@@ -26,7 +26,6 @@ def main():
   args = make_parser().parse_args()
   log_args(args)
 
-  num_classes = 20
   levels = make_levels()
   training = tf.placeholder(tf.bool, [], name='training')
 
@@ -35,12 +34,14 @@ def main():
   # print()
   # print(*regressions_true, sep='\n')
 
-  ds = dataset.make_dataset(
+  ds, num_classes = dataset.make_dataset(
       ann_path=args.ann_path,
       dataset_path=args.dataset_path,
-      num_classes=num_classes,
       levels=levels,
-      download=False).batch(1)
+      download=False)
+
+  ds = ds.batch(1)
+  assert num_classes == 80
 
   iter = ds.make_one_shot_iterator()
   image, classifications_true, regressions_true = iter.get_next()
