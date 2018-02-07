@@ -2,11 +2,13 @@ import argparse
 import tensorflow as tf
 import retinanet
 from utils import log_args
-from tmp import make_dataset
 from level import make_levels
+import objectives
+import dataset
 
 # TODO: prior class prob initialization
 # TODO: resize to 800
+# TODO: sigmoid and exp for regression
 
 
 def make_parser():
@@ -33,9 +35,7 @@ def main():
   # print()
   # print(*regressions_true, sep='\n')
 
-  # x = tf.zeros((1, 800, 1000, 3))
-
-  ds = make_dataset(
+  ds = dataset.make_dataset(
       ann_path=args.ann_path,
       dataset_path=args.dataset_path,
       num_classes=num_classes,
@@ -53,18 +53,22 @@ def main():
       weight_decay=args.weight_decay,
       training=training)
 
-  print()
-  print(*classifications_pred, sep='\n')
-  print()
-  print(*regressions_pred, sep='\n')
-  print()
+  loss = objectives.loss((classifications_true, regressions_true),
+                         (classifications_pred, regressions_pred))
+
+  # print()
+  # print(*classifications_pred, sep='\n')
+  # print()
+  # print(*regressions_pred, sep='\n')
 
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
 
     tmp = sess.run([classifications_pred, regressions_pred], {training: False})
-
     print([[x.shape for x in xs] for xs in tmp])
+
+    tmp = sess.run(loss, {training: False})
+    print(tmp)
 
 
 if __name__ == '__main__':
