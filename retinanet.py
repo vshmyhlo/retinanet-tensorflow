@@ -1,7 +1,6 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import tensorflow.contrib.slim.nets as nets
-import math
 
 
 def conv(x, filters, kernel_size, strides, kernel_initializer,
