@@ -2,6 +2,7 @@ import os
 import numpy as np
 import tensorflow as tf
 import pycocotools.coco as pycoco
+import cv_utils
 
 
 class COCO(object):
@@ -9,11 +10,12 @@ class COCO(object):
     def __init__(self, img):
       self.id = img['id']
       self.filename = img['file_name']
-      self.size = (img['height'], img['width'])
+      self.size = np.array([img['height'], img['width']])
 
   class Annotation(object):
     def __init__(self, ann, category_ids):
-      self.bbox = ann['bbox']
+      [left, top, width, height] = ann['bbox']
+      self.bbox = np.array([top, left, top + height, left + width])
       self.category_id = category_ids.index(ann['category_id'])
 
   def __init__(self, ann_path, dataset_path, download):
@@ -45,21 +47,48 @@ def box_size(base_size, ratio):
           np.sqrt(base_size**2 / (ratio[0] * ratio[1])) * ratio[1])
 
 
+# TODO: background category
 def make_level_labels(image, anns, level, num_classes):
-  image_size = np.array(image.size)
+  num_anchors = len(level.anchor_aspect_ratios)
+  grid_size = np.int32(np.ceil(image.size / 2**level.number))
+  cell_size = image.size / grid_size
 
-  # for item in anns:
-  #   print(item.bbox, item.category_id)
+  grid_y_positions = np.linspace(cell_size[0] / 2,
+                                 image.size[0] - cell_size[0] / 2,
+                                 grid_size[0]).reshape((-1, 1, 1, 1))
+  grid_x_positions = np.linspace(cell_size[1] / 2,
+                                 image.size[1] - cell_size[1] / 2,
+                                 grid_size[1]).reshape((1, -1, 1, 1))
+  grid_y_positions = np.tile(grid_y_positions,
+                             (1, grid_size[1], num_anchors, 1))
+  grid_x_positions = np.tile(grid_x_positions,
+                             (grid_size[0], 1, num_anchors, 1))
+  grid_positions = np.concatenate([grid_y_positions, grid_x_positions], -1)
+  del grid_x_positions, grid_y_positions
 
-  anchor_boxes = [
+  grid_anchors = np.array([
       box_size(level.anchor_size, ratio)
       for ratio in level.anchor_aspect_ratios
-  ]
+  ])
+  grid_anchors = grid_anchors.reshape((1, 1, *grid_anchors.shape))
+  grid_anchors = np.tile(grid_anchors, (*grid_size, 1, 1))
+  grid_anchors = np.concatenate([
+      grid_positions - grid_anchors / 2,
+      grid_positions + grid_anchors / 2,
+  ], -1)
+  grid_anchors = grid_anchors.reshape((1, *grid_anchors.shape))
 
-  classification = np.zeros((*np.int32(np.floor(image_size / 2**level.number)),
-                             num_classes * len(level.anchor_aspect_ratios)))
-  regression = np.zeros((*np.int32(np.floor(image_size / 2**level.number)),
-                         4 * len(level.anchor_aspect_ratios)))
+  boxes_true = np.array([item.bbox for item in anns])
+  boxes_true = boxes_true.reshape((boxes_true.shape[0], 1, 1, 1,
+                                   boxes_true.shape[1]))
+
+  iou = cv_utils.iou(grid_anchors, boxes_true)
+  print(iou)
+  print(iou.shape)
+  fail
+
+  # classification = np.zeros((*grid_size, num_anchors))
+  # regression = np.zeros((*grid_size, num_anchors, 4))
 
   return classification, regression
 

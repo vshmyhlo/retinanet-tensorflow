@@ -2,6 +2,7 @@ import tensorflow as tf
 
 
 # TODO: a-balancing
+# TODO: prob and reverse prob modulation
 def focal_sigmoid_cross_entropy_with_logits(labels,
                                             logits,
                                             focus=2.0,
