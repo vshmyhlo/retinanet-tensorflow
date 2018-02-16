@@ -56,7 +56,8 @@ def global_mean(tensors, name='global_mean'):
     global_sum = sum(tf.reduce_sum(t) for t in tensors)
 
     # TODO:
-    return tf.cond(size > 0, lambda: global_sum / tf.to_float(size), lambda: 0)
+    return tf.cond(size > 0, lambda: global_sum / tf.to_float(size),
+                   lambda: 0.0)
 
     # with tf.control_dependencies([tf.assert_positive(size)]):
     #   return global_sum / tf.to_float(size)
