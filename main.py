@@ -85,7 +85,7 @@ def main():
       levels=levels,
       download=False)
 
-  ds = ds.batch(1)
+  ds = ds.batch(1).prefetch(4)
   assert num_classes == 80 + 1
 
   iter = ds.make_one_shot_iterator()
