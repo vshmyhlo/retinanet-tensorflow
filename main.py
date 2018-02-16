@@ -12,7 +12,7 @@ from tqdm import tqdm
 # TODO: prior class prob initialization
 # TODO: resize to 800
 # TODO: sigmoid and exp for regression
-# TODO: rounding and float32
+# TODO: check rounding and float32 conversions
 
 
 def draw_heatmap(image, classification):
@@ -25,11 +25,13 @@ def draw_heatmap(image, classification):
   heatmap = tf.image.resize_images(
       heatmap, image_size, method=tf.image.ResizeMethod.AREA)
 
-  image_with_heatmap = image * tf.concat([
-      heatmap * 0.5 + (1 - heatmap),
-      tf.ones_like(heatmap),
-      heatmap * 0.5 + (1 - heatmap),
-  ], -1)
+  # image_with_heatmap = image * tf.concat([
+  #     heatmap * 0.5 + (1 - heatmap),
+  #     tf.ones_like(heatmap),
+  #     heatmap * 0.5 + (1 - heatmap),
+  # ], -1)
+
+  image_with_heatmap = image * 0.5 + heatmap * 0.5
 
   return image_with_heatmap
 
