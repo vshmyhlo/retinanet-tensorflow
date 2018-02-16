@@ -65,6 +65,8 @@ def make_parser():
   parser.add_argument('--dropout', type=float, default=0.2)
   parser.add_argument('--ann-path', type=str, required=True)
   parser.add_argument('--dataset-path', type=str, required=True)
+  parser.add_argument('--class-loss-k', type=float, default=1.0)
+  parser.add_argument('--regr-loss-k', type=float, default=1.0)
   parser.add_argument('--shuffle', type=int)
   parser.add_argument(
       '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
@@ -74,8 +76,9 @@ def make_parser():
 
 def class_distribution(tensors):
   # TODO: do not average over batch
-  return tf.stack(
-      [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [1, 2]) for x in tensors])
+  return tf.stack([
+      tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [0, 1, 2]) for x in tensors
+  ])
 
 
 def main():
@@ -112,10 +115,8 @@ def main():
       (classifications_true, regressions_true),
       (classifications_pred, regressions_pred))
 
-  # class_loss = tf.Print(class_loss, [
-  #     tf.reduce_mean(tf.to_float(tf.argmax(x, -1)))
-  #     for x in classifications_true
-  # ])
+  class_loss, regr_loss = (class_loss * args.class_loss_k,
+                           regr_loss * args.regr_loss_k)
 
   loss = class_loss + regr_loss
   train_step = tf.train.AdamOptimizer(args.learning_rate).minimize(
