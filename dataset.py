@@ -4,6 +4,8 @@ import tensorflow as tf
 import pycocotools.coco as pycoco
 import cv_utils
 
+IOU_THRESHOLD = 0.4
+
 
 class COCO(object):
   class Image(object):
@@ -115,7 +117,7 @@ def make_level_labels(image, anns, level, num_classes):
 
   iou = cv_utils.relative_iou(grid_anchors,
                               boxes_true)  # OBJECTS * H * W * RATIOS
-  iou *= iou > 0.5
+  iou *= iou > IOU_THRESHOLD
 
   # find best matches ##########################################################
   indices = np.argmax(iou, 0)  # H * W * RATIOS
