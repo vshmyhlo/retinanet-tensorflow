@@ -1,6 +1,7 @@
 import argparse
 import itertools
 import tensorflow as tf
+import tensorflow.contrib.slim as slim
 import retinanet
 from utils import log_args
 from level import make_levels
@@ -13,6 +14,9 @@ from tqdm import tqdm
 # TODO: resize to 800
 # TODO: sigmoid and exp for regression
 # TODO: check rounding and float32 conversions
+# TODO: name_scope to variable_scope
+# TODO: sgd
+# TODO: l1 loss
 
 
 def draw_heatmap(image, classification):
@@ -195,6 +199,9 @@ def main():
     image_summary = tf.summary.merge(image_summary)
 
   locals_init = tf.local_variables_initializer()
+
+  backbone_variables = slim.get_model_variables(scope="resnet_v2_50")
+  backbone_saver = tf.train.Saver(backbone_variables)
   saver = tf.train.Saver()
 
   with tf.Session() as sess, tf.summary.FileWriter(
@@ -204,6 +211,8 @@ def main():
       saver.restore(sess, restore_path)
     else:
       sess.run(tf.global_variables_initializer())
+      backbone_saver.restore(
+          sess, './pretrained/resnet_v2_50_2017_04_14/resnet_v2_50.ckpt')
 
     sess.run(locals_init)
 

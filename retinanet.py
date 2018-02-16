@@ -144,7 +144,7 @@ def backbone(x, levels, training, name='backbone'):
   ]
 
   with tf.name_scope(name):
-    with slim.arg_scope([slim.max_pool2d], padding='same'):
+    with slim.arg_scope(nets.resnet_v2.resnet_arg_scope()):
       _, outputs = nets.resnet_v2.resnet_v2_50(
           x,
           num_classes=None,
@@ -220,52 +220,66 @@ def fpn(bottom_up,
     return top_down
 
 
-def retinanet_base(x, num_classes, levels, dropout, kernel_initializer,
-                   kernel_regularizer, norm_type, training):
+def retinanet_base(x,
+                   num_classes,
+                   levels,
+                   dropout,
+                   kernel_initializer,
+                   kernel_regularizer,
+                   norm_type,
+                   training,
+                   name='retinanet_base'):
   backbone_levels = [l for l in levels if l.number <= 5]
   extra_levels = [l for l in levels if l.number > 5]
 
-  bottom_up = backbone(x, levels=backbone_levels, training=training)
+  with tf.name_scope(name):
+    bottom_up = backbone(x, levels=backbone_levels, training=training)
 
-  top_down = fpn(
-      bottom_up,
-      extra_levels=extra_levels,
-      dropout=dropout,
-      kernel_initializer=kernel_initializer,
-      kernel_regularizer=kernel_regularizer,
-      norm_type=norm_type,
-      training=training)
+    top_down = fpn(
+        bottom_up,
+        extra_levels=extra_levels,
+        dropout=dropout,
+        kernel_initializer=kernel_initializer,
+        kernel_regularizer=kernel_regularizer,
+        norm_type=norm_type,
+        training=training)
 
-  assert len(top_down) == len(levels)
+    assert len(top_down) == len(levels)
 
-  classifications = [
-      classification_subnet(
-          x,
-          num_classes=num_classes,
-          num_anchors=len(l.anchor_aspect_ratios),
-          dropout=dropout,
-          kernel_initializer=kernel_initializer,
-          kernel_regularizer=kernel_regularizer,
-          norm_type=norm_type,
-          training=training) for x, l in zip(reversed(top_down), levels)
-  ]
+    classifications = [
+        classification_subnet(
+            x,
+            num_classes=num_classes,
+            num_anchors=len(l.anchor_aspect_ratios),
+            dropout=dropout,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            norm_type=norm_type,
+            training=training) for x, l in zip(reversed(top_down), levels)
+    ]
 
-  regressions = [
-      regresison_subnet(
-          x,
-          num_anchors=len(l.anchor_aspect_ratios),
-          dropout=dropout,
-          kernel_initializer=kernel_initializer,
-          kernel_regularizer=kernel_regularizer,
-          norm_type=norm_type,
-          training=training) for x, l in zip(reversed(top_down), levels)
-  ]
+    regressions = [
+        regresison_subnet(
+            x,
+            num_anchors=len(l.anchor_aspect_ratios),
+            dropout=dropout,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            norm_type=norm_type,
+            training=training) for x, l in zip(reversed(top_down), levels)
+    ]
 
-  return classifications, regressions
+    return classifications, regressions
 
 
-def retinaneet(x, num_classes, levels, dropout, weight_decay, norm_type,
-               training):
+def retinaneet(x,
+               num_classes,
+               levels,
+               dropout,
+               weight_decay,
+               norm_type,
+               training,
+               name='retinanet'):
   kernel_initializer = tf.contrib.layers.xavier_initializer_conv2d()
   kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=weight_decay)
 
@@ -277,4 +291,5 @@ def retinaneet(x, num_classes, levels, dropout, weight_decay, norm_type,
       kernel_initializer=kernel_initializer,
       kernel_regularizer=kernel_regularizer,
       norm_type=norm_type,
-      training=training)
+      training=training,
+      name=name)
