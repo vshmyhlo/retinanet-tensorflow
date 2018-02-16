@@ -4,6 +4,7 @@ import tensorflow as tf
 import pycocotools.coco as pycoco
 import cv_utils
 
+# TODO: fix this
 IOU_THRESHOLD = 0.4
 
 
