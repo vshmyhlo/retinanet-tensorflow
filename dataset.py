@@ -5,7 +5,7 @@ import pycocotools.coco as pycoco
 import cv_utils
 
 # TODO: fix this
-IOU_THRESHOLD = 0.5
+IOU_THRESHOLD = 0.4
 
 
 class COCO(object):
