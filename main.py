@@ -20,10 +20,14 @@ def draw_heatmap(image, classification):
   heatmap = tf.argmax(classification, -1)
   heatmap = tf.reduce_max(classification, -1)
   heatmap = tf.not_equal(heatmap, 0)
+  heatmap = tf.to_float(heatmap)
+  heatmap = tf.expand_dims(heatmap, -1)
   heatmap = tf.image.resize_images(
       heatmap, image_size, method=tf.image.ResizeMethod.AREA)
 
-  return heatmap
+  image_with_heatmap = image * 0.5 + heatmap * 0.5
+
+  return image_with_heatmap
 
 
 def draw_bounding_boxes(image, regressions, classifications, levels):
