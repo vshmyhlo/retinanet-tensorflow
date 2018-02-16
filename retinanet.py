@@ -48,31 +48,32 @@ def classification_subnet(x,
                           norm_type,
                           training,
                           name='classification_subnet'):
-  filters = x.shape[-1]
-  for _ in range(4):
-    x = conv_norm_relu(
+  with tf.name_scope(name):
+    filters = x.shape[-1]
+    for _ in range(4):
+      x = conv_norm_relu(
+          x,
+          filters,
+          3,
+          1,
+          dropout=dropout,
+          kernel_initializer=kernel_initializer,
+          kernel_regularizer=kernel_regularizer,
+          norm_type=norm_type,
+          training=training)
+
+    x = conv(
         x,
-        filters,
+        num_anchors * num_classes,
         3,
         1,
-        dropout=dropout,
         kernel_initializer=kernel_initializer,
-        kernel_regularizer=kernel_regularizer,
-        norm_type=norm_type,
-        training=training)
+        kernel_regularizer=kernel_regularizer)
 
-  x = conv(
-      x,
-      num_anchors * num_classes,
-      3,
-      1,
-      kernel_initializer=kernel_initializer,
-      kernel_regularizer=kernel_regularizer)
+    shape = tf.shape(x)
+    x = tf.reshape(x, (shape[0], shape[1], shape[2], num_anchors, num_classes))
 
-  shape = tf.shape(x)
-  x = tf.reshape(x, (shape[0], shape[1], shape[2], num_anchors, num_classes))
-
-  return x
+    return x
 
 
 def regresison_subnet(x,
@@ -83,33 +84,34 @@ def regresison_subnet(x,
                       norm_type,
                       training,
                       name='regresison_subnet'):
-  filters = x.shape[-1]
-  for _ in range(4):
-    x = conv_norm_relu(
+  with tf.name_scope(name):
+    filters = x.shape[-1]
+    for _ in range(4):
+      x = conv_norm_relu(
+          x,
+          filters,
+          3,
+          1,
+          dropout=dropout,
+          kernel_initializer=kernel_initializer,
+          kernel_regularizer=kernel_regularizer,
+          norm_type=norm_type,
+          training=training)
+
+    x = conv(
         x,
-        filters,
+        num_anchors * 4,
         3,
         1,
-        dropout=dropout,
         kernel_initializer=kernel_initializer,
-        kernel_regularizer=kernel_regularizer,
-        norm_type=norm_type,
-        training=training)
+        kernel_regularizer=kernel_regularizer)
 
-  x = conv(
-      x,
-      num_anchors * 4,
-      3,
-      1,
-      kernel_initializer=kernel_initializer,
-      kernel_regularizer=kernel_regularizer)
+    shape = tf.shape(x)
+    x = tf.reshape(x, (shape[0], shape[1], shape[2], num_anchors, 4))
 
-  shape = tf.shape(x)
-  x = tf.reshape(x, (shape[0], shape[1], shape[2], num_anchors, 4))
+    x = tf.concat([x[..., :2], tf.exp(x[..., 2:])], -1)
 
-  x = tf.concat([x[..., :2], tf.exp(x[..., 2:])], -1)
-
-  return x
+    return x
 
 
 def validate_level_shape(x, output, l, name='validate_level_shape'):
