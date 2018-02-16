@@ -127,9 +127,9 @@ def main():
   with tf.name_scope('summary'):
     running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
     running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
-    running_true_class_dist, update_true_class_dist = tf.metrics.mean(
+    running_true_class_dist, update_true_class_dist = tf.metrics.mean_tensor(
         class_distribution(classifications_true))
-    running_pred_class_dist, update_pred_class_dist = tf.metrics.mean(
+    running_pred_class_dist, update_pred_class_dist = tf.metrics.mean_tensor(
         class_distribution(classifications_pred))
 
     update_metrics = tf.group(update_class_loss, update_regr_loss,
