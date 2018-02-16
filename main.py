@@ -150,7 +150,7 @@ def main():
           image[0], [y[0] for y in regressions_true],
           [y[0] for y in classifications_true], levels)
 
-      image.summary.append(
+      image_summary.append(
           tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)))
 
     with tf.name_scope('pred'):
@@ -158,7 +158,7 @@ def main():
           image[0], [y[0] for y in regressions_pred],
           [y[0] for y in classifications_pred], levels)
 
-      image.summary.append(
+      image_summary.append(
           tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)))
 
     image_summary = tf.summary.merge(image_summary)
