@@ -6,16 +6,20 @@ def focal_sigmoid_cross_entropy_with_logits(
     labels,
     logits,
     focus=2.0,
+    alpha=0.25,
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):
     loss = tf.nn.sigmoid_cross_entropy_with_logits(
         labels=labels, logits=logits)
+
+    a_balance = alpha * true + (1 - alpha) * (1 - true)
+
     prob = tf.nn.sigmoid(logits)
     prob_true = prob * labels + (1 - prob) * (1 - labels)
     modulating_factor = (1.0 - prob_true)**focus
 
-    return modulating_factor * loss
+    return a_balance * modulating_factor * loss
 
 
 def validate_output_shapes(true, pred, name='validate_output_shapes'):

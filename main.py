@@ -75,7 +75,7 @@ def draw_bounding_boxes(image, regressions, classifications, levels):
 def make_parser():
   parser = argparse.ArgumentParser()
   # parser.add_argument('--batch-size', type=int, default=32)
-  parser.add_argument('--learning-rate', type=float, default=1e-3)
+  parser.add_argument('--learning-rate', type=float, default=1e-2)
   parser.add_argument('--weight-decay', type=float, default=1e-4)
   parser.add_argument('--dropout', type=float, default=0.2)
   parser.add_argument('--ann-path', type=str, required=True)
