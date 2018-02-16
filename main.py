@@ -72,6 +72,11 @@ def make_parser():
   return parser
 
 
+def class_distribution(tensors):
+  return tf.stack(
+      [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [1, 2]) for x in tensors])
+
+
 def main():
   args = make_parser().parse_args()
   log_args(args)
@@ -126,14 +131,12 @@ def main():
         tf.summary.scalar('loss', running_loss)
     ])
 
-    boxmap = tf.expand_dims(image_with_boxes, 0)
-    predicted_classes = tf.stack([
-        tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [1, 2])
-        for x in classifications_pred
-    ])
     image_summary = tf.summary.merge([
-        tf.summary.image('boxmap', boxmap),
-        tf.summary.histogram('predicted_classes', predicted_classes)
+        tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)),
+        tf.summary.histogram('classifications_pred',
+                             class_distribution(classifications_pred)),
+        tf.summary.histogram('classifications_true',
+                             class_distribution(classifications_true))
     ])
 
   locals_init = tf.local_variables_initializer()
