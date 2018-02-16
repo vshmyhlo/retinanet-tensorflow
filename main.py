@@ -127,8 +127,8 @@ def main():
     ])
     image_summary = tf.summary.merge([
         tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)),
-        tf.summary.histogram('predicted_classes',
-                             tf.argmax(classifications_pred, -1))
+        # tf.summary.histogram('predicted_classes',
+        #                      tf.argmax(classifications_pred, -1))
     ])
 
   locals_init = tf.local_variables_initializer()
