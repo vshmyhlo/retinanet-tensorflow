@@ -15,28 +15,36 @@ def conv(x, filters, kernel_size, strides, kernel_initializer,
       kernel_regularizer=kernel_regularizer)
 
 
-def conv_norm_relu(x, filters, kernel_size, strides, dropout,
-                   kernel_initializer, kernel_regularizer, norm_type,
-                   training):
+def conv_norm_relu(x,
+                   filters,
+                   kernel_size,
+                   strides,
+                   dropout,
+                   kernel_initializer,
+                   kernel_regularizer,
+                   norm_type,
+                   training,
+                   name='conv_norm_relu'):
   assert norm_type in ['layer', 'batch']
 
-  x = conv(
-      x,
-      filters,
-      kernel_size,
-      strides,
-      kernel_initializer=kernel_initializer,
-      kernel_regularizer=kernel_regularizer)
+  with tf.name_scope(name):
+    x = conv(
+        x,
+        filters,
+        kernel_size,
+        strides,
+        kernel_initializer=kernel_initializer,
+        kernel_regularizer=kernel_regularizer)
 
-  if norm_type == 'layer':
-    x = tf.contrib.layers.layer_norm(x)
-  elif norm_type == 'batch':
-    x = tf.layers.batch_normalization(x, training=training)
+    if norm_type == 'layer':
+      x = tf.contrib.layers.layer_norm(x)
+    elif norm_type == 'batch':
+      x = tf.layers.batch_normalization(x, training=training)
 
-  x = tf.nn.relu(x)
-  x = tf.layers.dropout(x, rate=dropout, training=training)
+    x = tf.nn.relu(x)
+    x = tf.layers.dropout(x, rate=dropout, training=training)
 
-  return x
+    return x
 
 
 def classification_subnet(x,
@@ -50,6 +58,7 @@ def classification_subnet(x,
                           name='classification_subnet'):
   with tf.name_scope(name):
     filters = x.shape[-1]
+
     for _ in range(4):
       x = conv_norm_relu(
           x,
@@ -86,6 +95,7 @@ def regresison_subnet(x,
                       name='regresison_subnet'):
   with tf.name_scope(name):
     filters = x.shape[-1]
+
     for _ in range(4):
       x = conv_norm_relu(
           x,
@@ -108,7 +118,6 @@ def regresison_subnet(x,
 
     shape = tf.shape(x)
     x = tf.reshape(x, (shape[0], shape[1], shape[2], num_anchors, 4))
-
     x = tf.concat([x[..., :2], tf.exp(x[..., 2:])], -1)
 
     return x
