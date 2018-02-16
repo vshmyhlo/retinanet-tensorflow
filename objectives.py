@@ -10,7 +10,7 @@ def focal_sigmoid_cross_entropy_with_logits(
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):
-    return tf.nn.softmax_cross_entropy_with_logits_v2(
+    return tf.nn.softmax_cross_entropy_with_logits(
         logits=logits, labels=labels)
 
     # logits, labels = logits[..., 1:], labels[..., 1:]
