@@ -73,6 +73,7 @@ def make_parser():
 
 
 def class_distribution(tensors):
+  # TODO: do not average over batch
   return tf.stack(
       [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [1, 2]) for x in tensors])
 
