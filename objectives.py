@@ -72,7 +72,7 @@ def loss(true, pred, name='loss'):
     # sum over python list of values
     regr_size = sum(tf.to_float(tf.size(l)) for l in regr_losses)
     regr_size = tf.Print(regr_size, [regr_size])
-    with tf.control_dependencies([tf.assert_positive(regr_size)]):
-      regr_loss = sum(tf.reduce_sum(l) for l in regr_losses) / regr_size
+    # with tf.control_dependencies([tf.assert_positive(regr_size)]):
+    regr_loss = sum(tf.reduce_sum(l) for l in regr_losses) / regr_size
 
   return class_loss, regr_loss
