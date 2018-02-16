@@ -152,7 +152,7 @@ def main():
             training: True
         })
 
-        print('step: {}, class_loss: {}, regr_loss: {}\n'.format(step, cl, rl))
+        print('\nstep: {}, class_loss: {}, regr_loss: {}'.format(step, cl, rl))
         train_writer.add_summary(run_summ, step)
         train_writer.add_summary(im_summ, step)
         saver.save(sess, './tf_log/train/model.ckpt')
