@@ -15,6 +15,17 @@ from tqdm import tqdm
 # TODO: rounding and float32
 
 
+def draw_heatmap(image, classification):
+  image_size = tf.shape(image)[:2]
+  heatmap = tf.argmax(classification, -1)
+  heatmap = tf.max(classification, -1)
+  heatmap = tf.not_equal(heatmap, 0)
+  heatmap = tf.image.resize_images(
+      heatmap, image_size, method=tf.image.ResizeMethod.AREA)
+
+  return heatmap
+
+
 def draw_bounding_boxes(image, regressions, classifications, levels):
   image_size = tf.shape(image)[:2]
   image = tf.expand_dims(image, 0)
@@ -149,17 +160,27 @@ def main():
       image_with_boxes = draw_bounding_boxes(
           image[0], [y[0] for y in regressions_true],
           [y[0] for y in classifications_true], levels)
-
       image_summary.append(
           tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)))
+
+      for l, c in zip(levels, classifications_true):
+        image_with_heatmap = draw_heatmap(image[0], c[0])
+        image_summary.append(
+            tf.summary.image('heatmap_level_{}'.format(l.number),
+                             tf.expand_dims(image_with_heatmap, 0)))
 
     with tf.name_scope('pred'):
       image_with_boxes = draw_bounding_boxes(
           image[0], [y[0] for y in regressions_pred],
           [y[0] for y in classifications_pred], levels)
-
       image_summary.append(
           tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)))
+
+      for l, c in zip(levels, classifications_pred):
+        image_with_heatmap = draw_heatmap(image[0], c[0])
+        image_summary.append(
+            tf.summary.image('heatmap_level_{}'.format(l.number),
+                             tf.expand_dims(image_with_heatmap, 0)))
 
     image_summary = tf.summary.merge(image_summary)
 
@@ -193,8 +214,6 @@ def main():
         train_writer.add_summary(run_summ, step)
         train_writer.add_summary(im_summ, step)
         saver.save(sess, './tf_log/model.ckpt')
-
-      if step % 500 == 0:
         sess.run(locals_init)
 
 
