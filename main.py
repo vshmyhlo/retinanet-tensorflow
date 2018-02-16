@@ -211,8 +211,8 @@ def main():
       saver.restore(sess, restore_path)
     else:
       sess.run(tf.global_variables_initializer())
-      backbone_saver.restore(
-          sess, './pretrained/resnet_v2_50_2017_04_14/resnet_v2_50.ckpt')
+      backbone_saver.restore(sess,
+                             './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
 
     sess.run(locals_init)
 
