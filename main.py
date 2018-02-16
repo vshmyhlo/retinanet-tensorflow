@@ -125,12 +125,15 @@ def main():
         tf.summary.scalar('regr_loss', running_regr_loss),
         tf.summary.scalar('loss', running_loss)
     ])
+
+    boxmap = tf.expand_dims(image_with_boxes, 0)
+    predicted_classes = tf.stack([
+        tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [1, 2])
+        for x in classifications_pred
+    ])
     image_summary = tf.summary.merge([
-        tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)),
-        tf.summary.histogram('predicted_classes',
-                             tf.reduce_mean(
-                                 tf.to_float(
-                                     tf.argmax(classifications_pred, -1))))
+        tf.summary.image('boxmap', boxmap),
+        tf.summary.histogram('predicted_classes', predicted_classes)
     ])
 
   locals_init = tf.local_variables_initializer()
