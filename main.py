@@ -137,7 +137,7 @@ def main():
 
   with tf.Session() as sess, tf.summary.FileWriter(
       logdir='./tf_log/train', graph=sess.graph) as train_writer:
-    restore_path = tf.train.latest_checkpoint('./tf_log/train')
+    restore_path = tf.train.latest_checkpoint('./tf_log')
     if restore_path:
       saver.restore(sess, restore_path)
     else:
@@ -161,7 +161,7 @@ def main():
         print('\nstep: {}, class_loss: {}, regr_loss: {}'.format(step, cl, rl))
         train_writer.add_summary(run_summ, step)
         train_writer.add_summary(im_summ, step)
-        saver.save(sess, './tf_log/train/model.ckpt')
+        saver.save(sess, './tf_log/model.ckpt')
 
 
 if __name__ == '__main__':
