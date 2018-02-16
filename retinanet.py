@@ -173,8 +173,14 @@ def validate_lateral_shape(x, lateral, name='validate_lateral_shape'):
     )
 
 
-def fpn(bottom_up, extra_levels, dropout, kernel_initializer,
-        kernel_regularizer, norm_type, training):
+def fpn(bottom_up,
+        extra_levels,
+        dropout,
+        kernel_initializer,
+        kernel_regularizer,
+        norm_type,
+        training,
+        name='fpn'):
   def conv(x, kernel_size, strides):
     return conv_norm_relu(
         x,
@@ -195,22 +201,23 @@ def fpn(bottom_up, extra_levels, dropout, kernel_initializer,
 
       return x + lateral
 
-  x = bottom_up[-1]
-  top_down = []
+  with tf.name_scope(name):
+    x = bottom_up[-1]
+    top_down = []
 
-  for l in extra_levels:
-    x = conv(x, 3, 2)
-    top_down.insert(0, x)
+    for l in extra_levels:
+      x = conv(x, 3, 2)
+      top_down.insert(0, x)
 
-  x = conv(bottom_up.pop(), 1, 1)
-  top_down.append(x)
-
-  for _ in range(len(bottom_up)):
-    x = upsample_merge(x, bottom_up.pop())
-    x = conv(x, 3, 1)
+    x = conv(bottom_up.pop(), 1, 1)
     top_down.append(x)
 
-  return top_down
+    for _ in range(len(bottom_up)):
+      x = upsample_merge(x, bottom_up.pop())
+      x = conv(x, 3, 1)
+      top_down.append(x)
+
+    return top_down
 
 
 def retinanet_base(x, num_classes, levels, dropout, kernel_initializer,
