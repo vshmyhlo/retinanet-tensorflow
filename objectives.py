@@ -1,7 +1,10 @@
 import tensorflow as tf
 
+# TODO: huber loss
+# TODO: use huber loss weights
+# TODO: focal loss a-balancing
 
-# TODO: a-balancing
+
 def focal_sigmoid_cross_entropy_with_logits(
     labels,
     logits,
@@ -10,20 +13,21 @@ def focal_sigmoid_cross_entropy_with_logits(
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):
-    return tf.nn.softmax_cross_entropy_with_logits(
-        logits=logits, labels=labels)
+    # return tf.nn.softmax_cross_entropy_with_logits(
+    #     logits=logits, labels=labels)
 
-    # logits, labels = logits[..., 1:], labels[..., 1:]
-    # loss = tf.nn.sigmoid_cross_entropy_with_logits(
-    #     labels=labels, logits=logits)
-    #
-    # a_balance = alpha * labels + (1 - alpha) * (1 - labels)
-    #
-    # prob = tf.nn.sigmoid(logits)
-    # prob_true = prob * labels + (1 - prob) * (1 - labels)
-    # modulating_factor = (1.0 - prob_true)**focus
-    #
-    # return a_balance * modulating_factor * loss
+    logits, labels = logits[..., 1:], labels[..., 1:]
+
+    loss = tf.nn.sigmoid_cross_entropy_with_logits(
+        labels=labels, logits=logits)
+
+    a_balance = alpha * labels + (1 - alpha) * (1 - labels)
+
+    prob = tf.nn.sigmoid(logits)
+    prob_true = prob * labels + (1 - prob) * (1 - labels)
+    modulating_factor = (1.0 - prob_true)**focus
+
+    return a_balance * modulating_factor * loss
 
 
 def validate_output_shapes(true, pred, name='validate_output_shapes'):
@@ -40,20 +44,13 @@ def validate_output_shapes(true, pred, name='validate_output_shapes'):
 def level_loss(labels, logits, name='level_loss'):
   with tf.name_scope(name):
     non_background_mask = tf.not_equal(tf.argmax(labels[0], -1), 0)
-    # non_background_mask = tf.expand_dims(non_background_mask, -1)
-    # non_background_mask = tf.to_float(non_background_mask)
 
     class_loss = focal_sigmoid_cross_entropy_with_logits(
         labels=labels[0], logits=logits[0])
-    # class_loss = tf.reduce_mean(class_loss)
 
-    regr_loss = tf.square(labels[1] - logits[1])
+    regr_loss = tf.losses.huber_loss(
+        labels[1], logits[1], reduction=tf.losses.Reduction.NONE)
     regr_loss = tf.boolean_mask(regr_loss, non_background_mask)
-
-    # regr_loss = tf.cond(
-    #     tf.reduce_sum(tf.to_float(non_background_mask)) > 0,
-    #     lambda: tf.reduce_mean(tf.boolean_mask(regr_loss, non_background_mask)),
-    #     lambda: 0.0)
 
   return class_loss, regr_loss
 

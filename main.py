@@ -17,6 +17,7 @@ from tqdm import tqdm
 # TODO: name_scope to variable_scope
 # TODO: sgd
 # TODO: l1 loss
+# TODO: flip augmentation
 
 
 def draw_heatmap(image, classification):
