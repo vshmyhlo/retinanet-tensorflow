@@ -50,6 +50,14 @@ def level_loss(labels, logits, name='level_loss'):
   return class_loss, regr_loss
 
 
+def global_mean(tensors):
+  size = sum(tf.size(t) for t in tensors)
+  global_sum = sum(tf.reduce_sum(t) for t in tensors)
+
+  with tf.control_dependencies([tf.assert_positive(size)]):
+    return global_sum / tf.to_float(size)
+
+
 def loss(true, pred, name='loss'):
   assert len(true[0]) == len(true[1]) == len(pred[0]) == len(pred[1])
 
@@ -63,17 +71,7 @@ def loss(true, pred, name='loss'):
         class_losses.append(class_loss)
         regr_losses.append(regr_loss)
 
-    # sum over python list of values
-    # TODO: redundant assert
-    class_size = sum(tf.to_float(tf.size(l)) for l in class_losses)
-    with tf.control_dependencies([tf.assert_positive(class_size)]):
-      class_loss = sum(tf.reduce_sum(l) for l in class_losses) / class_size
-
-    # sum over python list of values
-    regr_size = sum(tf.size(l) for l in regr_losses)
-    regr_size = tf.Print(regr_size, [regr_size])
-    with tf.control_dependencies([tf.assert_positive(regr_size)]):
-      regr_loss = sum(
-          tf.reduce_sum(l) for l in regr_losses) / tf.to_float(regr_size)
+    class_loss = global_mean(class_losses)
+    regr_loss = global_mean(regr_losses)
 
   return class_loss, regr_loss
