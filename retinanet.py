@@ -39,9 +39,15 @@ def conv_norm_relu(x, filters, kernel_size, strides, dropout,
   return x
 
 
-def classification_subnet(x, num_classes, num_anchors, dropout,
-                          kernel_initializer, kernel_regularizer, norm_type,
-                          training):
+def classification_subnet(x,
+                          num_classes,
+                          num_anchors,
+                          dropout,
+                          kernel_initializer,
+                          kernel_regularizer,
+                          norm_type,
+                          training,
+                          name='classification_subnet'):
   filters = x.shape[-1]
   for _ in range(4):
     x = conv_norm_relu(
@@ -69,8 +75,14 @@ def classification_subnet(x, num_classes, num_anchors, dropout,
   return x
 
 
-def regresison_subnet(x, num_anchors, dropout, kernel_initializer,
-                      kernel_regularizer, norm_type, training):
+def regresison_subnet(x,
+                      num_anchors,
+                      dropout,
+                      kernel_initializer,
+                      kernel_regularizer,
+                      norm_type,
+                      training,
+                      name='regresison_subnet'):
   filters = x.shape[-1]
   for _ in range(4):
     x = conv_norm_relu(
