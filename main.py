@@ -21,11 +21,15 @@ def draw_heatmap(image, classification):
   heatmap = tf.reduce_max(heatmap, -1)
   heatmap = tf.not_equal(heatmap, 0)
   heatmap = tf.to_float(heatmap)
-  heatmap = tf.expand_dims(heatmap, -1)
+  # heatmap = tf.expand_dims(heatmap, -1)
   heatmap = tf.image.resize_images(
       heatmap, image_size, method=tf.image.ResizeMethod.AREA)
 
-  image_with_heatmap = image * 0.1  # + heatmap * 0.5
+  image_with_heatmap = image * tf.stack([
+      heatmap * 0.5 + (1 - heatmap),
+      tf.ones_like(heatmap),
+      heatmap * 0.5 + (1 - heatmap),
+  ], -1)
 
   return image_with_heatmap
 
