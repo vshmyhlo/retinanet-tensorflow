@@ -18,7 +18,7 @@ from tqdm import tqdm
 def draw_heatmap(image, classification):
   image_size = tf.shape(image)[:2]
   heatmap = tf.argmax(classification, -1)
-  heatmap = tf.reduce_max(classification, -1)
+  heatmap = tf.reduce_max(heatmap, -1)
   heatmap = tf.not_equal(heatmap, 0)
   heatmap = tf.to_float(heatmap)
   heatmap = tf.expand_dims(heatmap, -1)
