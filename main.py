@@ -180,6 +180,9 @@ def main():
         train_writer.add_summary(im_summ, step)
         saver.save(sess, './tf_log/model.ckpt')
 
+      if step % 500 == 0:
+        sess.run(locals_init)
+
 
 if __name__ == '__main__':
   main()
