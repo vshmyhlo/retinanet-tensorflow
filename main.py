@@ -7,6 +7,7 @@ from level import make_levels
 import objectives
 import dataset
 import numpy as np
+from tqdm import tqdm
 
 # TODO: prior class prob initialization
 # TODO: resize to 800
@@ -125,6 +126,7 @@ def main():
     image_summary = tf.summary.merge(
         [tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0))])
 
+  locals_init = tf.local_variables_initializer()
   saver = tf.train.Saver()
 
   with tf.Session() as sess, tf.summary.FileWriter(
@@ -135,7 +137,9 @@ def main():
     else:
       sess.run(tf.global_variables_initializer())
 
-    for _ in itertools.count():
+    sess.run(locals_init)
+
+    for _ in tqdm(itertools.count()):
       _, step = sess.run([(train_step, update_metrics), global_step], {
           training: True
       })
@@ -148,7 +152,7 @@ def main():
             training: True
         })
 
-        print('step: {}, class_loss: {}, regr_loss: {}'.format(step, cl, rl))
+        print('step: {}, class_loss: {}, regr_loss: {}\n'.format(step, cl, rl))
         train_writer.add_summary(run_summ, step)
         train_writer.add_summary(im_summ, step)
         saver.save(sess, './tf_log/train/model.ckpt')
