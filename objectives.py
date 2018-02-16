@@ -59,7 +59,7 @@ def global_mean(tensors, name='global_mean'):
     size = sum(tf.size(t) for t in tensors)
     global_sum = sum(tf.reduce_sum(t) for t in tensors)
 
-    # TODO:
+    # TODO: check why bounding box is not assigned to any anchor box
     return tf.cond(size > 0, lambda: global_sum / tf.to_float(size),
                    lambda: 0.0)
 
