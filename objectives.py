@@ -60,8 +60,10 @@ def level_loss(labels, logits, name='level_loss'):
 
 def global_mean(tensors, name='global_mean'):
   with tf.name_scope(name):
-    size = sum(tf.size(t) for t in tensors)
-    global_sum = sum(tf.reduce_sum(t) for t in tensors)
+    size = sum(tf.size(t) // 4 for t in tensors)
+    global_sum = sum(
+        tf.reduce_sum(tf.nn.top_k(t,
+                                  tf.size(t) // 4)[0]) for t in tensors)
 
     # TODO: check why bounding box is not assigned to any anchor box
     return tf.cond(size > 0, lambda: global_sum / tf.to_float(size),
