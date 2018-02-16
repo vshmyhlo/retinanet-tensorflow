@@ -173,7 +173,7 @@ def gen(coco, dataset_path, levels, download):
     yield filename.encode('utf-8'), classifications, regressions
 
 
-def make_dataset(ann_path, dataset_path, levels, download):
+def make_dataset(ann_path, dataset_path, levels, shuffle, download):
   def make_gen():
     return gen(
         coco=coco, dataset_path=dataset_path, levels=levels, download=download)
@@ -204,6 +204,8 @@ def make_dataset(ann_path, dataset_path, levels, download):
           tuple([None, None, len(l.anchor_aspect_ratios), 4] for l in levels),
       ))
 
+  if shuffle is not None:
+    ds = ds.shuffle(shuffle)
   ds = ds.map(mapper)
 
   return ds, coco.num_classes

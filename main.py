@@ -83,6 +83,7 @@ def main():
       ann_path=args.ann_path,
       dataset_path=args.dataset_path,
       levels=levels,
+      shuffle=1024,
       download=False)
 
   ds = ds.batch(1).prefetch(4)
