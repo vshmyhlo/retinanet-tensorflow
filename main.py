@@ -122,10 +122,6 @@ def main():
   train_step = tf.train.AdamOptimizer(args.learning_rate).minimize(
       loss, global_step=global_step)
 
-  image_with_boxes = draw_bounding_boxes(
-      image[0], [y[0] for y in regressions_pred],
-      [y[0] for y in classifications_pred], levels)
-
   with tf.name_scope('summary'):
     running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
     running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
@@ -142,14 +138,30 @@ def main():
     running_summary = tf.summary.merge([
         tf.summary.scalar('class_loss', running_class_loss),
         tf.summary.scalar('regr_loss', running_regr_loss),
-        tf.summary.scalar('loss', running_loss)
-    ])
-
-    image_summary = tf.summary.merge([
-        tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)),
+        tf.summary.scalar('loss', running_loss),
         tf.summary.histogram('classifications_true', running_true_class_dist),
         tf.summary.histogram('classifications_pred', running_pred_class_dist)
     ])
+
+    image_summary = []
+
+    with tf.name_scope('true'):
+      image_with_boxes = draw_bounding_boxes(
+          image[0], [y[0] for y in regressions_true],
+          [y[0] for y in classifications_true], levels)
+
+      image.summary.append(
+          tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)))
+
+    with tf.name_scope('pred'):
+      image_with_boxes = draw_bounding_boxes(
+          image[0], [y[0] for y in regressions_pred],
+          [y[0] for y in classifications_pred], levels)
+
+      image.summary.append(
+          tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)))
+
+    image_summary = tf.summary.merge(image_summary)
 
   locals_init = tf.local_variables_initializer()
   saver = tf.train.Saver()
