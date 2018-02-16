@@ -32,16 +32,20 @@ def validate_output_shapes(true, pred, name='validate_output_shapes'):
 def level_loss(labels, logits, name='level_loss'):
   with tf.name_scope(name):
     non_background_mask = tf.not_equal(tf.argmax(labels[0], -1), 0)
-    non_background_mask = tf.expand_dims(non_background_mask, -1)
-    non_background_mask = tf.to_float(non_background_mask)
+    # non_background_mask = tf.expand_dims(non_background_mask, -1)
+    # non_background_mask = tf.to_float(non_background_mask)
 
     class_loss = focal_sigmoid_cross_entropy_with_logits(
         labels=labels[0], logits=logits[0])
     class_loss = tf.reduce_mean(class_loss)
 
     regr_loss = tf.square(labels[1] - logits[1])
-    regr_loss = regr_loss * non_background_mask
-    regr_loss = tf.reduce_sum(regr_loss) / tf.reduce_sum(non_background_mask)
+    regr_loss = tf.cond(
+        tf.reduce_sum(tf.to_float(non_background_mask)) > 0,
+        lambda: tf.reduce_mean(tf.boolean_mask(regr_loss, non_background_mask)),
+        lambda: 0.0)
+    # regr_loss = regr_loss * non_background_mask
+    # regr_loss = (regr_loss)
 
   return class_loss, regr_loss
 
