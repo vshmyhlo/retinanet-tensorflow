@@ -167,7 +167,7 @@ def gen(coco, dataset_path, levels, download):
     classifications, regressions = make_labels(
         img, anns, levels=levels, num_classes=coco.num_classes)
 
-    yield filename, classifications, regressions
+    yield filename.encode('utf-8'), classifications, regressions
 
 
 def make_dataset(ann_path, dataset_path, levels, download):
