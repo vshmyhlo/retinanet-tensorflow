@@ -111,6 +111,11 @@ def main():
       (classifications_true, regressions_true),
       (classifications_pred, regressions_pred))
 
+  # class_loss = tf.Print(class_loss, [
+  #     tf.reduce_mean(tf.to_float(tf.argmax(x, -1)))
+  #     for x in classifications_true
+  # ])
+
   loss = class_loss + regr_loss
   train_step = tf.train.AdamOptimizer(args.learning_rate).minimize(
       loss, global_step=global_step)
@@ -122,7 +127,14 @@ def main():
   with tf.name_scope('summary'):
     running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
     running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
-    update_metrics = tf.group(update_class_loss, update_regr_loss)
+    running_true_class_dist, update_true_class_dist = tf.metrics.mean(
+        class_distribution(classifications_true))
+    running_pred_class_dist, update_pred_class_dist = tf.metrics.mean(
+        class_distribution(classifications_pred))
+
+    update_metrics = tf.group(update_class_loss, update_regr_loss,
+                              update_true_class_dist, update_pred_class_dist)
+
     running_loss = running_class_loss + running_regr_loss
 
     running_summary = tf.summary.merge([
@@ -133,10 +145,8 @@ def main():
 
     image_summary = tf.summary.merge([
         tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0)),
-        tf.summary.histogram('classifications_pred',
-                             class_distribution(classifications_pred)),
-        tf.summary.histogram('classifications_true',
-                             class_distribution(classifications_true))
+        tf.summary.histogram('classifications_true', running_true_class_dist),
+        tf.summary.histogram('classifications_pred', running_pred_class_dist)
     ])
 
   locals_init = tf.local_variables_initializer()
