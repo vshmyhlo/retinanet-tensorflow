@@ -64,6 +64,8 @@ def make_parser():
   parser.add_argument('--dropout', type=float, default=0.2)
   parser.add_argument('--ann-path', type=str, required=True)
   parser.add_argument('--dataset-path', type=str, required=True)
+  parser.add_argument(
+      '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
 
   return parser
 
@@ -82,7 +84,7 @@ def main():
       levels=levels,
       download=False)
 
-  ds = ds.batch(1)
+  ds = ds.repeat().batch(1)
   assert num_classes == 80 + 1
 
   iter = ds.make_one_shot_iterator()
@@ -94,6 +96,7 @@ def main():
       levels=levels,
       dropout=args.dropout,
       weight_decay=args.weight_decay,
+      norm_type=args.norm_type,
       training=training)
 
   class_loss, regr_loss = objectives.loss(
@@ -105,8 +108,8 @@ def main():
       loss, global_step=global_step)
 
   image_with_boxes = draw_bounding_boxes(
-      image[0], [y[0] for y in regressions_true],
-      [y[0] for y in classifications_true], levels)
+      image[0], [y[0] for y in regressions_pred],
+      [y[0] for y in classifications_pred], levels)
 
   with tf.name_scope('summary'):
     merged = tf.summary.merge(
@@ -116,7 +119,7 @@ def main():
 
   with tf.Session() as sess, tf.summary.FileWriter(
       logdir='./tf_log/train', graph=sess.graph) as train_writer:
-    restore_path = tf.train.latest_checkpoint(args.experiment_path)
+    restore_path = tf.train.latest_checkpoint('./tf_log/train')
     if restore_path:
       saver.restore(sess, restore_path)
     else:
@@ -128,9 +131,10 @@ def main():
               training: True
           })
 
-      print('step: {}, class_loss: {}, regr_loss: {}'.format(step, cl, rl))
-      train_writer.add_summary(summ, step)
-      saver.save(sess, './tf_log/train/model.ckpt')
+      if step % 100 == 0:
+        print('step: {}, class_loss: {}, regr_loss: {}'.format(step, cl, rl))
+        train_writer.add_summary(summ, step)
+        saver.save(sess, './tf_log/train/model.ckpt')
 
 
 if __name__ == '__main__':

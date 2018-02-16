@@ -15,8 +15,11 @@ def conv(x, filters, kernel_size, strides, kernel_initializer,
       kernel_regularizer=kernel_regularizer)
 
 
-def conv_bn_relu(x, filters, kernel_size, strides, dropout, kernel_initializer,
-                 kernel_regularizer, training):
+def conv_norm_relu(x, filters, kernel_size, strides, dropout,
+                   kernel_initializer, kernel_regularizer, norm_type,
+                   training):
+  assert norm_type in ['layer', 'batch']
+
   x = conv(
       x,
       filters,
@@ -24,7 +27,12 @@ def conv_bn_relu(x, filters, kernel_size, strides, dropout, kernel_initializer,
       strides,
       kernel_initializer=kernel_initializer,
       kernel_regularizer=kernel_regularizer)
-  x = tf.layers.batch_normalization(x, training=training)
+
+  if norm_type == 'layer':
+    x = tf.contrib.layers.layer_norm(x)
+  elif norm_type == 'batch':
+    x = tf.layers.batch_normalization(x, training=training)
+
   x = tf.nn.relu(x)
   x = tf.layers.dropout(x, rate=dropout, training=training)
 
@@ -32,10 +40,11 @@ def conv_bn_relu(x, filters, kernel_size, strides, dropout, kernel_initializer,
 
 
 def classification_subnet(x, num_classes, num_anchors, dropout,
-                          kernel_initializer, kernel_regularizer, training):
+                          kernel_initializer, kernel_regularizer, norm_type,
+                          training):
   filters = x.shape[-1]
   for _ in range(4):
-    x = conv_bn_relu(
+    x = conv_norm_relu(
         x,
         filters,
         3,
@@ -43,6 +52,7 @@ def classification_subnet(x, num_classes, num_anchors, dropout,
         dropout=dropout,
         kernel_initializer=kernel_initializer,
         kernel_regularizer=kernel_regularizer,
+        norm_type=norm_type,
         training=training)
 
   x = conv(
@@ -60,10 +70,10 @@ def classification_subnet(x, num_classes, num_anchors, dropout,
 
 
 def regresison_subnet(x, num_anchors, dropout, kernel_initializer,
-                      kernel_regularizer, training):
+                      kernel_regularizer, norm_type, training):
   filters = x.shape[-1]
   for _ in range(4):
-    x = conv_bn_relu(
+    x = conv_norm_relu(
         x,
         filters,
         3,
@@ -71,6 +81,7 @@ def regresison_subnet(x, num_anchors, dropout, kernel_initializer,
         dropout=dropout,
         kernel_initializer=kernel_initializer,
         kernel_regularizer=kernel_regularizer,
+        norm_type=norm_type,
         training=training)
 
   x = conv(
@@ -140,9 +151,9 @@ def validate_lateral_shape(x, lateral, name='validate_lateral_shape'):
 
 
 def fpn(bottom_up, extra_levels, dropout, kernel_initializer,
-        kernel_regularizer, training):
+        kernel_regularizer, norm_type, training):
   def conv(x, kernel_size, strides):
-    return conv_bn_relu(
+    return conv_norm_relu(
         x,
         256,
         kernel_size,
@@ -150,6 +161,7 @@ def fpn(bottom_up, extra_levels, dropout, kernel_initializer,
         dropout=dropout,
         kernel_initializer=kernel_initializer,
         kernel_regularizer=kernel_regularizer,
+        norm_type=norm_type,
         training=training)
 
   def upsample_merge(x, lateral):
@@ -179,7 +191,7 @@ def fpn(bottom_up, extra_levels, dropout, kernel_initializer,
 
 
 def retinanet_base(x, num_classes, levels, dropout, kernel_initializer,
-                   kernel_regularizer, training):
+                   kernel_regularizer, norm_type, training):
   backbone_levels = [l for l in levels if l.number <= 5]
   extra_levels = [l for l in levels if l.number > 5]
 
@@ -191,6 +203,7 @@ def retinanet_base(x, num_classes, levels, dropout, kernel_initializer,
       dropout=dropout,
       kernel_initializer=kernel_initializer,
       kernel_regularizer=kernel_regularizer,
+      norm_type=norm_type,
       training=training)
 
   assert len(top_down) == len(levels)
@@ -203,6 +216,7 @@ def retinanet_base(x, num_classes, levels, dropout, kernel_initializer,
           dropout=dropout,
           kernel_initializer=kernel_initializer,
           kernel_regularizer=kernel_regularizer,
+          norm_type=norm_type,
           training=training) for x, l in zip(reversed(top_down), levels)
   ]
 
@@ -213,13 +227,15 @@ def retinanet_base(x, num_classes, levels, dropout, kernel_initializer,
           dropout=dropout,
           kernel_initializer=kernel_initializer,
           kernel_regularizer=kernel_regularizer,
+          norm_type=norm_type,
           training=training) for x, l in zip(reversed(top_down), levels)
   ]
 
   return classifications, regressions
 
 
-def retinaneet(x, num_classes, levels, dropout, weight_decay, training):
+def retinaneet(x, num_classes, levels, dropout, weight_decay, norm_type,
+               training):
   kernel_initializer = tf.contrib.layers.xavier_initializer_conv2d()
   kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=weight_decay)
 
@@ -230,4 +246,5 @@ def retinaneet(x, num_classes, levels, dropout, weight_decay, training):
       dropout=dropout,
       kernel_initializer=kernel_initializer,
       kernel_regularizer=kernel_regularizer,
+      norm_type=norm_type,
       training=training)
