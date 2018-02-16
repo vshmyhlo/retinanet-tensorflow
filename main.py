@@ -84,7 +84,7 @@ def main():
       levels=levels,
       download=False)
 
-  ds = ds.repeat().batch(1)
+  ds = ds.batch(1)
   assert num_classes == 80 + 1
 
   iter = ds.make_one_shot_iterator()
@@ -112,7 +112,17 @@ def main():
       [y[0] for y in classifications_pred], levels)
 
   with tf.name_scope('summary'):
-    merged = tf.summary.merge(
+    running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
+    running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
+    update_metrics = tf.group(update_class_loss, update_regr_loss)
+    running_loss = running_class_loss + running_regr_loss
+
+    running_summary = tf.summary.merge([
+        tf.summary.scalar('class_loss', running_class_loss),
+        tf.summary.scalar('regr_loss', running_regr_loss),
+        tf.summary.scalar('loss', running_loss)
+    ])
+    image_summary = tf.summary.merge(
         [tf.summary.image('boxmap', tf.expand_dims(image_with_boxes, 0))])
 
   saver = tf.train.Saver()
@@ -126,14 +136,21 @@ def main():
       sess.run(tf.global_variables_initializer())
 
     for _ in itertools.count():
-      _, step, cl, rl, summ = sess.run(
-          [train_step, global_step, class_loss, regr_loss, merged], {
-              training: True
-          })
+      _, step = sess.run([(train_step, update_metrics), global_step], {
+          training: True
+      })
 
       if step % 100 == 0:
+        run_summ, im_summ, cl, rl = sess.run([
+            running_summary, image_summary, running_class_loss,
+            running_regr_loss
+        ], {
+            training: True
+        })
+
         print('step: {}, class_loss: {}, regr_loss: {}'.format(step, cl, rl))
-        train_writer.add_summary(summ, step)
+        train_writer.add_summary(run_summ, step)
+        train_writer.add_summary(im_summ, step)
         saver.save(sess, './tf_log/train/model.ckpt')
 
 
