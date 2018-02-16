@@ -50,12 +50,16 @@ def level_loss(labels, logits, name='level_loss'):
   return class_loss, regr_loss
 
 
-def global_mean(tensors):
-  size = sum(tf.size(t) for t in tensors)
-  global_sum = sum(tf.reduce_sum(t) for t in tensors)
+def global_mean(tensors, name='global_mean'):
+  with tf.name_scope(name):
+    size = sum(tf.size(t) for t in tensors)
+    global_sum = sum(tf.reduce_sum(t) for t in tensors)
 
-  with tf.control_dependencies([tf.assert_positive(size)]):
-    return global_sum / tf.to_float(size)
+    # TODO:
+    return tf.cond(size > 0, lambda: global_sum / tf.to_float(size), lambda: 0)
+
+    # with tf.control_dependencies([tf.assert_positive(size)]):
+    #   return global_sum / tf.to_float(size)
 
 
 def loss(true, pred, name='loss'):

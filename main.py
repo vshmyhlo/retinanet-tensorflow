@@ -65,6 +65,7 @@ def make_parser():
   parser.add_argument('--dropout', type=float, default=0.2)
   parser.add_argument('--ann-path', type=str, required=True)
   parser.add_argument('--dataset-path', type=str, required=True)
+  parser.add_argument('--shuffle', type=int)
   parser.add_argument(
       '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
 
@@ -83,7 +84,7 @@ def main():
       ann_path=args.ann_path,
       dataset_path=args.dataset_path,
       levels=levels,
-      shuffle=1024,
+      shuffle=args.shuffle,
       download=False)
 
   ds = ds.batch(1).prefetch(4)
