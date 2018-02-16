@@ -41,7 +41,7 @@ def level_loss(labels, logits, name='level_loss'):
 
     regr_loss = tf.square(labels[1] - logits[1])
     regr_loss = regr_loss * non_background_mask
-    regr_loss = tf.reduce_mean(regr_loss)
+    regr_loss = tf.reduce_sum(regr_loss) / tf.reduce_sum(non_background_mask)
 
   return class_loss, regr_loss
 
