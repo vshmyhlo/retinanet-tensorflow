@@ -3,6 +3,7 @@ import tensorflow as tf
 # TODO: huber loss
 # TODO: use huber loss weights
 # TODO: focal loss a-balancing
+# TODO: try focal cross-entropy
 
 
 def focal_sigmoid_cross_entropy_with_logits(

@@ -18,6 +18,7 @@ from tqdm import tqdm
 # TODO: sgd
 # TODO: l1 loss
 # TODO: flip augmentation
+# TODO: divide by zero cv_utils:45
 
 
 def draw_heatmap(image, classification):
@@ -96,6 +97,11 @@ def make_parser():
   parser.add_argument('--shuffle', type=int)
   parser.add_argument(
       '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
+  parser.add_argument(
+      '--optimizer',
+      type=str,
+      choices=['momentum', 'adam'],
+      default='momentum')
 
   return parser
 
@@ -105,6 +111,15 @@ def class_distribution(tensors):
   return tf.stack([
       tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [0, 1, 2]) for x in tensors
   ])
+
+
+def make_optimizer(optimizer_type, learning_rate):
+  assert optimizer_type in ['momentum', 'adam']
+
+  if optimizer_type == 'momentum':
+    return tf.train.MomentumOptimizer(learning_rate, 0.9)
+  elif optimizer_type == 'adam':
+    return tf.train.AdamOptimizer(learning_rate)
 
 
 def main():
@@ -145,7 +160,7 @@ def main():
                            regr_loss * args.regr_loss_k)
 
   loss = class_loss + regr_loss
-  train_step = tf.train.AdamOptimizer(args.learning_rate).minimize(
+  train_step = make_optimizer(args.optimizer, args.learning_rate).minimize(
       loss, global_step=global_step)
 
   with tf.name_scope('summary'):
