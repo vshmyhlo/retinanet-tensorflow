@@ -188,7 +188,21 @@ def make_dataset(ann_path, dataset_path, levels, shuffle, download):
     return tuple(tf.one_hot(x, coco.num_classes) for x in classifications)
 
   def mapper(filename, classifications, regressions):
-    return load_image(filename), one_hot(classifications), regressions
+    def flip(image, classifications, regressions):
+      image = tf.image.flip_left_right(image)
+      classifications = tf.image.flip_left_right(classifications)
+      regressions = tf.image.flip_left_right(regressions)
+      regressions = tf.concat([-regressions[..., :2], regressions[..., 2:]],
+                              -1)
+
+      return image, classifications, regressions
+
+    image = load_image(filename)
+    classifications = one_hot(classifications)
+    image, classifications, regressions = flip(image, classifications,
+                                               regressions)
+
+    return image, classifications, regressions
 
   coco = COCO(ann_path, dataset_path, download)
   ds = tf.data.Dataset.from_generator(
@@ -206,6 +220,6 @@ def make_dataset(ann_path, dataset_path, levels, shuffle, download):
 
   if shuffle is not None:
     ds = ds.shuffle(shuffle)
-  ds = ds.map(mapper)
+  ds = ds.map(mapper).batch(1)
 
   return ds, coco.num_classes

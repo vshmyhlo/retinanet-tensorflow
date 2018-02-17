@@ -16,9 +16,10 @@ from tqdm import tqdm
 # TODO: check rounding and float32 conversions
 # TODO: name_scope to variable_scope
 # TODO: sgd
-# TODO: l1 loss
 # TODO: flip augmentation
 # TODO: divide by zero cv_utils:45
+# TODO: add dataset downloading to densenet
+# TODO: exclude samples without prop IoU
 
 
 def draw_heatmap(image, classification):
@@ -138,7 +139,7 @@ def main():
       shuffle=args.shuffle,
       download=False)
 
-  ds = ds.batch(1).prefetch(4)
+  ds = ds.prefetch(4)
   assert num_classes == 80 + 1
 
   iter = ds.make_one_shot_iterator()
