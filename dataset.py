@@ -188,12 +188,28 @@ def make_dataset(ann_path, dataset_path, levels, shuffle, download):
     return tuple(tf.one_hot(x, coco.num_classes) for x in classifications)
 
   def mapper(filename, classifications, regressions):
+    # TODO: change to tf.reverse
     def flip(image, classifications, regressions):
       image = tf.image.flip_left_right(image)
-      classifications = tf.image.flip_left_right(classifications)
-      regressions = tf.image.flip_left_right(regressions)
-      regressions = tf.concat([-regressions[..., :2], regressions[..., 2:]],
-                              -1)
+
+      classifications = [
+          tf.reshape(
+              tf.image.flip_left_right(
+                  tf.reshape(x, (shape[0], shape[1], -1))), shape)
+          for x, shape in zip(classifications, (tf.shape(x)
+                                                for x in classifications))
+      ]
+
+      regressions = [
+          tf.reshape(
+              tf.image.flip_left_right(
+                  tf.reshape(x, (shape[0], shape[1], -1))), shape)
+          for x, shape in zip(regressions, (tf.shape(x) for x in regressions))
+      ]
+
+      regressions = [
+          tf.concat([-x[..., :2], x[..., 2:]], -1) for x in regressions
+      ]
 
       return image, classifications, regressions
 
