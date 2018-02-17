@@ -94,6 +94,7 @@ def make_parser():
   parser.add_argument('--dataset-path', type=str, required=True)
   parser.add_argument('--class-loss-k', type=float, default=1.0)
   parser.add_argument('--regr-loss-k', type=float, default=1.0)
+  parser.add_argument('--log-interval', type=int, default=200)
   parser.add_argument('--shuffle', type=int)
   parser.add_argument(
       '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
@@ -237,7 +238,7 @@ def main():
           training: True
       })
 
-      if step % 100 == 0:
+      if step % args.log_interval == 0:
         run_summ, im_summ, cl, rl = sess.run([
             running_summary, image_summary, running_class_loss,
             running_regr_loss
