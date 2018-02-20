@@ -193,7 +193,8 @@ def make_dataset(ann_path, dataset_path, levels, shuffle, download):
       classifications = tuple(tf.reverse(x, [1]) for x in classifications)
       regressions = tuple(tf.reverse(x, [1]) for x in regressions)
       regressions = tuple(
-          tf.concat([-x[..., :2], x[..., 2:]], -1) for x in regressions)
+          tf.concat([x[..., :1], -x[..., 1:2], x[..., 2:]], -1)
+          for x in regressions)
 
       return image, classifications, regressions
 
