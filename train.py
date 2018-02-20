@@ -11,7 +11,6 @@ import numpy as np
 from tqdm import tqdm
 
 # TODO: prior class prob initialization
-# TODO: resize to 800
 # TODO: sigmoid and exp for regression
 # TODO: check rounding and float32 conversions
 # TODO: name_scope to variable_scope
@@ -94,6 +93,7 @@ def make_parser():
   parser.add_argument('--class-loss-k', type=float, default=1.0)
   parser.add_argument('--regr-loss-k', type=float, default=1.0)
   parser.add_argument('--log-interval', type=int, default=200)
+  parser.add_argument('--scale', type=int, default=600)
   parser.add_argument('--shuffle', type=int)
   parser.add_argument(
       '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
@@ -134,6 +134,7 @@ def main():
       ann_path=args.ann_path,
       dataset_path=args.dataset_path,
       levels=levels,
+      scale=args.scale,
       shuffle=args.shuffle,
       download=False)
 

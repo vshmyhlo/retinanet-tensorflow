@@ -173,7 +173,7 @@ def gen(coco, dataset_path, levels, download):
     yield filename.encode('utf-8'), classifications, regressions
 
 
-def make_dataset(ann_path, dataset_path, levels, shuffle, download):
+def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
   def make_gen():
     return gen(
         coco=coco, dataset_path=dataset_path, levels=levels, download=download)
@@ -182,6 +182,13 @@ def make_dataset(ann_path, dataset_path, levels, shuffle, download):
     image = tf.read_file(filename)
     image = tf.image.decode_png(image, channels=3)
     image = tf.image.convert_image_dtype(image, tf.float32)
+
+    size = tf.to_float(tf.shape(image)[:2])
+    shorter_side = tf.argmin(size)
+    ratio = 400 / size[shorter_side]
+    new_size = tf.to_int32(tf.round(size * ratio))
+    image = tf.image.resize_images(image, new_size)
+
     return image
 
   def one_hot(classifications):
