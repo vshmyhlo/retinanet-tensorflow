@@ -15,8 +15,6 @@ from tqdm import tqdm
 # TODO: sigmoid and exp for regression
 # TODO: check rounding and float32 conversions
 # TODO: name_scope to variable_scope
-# TODO: sgd
-# TODO: flip augmentation
 # TODO: divide by zero cv_utils:45
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
