@@ -190,11 +190,10 @@ def make_dataset(ann_path, dataset_path, levels, shuffle, download):
   def mapper(filename, classifications, regressions):
     def flip(image, classifications, regressions):
       image = tf.reverse(image, [1])
-      classifications = [tf.reverse(x, [1]) for x in classifications]
-      regressions = [tf.reverse(x, [1]) for x in regressions]
-      regressions = [
-          tf.concat([-x[..., :2], x[..., 2:]], -1) for x in regressions
-      ]
+      classifications = tuple(tf.reverse(x, [1]) for x in classifications)
+      regressions = tuple(tf.reverse(x, [1]) for x in regressions)
+      regressions = tuple(
+          tf.concat([-x[..., :2], x[..., 2:]], -1) for x in regressions)
 
       return image, classifications, regressions
 
