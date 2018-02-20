@@ -183,11 +183,11 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
     image = tf.image.decode_png(image, channels=3)
     image = tf.image.convert_image_dtype(image, tf.float32)
 
-    size = tf.to_float(tf.shape(image)[:2])
-    shorter_side = tf.argmin(size)
-    ratio = 400 / size[shorter_side]
-    new_size = tf.to_int32(tf.round(size * ratio))
-    image = tf.image.resize_images(image, new_size)
+    # size = tf.to_float(tf.shape(image)[:2])
+    # shorter_side = tf.argmin(size)
+    # ratio = 400 / size[shorter_side]
+    # new_size = tf.to_int32(tf.round(size * ratio))
+    # image = tf.image.resize_images(image, new_size)
 
     return image
 
