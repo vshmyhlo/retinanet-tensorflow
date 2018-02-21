@@ -50,7 +50,7 @@ def level_loss(labels, logits, name='level_loss'):
         labels[1], logits[1], reduction=tf.losses.Reduction.NONE)
     regr_loss = tf.boolean_mask(regr_loss, non_background_mask)
 
-  return class_loss, regr_loss
+  return class_loss, regr_loss, non_background_mask
 
 
 # TODO: check why bounding box is not assigned to any anchor box
@@ -63,20 +63,29 @@ def global_mean(tensors, name='global_mean'):
     return global_sum / size
 
 
+def global_sum(tensors, name='global_sum'):
+  with tf.name_scope(name):
+    return sum(tf.reduce_sum(tf.to_float(t)) for t in tensors)
+
+
 def loss(true, pred, name='loss'):
   assert len(true[0]) == len(true[1]) == len(pred[0]) == len(pred[1])
 
   with tf.name_scope(name):
+    non_background_masks = []
     class_losses = []
     regr_losses = []
 
     with tf.control_dependencies(validate_output_shapes(true, pred)):
       for ct, rt, cp, rp in zip(*true, *pred):
-        class_loss, regr_loss = level_loss((ct, rt), (cp, rp))
+        class_loss, regr_loss, non_background_mask = level_loss((ct, rt),
+                                                                (cp, rp))
+        non_background_masks.append(non_background_mask)
         class_losses.append(class_loss)
         regr_losses.append(regr_loss)
 
-    class_loss = global_mean(class_losses)
+    class_loss = global_sum(class_losses) / tf.maximum(
+        global_sum(non_background_masks), 1)
     regr_loss = global_mean(regr_losses)
 
   return class_loss, regr_loss
