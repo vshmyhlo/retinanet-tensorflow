@@ -17,6 +17,8 @@ from tqdm import tqdm
 # TODO: divide by zero cv_utils:45
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
+# TODO: not 3 boxes per level?
+# TODO: nms
 
 
 def draw_heatmap(image, classification):
@@ -40,9 +42,15 @@ def draw_heatmap(image, classification):
   return image_with_heatmap
 
 
-def draw_bounding_boxes(image, regressions, classifications, levels):
+def draw_bounding_boxes(image,
+                        regressions,
+                        classifications,
+                        levels,
+                        max_output_size=1000):
   image_size = tf.shape(image)[:2]
   image = tf.expand_dims(image, 0)
+  final_boxes = []
+  final_scores = []
 
   for regression, classification, level in zip(regressions, classifications,
                                                levels):
@@ -74,17 +82,25 @@ def draw_bounding_boxes(image, regressions, classifications, levels):
         boxes[..., :2] + boxes[..., 2:] / 2
     ], -1)
     boxes = tf.boolean_mask(boxes, mask)
-    boxes = tf.expand_dims(boxes, 0)
+    scores = tf.reduce_max(classification, -1)
+    scores = tf.boolean_mask(scores, mask)
 
-    image = tf.image.draw_bounding_boxes(image, boxes)
+    final_boxes.append(boxes)
+    final_scores.append(scores)
 
+  final_boxes = tf.concat(final_boxes, 0)
+  final_scores = tf.concat(final_scores, 0)
+
+  nms_indices = non_max_suppression(
+      final_boxes, final_scores, max_output_size, iou_threshold=0.5)
+  image = tf.image.draw_bounding_boxes(image, final_boxes[nms_indices])
   image = tf.squeeze(image, 0)
+
   return image
 
 
 def make_parser():
   parser = argparse.ArgumentParser()
-  # parser.add_argument('--batch-size', type=int, default=32)
   parser.add_argument('--learning-rate', type=float, default=1e-2)
   parser.add_argument('--weight-decay', type=float, default=1e-4)
   parser.add_argument('--dropout', type=float, default=0.2)
