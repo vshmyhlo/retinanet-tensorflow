@@ -14,9 +14,6 @@ def focal_sigmoid_cross_entropy_with_logits(
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):
-    # return tf.nn.softmax_cross_entropy_with_logits(
-    #     logits=logits, labels=labels)
-
     logits, labels = logits[..., 1:], labels[..., 1:]
 
     loss = tf.nn.sigmoid_cross_entropy_with_logits(
@@ -56,17 +53,14 @@ def level_loss(labels, logits, name='level_loss'):
   return class_loss, regr_loss
 
 
+# TODO: check why bounding box is not assigned to any anchor box
 def global_mean(tensors, name='global_mean'):
   with tf.name_scope(name):
-    size = sum(tf.size(t) for t in tensors)
     global_sum = sum(tf.reduce_sum(t) for t in tensors)
+    size = sum(tf.size(t) for t in tensors)
+    size = tf.to_float(tf.maximum(size, 1))
 
-    # TODO: check why bounding box is not assigned to any anchor box
-    return tf.cond(size > 0, lambda: global_sum / tf.to_float(size),
-                   lambda: 0.0)
-
-    # with tf.control_dependencies([tf.assert_positive(size)]):
-    #   return global_sum / tf.to_float(size)
+    return global_sum / size
 
 
 def loss(true, pred, name='loss'):
