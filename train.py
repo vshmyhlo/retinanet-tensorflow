@@ -90,11 +90,11 @@ def draw_bounding_boxes(image,
 
   final_boxes = tf.concat(final_boxes, 0)
   final_scores = tf.concat(final_scores, 0)
-
   nms_indices = tf.image.non_max_suppression(
       final_boxes, final_scores, max_output_size, iou_threshold=0.5)
-  image = tf.image.draw_bounding_boxes(image,
-                                       tf.gather(final_boxes, nms_indices))
+  final_boxes = tf.expand_dims(tf.gather(final_boxes, nms_indices), 0)
+
+  image = tf.image.draw_bounding_boxes(image, final_boxes)
   image = tf.squeeze(image, 0)
 
   return image
