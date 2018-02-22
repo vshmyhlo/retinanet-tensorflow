@@ -10,6 +10,7 @@ import objectives
 import dataset
 import numpy as np
 from tqdm import tqdm
+import L4
 
 # TODO: prior class prob initialization
 # TODO: sigmoid and exp for regression
