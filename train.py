@@ -103,8 +103,7 @@ def make_parser():
   parser.add_argument('--weight-decay', type=float, default=1e-4)
   parser.add_argument('--dropout', type=float, default=0.2)
   parser.add_argument('--dataset-path', type=str, nargs=2, required=True)
-  parser.add_argument('--class-loss-k', type=float, default=1.0)
-  parser.add_argument('--regr-loss-k', type=float, default=1.0)
+  parser.add_argument('--epochs', type=int, default=10)
   parser.add_argument('--log-interval', type=int, default=200)
   parser.add_argument('--scale', type=int, default=600)
   parser.add_argument('--shuffle', type=int)
@@ -172,9 +171,6 @@ def main():
   class_loss, regr_loss = objectives.loss(
       (classifications_true, regressions_true),
       (classifications_pred, regressions_pred))
-
-  class_loss, regr_loss = (class_loss * args.class_loss_k,
-                           regr_loss * args.regr_loss_k)
 
   loss = class_loss + regr_loss
   train_step = make_optimizer(args.optimizer, args.learning_rate).minimize(
@@ -250,24 +246,26 @@ def main():
 
     sess.run(locals_init)
 
-    for _ in tqdm(itertools.count()):
-      _, step = sess.run([(train_step, update_metrics), global_step], {
-          training: True
-      })
-
-      if step % args.log_interval == 0:
-        run_summ, im_summ, cl, rl = sess.run([
-            running_summary, image_summary, running_class_loss,
-            running_regr_loss
-        ], {
+    for epoch in range(args.epochs):
+      for _ in tqdm(itertools.count()):
+        _, step = sess.run([(train_step, update_metrics), global_step], {
             training: True
         })
 
-        print('\nstep: {}, class_loss: {}, regr_loss: {}'.format(step, cl, rl))
-        train_writer.add_summary(run_summ, step)
-        train_writer.add_summary(im_summ, step)
-        saver.save(sess, os.path.join(args.experiment_path, 'model.ckpt'))
-        sess.run(locals_init)
+        if step % args.log_interval == 0:
+          run_summ, im_summ, cl, rl = sess.run([
+              running_summary, image_summary, running_class_loss,
+              running_regr_loss
+          ], {
+              training: True
+          })
+
+          print('\nstep: {}, class_loss: {}, regr_loss: {}'.format(
+              step, cl, rl))
+          train_writer.add_summary(run_summ, step)
+          train_writer.add_summary(im_summ, step)
+          saver.save(sess, os.path.join(args.experiment_path, 'model.ckpt'))
+          sess.run(locals_init)
 
 
 if __name__ == '__main__':
