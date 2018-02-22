@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 import pycocotools.coco as pycoco
 import cv_utils
+from itertools import product
 
 # TODO: fix this
 IOU_THRESHOLD = 0.4
@@ -47,9 +48,11 @@ class COCO(object):
     ]
 
 
-def box_size(base_size, ratio):
-  return (np.sqrt(base_size**2 / (ratio[0] * ratio[1])) * ratio[0],
-          np.sqrt(base_size**2 / (ratio[0] * ratio[1])) * ratio[1])
+def box_size(base_size, aspect_ratio, scale_ratio):
+  return (np.sqrt(base_size**2 /
+                  (ratio[0] * ratio[1])) * ratio[0] * scale_ratio,
+          np.sqrt(base_size**2 /
+                  (ratio[0] * ratio[1])) * ratio[1] * scale_ratio)
 
 
 # TODO: resize image
@@ -80,8 +83,9 @@ def make_level_labels(image, anns, level, num_classes):
   # build grid anchor sizes ####################################################
   grid_anchor_sizes = np.array(
       [
-          box_size(level.anchor_size, ratio)
-          for ratio in level.anchor_aspect_ratios
+          box_size(level.anchor_size, aspect_ratio, scale_ratio)
+          for aspect_ratio, scale_ratio in product(level.anchor_aspect_ratios,
+                                                   level.anchor_scale_ratios)
       ],
       dtype=np.float32)  # RATIOS * 2
 
