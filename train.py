@@ -12,14 +12,12 @@ import numpy as np
 from tqdm import tqdm
 import L4
 
-# TODO: prior class prob initialization
-# TODO: sigmoid and exp for regression
+# TODO: try focal cross-entropy
 # TODO: check rounding and float32 conversions
 # TODO: name_scope to variable_scope
 # TODO: divide by zero cv_utils:45
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
-# TODO: nms
 # TODO: weight initialization
 
 

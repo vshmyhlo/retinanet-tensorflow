@@ -1,10 +1,5 @@
 import tensorflow as tf
 
-# TODO: huber loss
-# TODO: use huber loss weights
-# TODO: focal loss a-balancing
-# TODO: try focal cross-entropy
-
 
 def focal_sigmoid_cross_entropy_with_logits(
     labels,
@@ -14,12 +9,11 @@ def focal_sigmoid_cross_entropy_with_logits(
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):
-    # logits, labels = logits[..., 1:], labels[..., 1:]
-
     loss = tf.nn.sigmoid_cross_entropy_with_logits(
         labels=labels, logits=logits)
 
-    a_balance = alpha * labels + (1 - alpha) * (1 - labels)
+    # a_balance = alpha * labels + (1 - alpha) * (1 - labels)
+    a_balance = 1
 
     prob = tf.nn.sigmoid(logits)
     prob_true = prob * labels + (1 - prob) * (1 - labels)
