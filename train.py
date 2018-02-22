@@ -1,3 +1,4 @@
+import os
 import argparse
 import itertools
 import tensorflow as tf
@@ -106,6 +107,7 @@ def make_parser():
   parser.add_argument('--log-interval', type=int, default=200)
   parser.add_argument('--scale', type=int, default=600)
   parser.add_argument('--shuffle', type=int)
+  parser.add_argument('--experiment-path', type=str, required=True)
   parser.add_argument(
       '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
   parser.add_argument(
@@ -233,8 +235,9 @@ def main():
   saver = tf.train.Saver()
 
   with tf.Session() as sess, tf.summary.FileWriter(
-      logdir='./tf_log/train', graph=sess.graph) as train_writer:
-    restore_path = tf.train.latest_checkpoint('./tf_log')
+      logdir=os.path.join(args.experiment_path, 'train'),
+      graph=sess.graph) as train_writer:
+    restore_path = tf.train.latest_checkpoint(args.experiment_path)
     if restore_path:
       saver.restore(sess, restore_path)
     else:
@@ -260,7 +263,7 @@ def main():
         print('\nstep: {}, class_loss: {}, regr_loss: {}'.format(step, cl, rl))
         train_writer.add_summary(run_summ, step)
         train_writer.add_summary(im_summ, step)
-        saver.save(sess, './tf_log/model.ckpt')
+        saver.save(sess, os.path.join(args.experiment_path, 'model.ckpt'))
         sess.run(locals_init)
 
 
