@@ -240,7 +240,6 @@ def retinanet_base(x,
                    norm_type,
                    training,
                    name='retinanet_base'):
-  num_anchors = len(l.anchor_aspect_ratios) * len(l.anchor_scale_ratios)
   backbone_levels = [l for l in levels if l.number <= 5]
   extra_levels = [l for l in levels if l.number > 5]
 
@@ -262,7 +261,8 @@ def retinanet_base(x,
         classification_subnet(
             x,
             num_classes=num_classes,
-            num_anchors=num_anchors,
+            num_anchors=len(l.anchor_aspect_ratios) * len(
+                l.anchor_scale_ratios),
             dropout=dropout,
             kernel_initializer=kernel_initializer,
             kernel_regularizer=kernel_regularizer,
@@ -273,7 +273,8 @@ def retinanet_base(x,
     regressions = [
         regresison_subnet(
             x,
-            num_anchors=num_anchors,
+            num_anchors=len(l.anchor_aspect_ratios) * len(
+                l.anchor_scale_ratios),
             dropout=dropout,
             kernel_initializer=kernel_initializer,
             kernel_regularizer=kernel_regularizer,
