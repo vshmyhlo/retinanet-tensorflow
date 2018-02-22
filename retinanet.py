@@ -1,10 +1,16 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import tensorflow.contrib.slim.nets as nets
+import math
 
 
-def conv(x, filters, kernel_size, strides, kernel_initializer,
-         kernel_regularizer):
+def conv(x,
+         filters,
+         kernel_size,
+         strides,
+         kernel_initializer,
+         kernel_regularizer,
+         bias_initializer=tf.zeros_initializer()):
   return tf.layers.conv2d(
       x,
       filters,
@@ -12,6 +18,7 @@ def conv(x, filters, kernel_size, strides, kernel_initializer,
       strides,
       padding='same',
       kernel_initializer=kernel_initializer,
+      bias_initializer=bias_initializer,
       kernel_regularizer=kernel_regularizer)
 
 
@@ -71,12 +78,16 @@ def classification_subnet(x,
           norm_type=norm_type,
           training=training)
 
+    pi = 0.01
+    bias_initializer = tf.constant_initializer(-math.log((1 - pi) / pi))
+
     x = conv(
         x,
         num_anchors * num_classes,
         3,
         1,
         kernel_initializer=kernel_initializer,
+        bias_initializer=bias_initializer,
         kernel_regularizer=kernel_regularizer)
 
     shape = tf.shape(x)

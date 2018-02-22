@@ -21,6 +21,7 @@ import L4
 # TODO: exclude samples without prop IoU
 # TODO: not 3 boxes per level?
 # TODO: nms
+# TODO: weight initialization
 
 
 def draw_heatmap(image, classification):
