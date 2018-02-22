@@ -4,13 +4,8 @@ import tensorflow.contrib.slim.nets as nets
 import math
 
 
-def conv(x,
-         filters,
-         kernel_size,
-         strides,
-         kernel_initializer,
-         kernel_regularizer,
-         bias_initializer=tf.zeros_initializer()):
+def conv(x, filters, kernel_size, strides, kernel_initializer,
+         bias_initializer, kernel_regularizer):
   return tf.layers.conv2d(
       x,
       filters,
@@ -28,6 +23,7 @@ def conv_norm_relu(x,
                    strides,
                    dropout,
                    kernel_initializer,
+                   bias_initializer,
                    kernel_regularizer,
                    norm_type,
                    training,
@@ -41,6 +37,7 @@ def conv_norm_relu(x,
         kernel_size,
         strides,
         kernel_initializer=kernel_initializer,
+        bias_initializer=bias_initializer,
         kernel_regularizer=kernel_regularizer)
 
     if norm_type == 'layer':
@@ -59,6 +56,7 @@ def classification_subnet(x,
                           num_anchors,
                           dropout,
                           kernel_initializer,
+                          bias_initializer,
                           kernel_regularizer,
                           norm_type,
                           training,
@@ -74,12 +72,13 @@ def classification_subnet(x,
           1,
           dropout=dropout,
           kernel_initializer=kernel_initializer,
+          bias_initializer=bias_initializer,
           kernel_regularizer=kernel_regularizer,
           norm_type=norm_type,
           training=training)
 
     pi = 0.01
-    bias_initializer = tf.constant_initializer(-math.log((1 - pi) / pi))
+    bias_prior_initializer = tf.constant_initializer(-math.log((1 - pi) / pi))
 
     x = conv(
         x,
@@ -87,7 +86,7 @@ def classification_subnet(x,
         3,
         1,
         kernel_initializer=kernel_initializer,
-        bias_initializer=bias_initializer,
+        bias_initializer=bias_prior_initializer,
         kernel_regularizer=kernel_regularizer)
 
     shape = tf.shape(x)
@@ -100,6 +99,7 @@ def regresison_subnet(x,
                       num_anchors,
                       dropout,
                       kernel_initializer,
+                      bias_initializer,
                       kernel_regularizer,
                       norm_type,
                       training,
@@ -115,6 +115,7 @@ def regresison_subnet(x,
           1,
           dropout=dropout,
           kernel_initializer=kernel_initializer,
+          bias_initializer=bias_initializer,
           kernel_regularizer=kernel_regularizer,
           norm_type=norm_type,
           training=training)
@@ -125,6 +126,7 @@ def regresison_subnet(x,
         3,
         1,
         kernel_initializer=kernel_initializer,
+        bias_initializer=bias_initializer,
         kernel_regularizer=kernel_regularizer)
 
     shape = tf.shape(x)
@@ -189,6 +191,7 @@ def fpn(bottom_up,
         extra_levels,
         dropout,
         kernel_initializer,
+        bias_initializer,
         kernel_regularizer,
         norm_type,
         training,
@@ -201,6 +204,7 @@ def fpn(bottom_up,
         strides,
         dropout=dropout,
         kernel_initializer=kernel_initializer,
+        bias_initializer=bias_initializer,
         kernel_regularizer=kernel_regularizer,
         norm_type=norm_type,
         training=training)
@@ -237,6 +241,7 @@ def retinanet_base(x,
                    levels,
                    dropout,
                    kernel_initializer,
+                   bias_initializer,
                    kernel_regularizer,
                    norm_type,
                    training,
@@ -252,6 +257,7 @@ def retinanet_base(x,
         extra_levels=extra_levels,
         dropout=dropout,
         kernel_initializer=kernel_initializer,
+        bias_initializer=bias_initializer,
         kernel_regularizer=kernel_regularizer,
         norm_type=norm_type,
         training=training)
@@ -266,6 +272,7 @@ def retinanet_base(x,
                 l.anchor_scale_ratios),
             dropout=dropout,
             kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
             kernel_regularizer=kernel_regularizer,
             norm_type=norm_type,
             training=training) for x, l in zip(reversed(top_down), levels)
@@ -278,6 +285,7 @@ def retinanet_base(x,
                 l.anchor_scale_ratios),
             dropout=dropout,
             kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
             kernel_regularizer=kernel_regularizer,
             norm_type=norm_type,
             training=training) for x, l in zip(reversed(top_down), levels)
@@ -294,7 +302,9 @@ def retinaneet(x,
                norm_type,
                training,
                name='retinanet'):
-  kernel_initializer = tf.contrib.layers.xavier_initializer_conv2d()
+  # kernel_initializer = tf.contrib.layers.xavier_initializer_conv2d()
+  kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
+  bias_initializer = tf.zeros_initializer()
   kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=weight_decay)
 
   return retinanet_base(
@@ -303,6 +313,7 @@ def retinaneet(x,
       levels=levels,
       dropout=dropout,
       kernel_initializer=kernel_initializer,
+      bias_initializer=bias_initializer,
       kernel_regularizer=kernel_regularizer,
       norm_type=norm_type,
       training=training,
