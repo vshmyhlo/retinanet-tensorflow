@@ -236,8 +236,14 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
       ),
       output_shapes=(
           [],
-          tuple([None, None, len(l.anchor_aspect_ratios)] for l in levels),
-          tuple([None, None, len(l.anchor_aspect_ratios), 4] for l in levels),
+          tuple([
+              None, None,
+              len(l.anchor_aspect_ratios) * len(l.anchor_scale_ratios)
+          ] for l in levels),
+          tuple([
+              None, None,
+              len(l.anchor_aspect_ratios) * len(l.anchor_scale_ratios), 4
+          ] for l in levels),
       ))
 
   if shuffle is not None:
