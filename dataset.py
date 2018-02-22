@@ -90,7 +90,7 @@ def make_level_labels(image, anns, level, num_classes):
       dtype=np.float32)  # RATIOS * 2
 
   # build grid anchors #########################################################
-  num_ratios = len(level.anchor_aspect_ratios)
+  num_ratios = len(level.anchor_aspect_ratios) * len(level.anchor_scale_ratios)
   grid_anchor_positions = grid_anchor_positions.reshape((*grid_size, 1,
                                                          2))  # H * W * 1 * 2
   grid_anchor_positions = np.tile(grid_anchor_positions,
