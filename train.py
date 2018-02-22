@@ -134,7 +134,7 @@ def make_optimizer(optimizer_type, learning_rate):
   elif optimizer_type == 'adam':
     return tf.train.AdamOptimizer(learning_rate)
   elif optimizer_type == 'l4':
-    return L4.L4Adam(fraction=0.1)
+    return L4.L4Adam(fraction=0.15)
 
 
 def main():

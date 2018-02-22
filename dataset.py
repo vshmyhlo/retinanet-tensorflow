@@ -185,9 +185,11 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
 
     # size = tf.to_float(tf.shape(image)[:2])
     # shorter_side = tf.argmin(size)
-    # ratio = 400 / size[shorter_side]
+    # ratio = scale / size[shorter_side]
     # new_size = tf.to_int32(tf.round(size * ratio))
     # image = tf.image.resize_images(image, new_size)
+    #
+    # image = tf.Print(image, [tf.shape(image)], summarize=10)
 
     return image
 
