@@ -113,7 +113,7 @@ def make_parser():
   parser.add_argument(
       '--optimizer',
       type=str,
-      choices=['momentum', 'adam'],
+      choices=['momentum', 'adam', 'l4'],
       default='momentum')
 
   return parser
@@ -127,12 +127,14 @@ def class_distribution(tensors):
 
 
 def make_optimizer(optimizer_type, learning_rate):
-  assert optimizer_type in ['momentum', 'adam']
+  assert optimizer_type in ['momentum', 'adam', 'l4']
 
   if optimizer_type == 'momentum':
     return tf.train.MomentumOptimizer(learning_rate, 0.9)
   elif optimizer_type == 'adam':
     return tf.train.AdamOptimizer(learning_rate)
+  elif optimizer_type == 'l4':
+    return L4.L4Adam(fraction=0.15)
 
 
 def main():
