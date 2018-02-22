@@ -101,8 +101,7 @@ def make_parser():
   parser.add_argument('--learning-rate', type=float, default=1e-2)
   parser.add_argument('--weight-decay', type=float, default=1e-4)
   parser.add_argument('--dropout', type=float, default=0.2)
-  parser.add_argument('--ann-path', type=str, required=True)
-  parser.add_argument('--dataset-path', type=str, required=True)
+  parser.add_argument('--dataset-path', type=str, nargs=2, required=True)
   parser.add_argument('--class-loss-k', type=float, default=1.0)
   parser.add_argument('--regr-loss-k', type=float, default=1.0)
   parser.add_argument('--log-interval', type=int, default=200)
@@ -135,7 +134,7 @@ def make_optimizer(optimizer_type, learning_rate):
   elif optimizer_type == 'adam':
     return tf.train.AdamOptimizer(learning_rate)
   elif optimizer_type == 'l4':
-    return L4.L4Adam(fraction=0.15)
+    return L4.L4Adam(fraction=0.1)
 
 
 def main():
@@ -147,8 +146,8 @@ def main():
   global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
   ds, num_classes = dataset.make_dataset(
-      ann_path=args.ann_path,
-      dataset_path=args.dataset_path,
+      ann_path=args.dataset_path[0],
+      dataset_path=args.dataset_path[1],
       levels=levels,
       scale=args.scale,
       shuffle=args.shuffle,
