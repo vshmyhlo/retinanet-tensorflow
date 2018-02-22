@@ -49,10 +49,12 @@ class COCO(object):
 
 
 def box_size(base_size, aspect_ratio, scale_ratio):
-  return (np.sqrt(base_size**2 /
-                  (ratio[0] * ratio[1])) * ratio[0] * scale_ratio,
-          np.sqrt(base_size**2 /
-                  (ratio[0] * ratio[1])) * ratio[1] * scale_ratio)
+  h = np.sqrt(base_size**2 / (
+      aspect_ratio[0] * aspect_ratio[1])) * aspect_ratio[0] * scale_ratio
+  w = np.sqrt(base_size**2 / (
+      aspect_ratio[0] * aspect_ratio[1])) * aspect_ratio[1] * scale_ratio
+
+  return h, w
 
 
 # TODO: resize image
