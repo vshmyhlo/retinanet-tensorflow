@@ -5,7 +5,7 @@ def focal_sigmoid_cross_entropy_with_logits(
     labels,
     logits,
     focus=2.0,
-    alpha=0.75,
+    alpha=0.25,
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):

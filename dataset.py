@@ -108,10 +108,10 @@ def make_level_labels(image, anns, level, num_classes):
 
   # extract targets ############################################################
   classes_true = np.array(
-      [0] + [item.category_id for item in anns], dtype=np.float32)  # OBJECTS
+      [0] + [item.category_id for item in anns], dtype=np.float32)  # [OBJECTS]
   boxes_true = np.array(
       [[0.0, 0.0, 0.0, 0.0]] + [item.bbox for item in anns],
-      dtype=np.float32)  # OBJECTS * 4
+      dtype=np.float32)  # [OBJECTS, 4]
   assert classes_true.shape[0] == boxes_true.shape[0]
 
   # compute iou ################################################################
@@ -226,6 +226,9 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
         tf.stack([x, x_flipped], 0)
         for x, x_flipped in zip(regressions, regressions_flipped))
 
+    classifications = tuple(
+        tf.Print(x, [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)))])
+        for x in classifications)
     return image, classifications, regressions
 
   coco = COCO(ann_path, dataset_path, download)
