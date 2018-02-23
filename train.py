@@ -20,6 +20,7 @@ import L4
 # TODO: exclude samples without prop IoU
 # TODO: weight initialization
 # TODO: concat classifications and regressions
+# TODO: remove unnecessary validations
 
 
 def draw_heatmap(image, classification):
@@ -158,14 +159,6 @@ def main():
   assert num_classes == 80 + 1  # COCO + background
   iter = ds.make_initializable_iterator()
   image, classifications_true, regressions_true = iter.get_next()
-
-  ###
-  classifications_true = tuple(
-      tf.Print(
-          x, [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)))],
-          message='train_{}'.format(i))
-      for i, x in enumerate(classifications_true))
-  ###
 
   classifications_pred, regressions_pred = retinanet.retinaneet(
       image,

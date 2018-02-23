@@ -4,16 +4,11 @@ import tensorflow as tf
 def focal_sigmoid_cross_entropy_with_logits(
     labels,
     logits,
-    focus=2.0,
+    focus=5.0,
     alpha=0.25,
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):
-    ###
-    labels = tf.Print(labels,
-                      [tf.reduce_mean(tf.to_float(tf.argmax(labels, -1)))])
-    ###
-
     loss = tf.nn.sigmoid_cross_entropy_with_logits(
         labels=labels, logits=logits)
 
