@@ -243,10 +243,8 @@ def main():
       backbone_saver.restore(sess,
                              './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
 
-    sess.run(locals_init)
-
     for epoch in range(args.epochs):
-      sess.run(train_iter.initializer)
+      sess.run([train_iter.initializer, locals_init])
 
       for _ in tqdm(itertools.count()):
         _, step = sess.run([(train_step, update_metrics), global_step], {
@@ -266,7 +264,6 @@ def main():
           train_writer.add_summary(run_summ, step)
           train_writer.add_summary(im_summ, step)
           saver.save(sess, os.path.join(args.experiment_path, 'model.ckpt'))
-          sess.run(locals_init)
 
 
 if __name__ == '__main__':
