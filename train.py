@@ -121,11 +121,12 @@ def make_parser():
   return parser
 
 
-def class_distribution(tensors):
-  # TODO: do not average over batch
-  return tf.stack([
-      tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [0, 1, 2]) for x in tensors
-  ])
+def class_distribution(classifications):
+  def reshape(x):
+    shape = tf.shape(x)
+    return tf.reshape(x, (shape[0], shape[1] * shape[2], shape[3], shape[4]))
+
+  return tf.concat([reshape(x) for x in classifications], 1)
 
 
 def make_optimizer(optimizer_type, learning_rate):
