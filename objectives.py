@@ -17,7 +17,6 @@ def focal_sigmoid_cross_entropy_with_logits(
     prob = tf.nn.sigmoid(logits)
     prob_true = prob * labels + (1 - prob) * (1 - labels)
     modulating_factor = (1.0 - prob_true)**focus
-    modulating_factor = tf.Print(modulating_factor, [modulating_factor])
 
     return a_balance * modulating_factor * loss
 
