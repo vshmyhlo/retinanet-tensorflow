@@ -93,17 +93,17 @@ def make_level_labels(image, anns, level, num_classes):
   # build grid anchors #########################################################
   num_ratios = len(level.anchor_aspect_ratios) * len(level.anchor_scale_ratios)
   grid_anchor_positions = grid_anchor_positions.reshape((*grid_size, 1,
-                                                         2))  # H * W * 1 * 2
+                                                         2))  # [H, W, 1, 2]
   grid_anchor_positions = np.tile(grid_anchor_positions,
-                                  (1, 1, num_ratios, 1))  # H * W * RATIOS * 2
+                                  (1, 1, num_ratios, 1))  # [H, W, RATIOS, 2]
 
   grid_anchor_sizes = grid_anchor_sizes.reshape((1, 1, num_ratios,
-                                                 2))  # 1 * 1 * RATIOS * 2
+                                                 2))  # [1, 1, RATIOS, 2]
   grid_anchor_sizes = np.tile(grid_anchor_sizes,
-                              (*grid_size, 1, 1))  # H * W * RATIOS * 2
+                              (*grid_size, 1, 1))  # [H, W, RATIOS, 2]
 
   grid_anchors = np.concatenate([grid_anchor_positions, grid_anchor_sizes],
-                                -1)  # H * W * RATIOS * 4
+                                -1)  # [H, W, RATIOS, 4]
   del grid_anchor_positions, grid_anchor_sizes
 
   # extract targets ############################################################
@@ -126,21 +126,22 @@ def make_level_labels(image, anns, level, num_classes):
   iou *= iou > IOU_THRESHOLD
 
   # find best matches ##########################################################
-  indices = np.argmax(iou, 0)  # H * W * RATIOS
+  indices = np.argmax(iou, 0)  # [H, W, RATIOS]
   del iou
   assert indices.shape == (*grid_size, num_ratios)
 
   # build classification targets ###############################################
-  classification = classes_true[indices]  # H * W * RATIOS
+  classification = classes_true[indices]  # [H, W, RATIOS]
   assert classification.shape == (*grid_size, num_ratios)
 
   # build regression targets ###################################################
   shifts = (boxes_true[..., :2] - grid_anchors[..., :2]
-            ) / grid_anchors[..., 2:]  # OBJECTS * H * W * RATIOS * 2
+            ) / grid_anchors[..., 2:]  # [OBJECTS, H, W, RATIOS, 2]
   scales = boxes_true[..., 2:] / grid_anchors[
-      ..., 2:]  # OBJECTS * H * W * RATIOS * 2
+      ..., 2:]  # [OBJECTS, H, W, RATIOS, 2]
+  scales = np.where(scales > 0, np.log(scales), scales * 0)
   shift_scales = np.concatenate([shifts, scales],
-                                -1)  # OBJECTS * H * W * RATIOS * 4
+                                -1)  # [OBJECTS, H, W, RATIOS, 4]
   del shifts, scales
 
   # TODO: vectorize this

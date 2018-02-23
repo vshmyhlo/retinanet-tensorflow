@@ -19,6 +19,7 @@ import L4
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
 # TODO: weight initialization
+# TODO: concat classifications and regressions
 
 
 def draw_heatmap(image, classification):
