@@ -265,6 +265,7 @@ def main():
           train_writer.add_summary(run_summ, step)
           train_writer.add_summary(im_summ, step)
           saver.save(sess, os.path.join(args.experiment_path, 'model.ckpt'))
+          sess.run(locals_init)
 
 
 if __name__ == '__main__':
