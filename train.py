@@ -161,8 +161,10 @@ def main():
 
   ###
   classifications_true = tuple(
-      tf.Print(x, [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)))])
-      for x in classifications_true)
+      tf.Print(
+          x, [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)))],
+          message='train_{}'.format(i))
+      for i, x in enumerate(classifications_true))
   ###
 
   classifications_pred, regressions_pred = retinanet.retinaneet(
