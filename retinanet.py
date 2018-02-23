@@ -77,8 +77,6 @@ def classification_subnet(x,
           norm_type=norm_type,
           training=training)
 
-      print(tf.reduce_mean(x[:1, ...], -1, keepdims=True))
-      # fail
       tf.summary.image('activations',
                        tf.reduce_mean(x[:1, ...], -1, keepdims=True))
 
