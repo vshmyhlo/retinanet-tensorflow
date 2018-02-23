@@ -154,9 +154,8 @@ def main():
       download=False)
 
   ds = ds.prefetch(4)
-  assert num_classes == 80 + 1
-
-  iter = ds.make_one_shot_iterator()
+  assert num_classes == 80 + 1  # COCO + background
+  iter = ds.make_initializable_iterator()
   image, classifications_true, regressions_true = iter.get_next()
 
   classifications_pred, regressions_pred = retinanet.retinaneet(
@@ -247,6 +246,8 @@ def main():
     sess.run(locals_init)
 
     for epoch in range(args.epochs):
+      sess.run(train_iter.initializer)
+
       for _ in tqdm(itertools.count()):
         _, step = sess.run([(train_step, update_metrics), global_step], {
             training: True
