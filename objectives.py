@@ -5,15 +5,14 @@ def focal_sigmoid_cross_entropy_with_logits(
     labels,
     logits,
     focus=2.0,
-    alpha=0.25,
+    alpha=0.75,
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):
     loss = tf.nn.sigmoid_cross_entropy_with_logits(
         labels=labels, logits=logits)
 
-    # a_balance = alpha * labels + (1 - alpha) * (1 - labels)
-    a_balance = 1.0
+    a_balance = alpha * labels + (1 - alpha) * (1 - labels)
 
     prob = tf.nn.sigmoid(logits)
     prob_true = prob * labels + (1 - prob) * (1 - labels)
