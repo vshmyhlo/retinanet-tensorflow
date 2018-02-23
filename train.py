@@ -122,7 +122,7 @@ def make_parser():
 
 
 def class_distribution(classifications):
-  return tf.concat([tf.reshape(x, (-1, )) for x in classifications], 1)
+  return tf.concat([tf.reshape(x, (-1, )) for x in classifications], 0)
 
 
 def make_optimizer(optimizer_type, learning_rate):
