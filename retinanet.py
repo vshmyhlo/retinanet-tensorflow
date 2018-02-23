@@ -131,8 +131,8 @@ def regresison_subnet(x,
 
     shape = tf.shape(x)
     x = tf.reshape(x, (shape[0], shape[1], shape[2], num_anchors, 4))
-    x = tf.concat([x[..., :2], tf.exp(x[..., 2:])],
-                  -1)  # TODO: should use exp?
+    # x = tf.concat([x[..., :2], tf.exp(x[..., 2:])],
+    #               -1)  # TODO: should use exp?
 
     return x
 
