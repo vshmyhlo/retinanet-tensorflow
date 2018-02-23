@@ -244,7 +244,7 @@ def main():
                              './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
 
     for epoch in range(args.epochs):
-      sess.run([train_iter.initializer, locals_init])
+      sess.run([iter.initializer, locals_init])
 
       for _ in tqdm(itertools.count()):
         _, step = sess.run([(train_step, update_metrics), global_step], {
