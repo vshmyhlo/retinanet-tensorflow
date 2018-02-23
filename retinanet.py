@@ -78,7 +78,7 @@ def classification_subnet(x,
           training=training)
 
       tf.summary.image('activations',
-                       tf.reduce_mean(x[:1, ...], -1, keepdims=True))
+                       tf.reduce_mean(x[:1, ...], -1, keep_dims=True))
 
     pi = 0.01
     bias_prior_initializer = tf.constant_initializer(-math.log((1 - pi) / pi))
