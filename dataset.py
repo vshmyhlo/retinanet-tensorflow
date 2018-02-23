@@ -226,9 +226,6 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
         tf.stack([x, x_flipped], 0)
         for x, x_flipped in zip(regressions, regressions_flipped))
 
-    classifications = tuple(
-        tf.Print(x, [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)))])
-        for x in classifications)
     return image, classifications, regressions
 
   coco = COCO(ann_path, dataset_path, download)

@@ -159,6 +159,12 @@ def main():
   iter = ds.make_initializable_iterator()
   image, classifications_true, regressions_true = iter.get_next()
 
+  ###
+  classifications_true = tuple(
+      tf.Print(x, [tf.reduce_mean(tf.to_float(tf.argmax(x, -1)))])
+      for x in classifications_true)
+  ###
+
   classifications_pred, regressions_pred = retinanet.retinaneet(
       image,
       num_classes=num_classes,
