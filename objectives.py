@@ -6,7 +6,6 @@ def focal_sigmoid_cross_entropy_with_logits(
     logits,
     focus=2.0,
     alpha=0.25,
-    dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
   with tf.name_scope(name):
     loss = tf.nn.sigmoid_cross_entropy_with_logits(

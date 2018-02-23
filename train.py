@@ -226,7 +226,9 @@ def main():
             tf.summary.image('heatmap_level_{}'.format(l.number),
                              tf.expand_dims(image_with_heatmap, 0)))
 
-    image_summary = tf.summary.merge(image_summary)
+    # TODO:
+    # image_summary = tf.summary.merge(image_summary)
+    image_summary = tf.summary.merge_all()
 
   locals_init = tf.local_variables_initializer()
 
@@ -265,6 +267,7 @@ def main():
               step, cl, rl))
           train_writer.add_summary(run_summ, step)
           train_writer.add_summary(im_summ, step)
+          train_writer.flush()
           saver.save(sess, os.path.join(args.experiment_path, 'model.ckpt'))
           sess.run(locals_init)
 
