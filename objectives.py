@@ -4,7 +4,7 @@ import tensorflow as tf
 def focal_sigmoid_cross_entropy_with_logits(
     labels,
     logits,
-    focus=1.0,
+    focus=2.0,
     alpha=0.25,
     dim=-1,
     name='focal_sigmoid_cross_entropy_with_logits'):
