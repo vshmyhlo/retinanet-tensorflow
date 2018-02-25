@@ -21,6 +21,7 @@ import L4
 # TODO: weight initialization
 # TODO: concat classifications and regressions
 # TODO: remove unnecessary validations
+# TODO: does nn output should be exponentiated?
 
 
 def draw_heatmap(image, classification):
