@@ -252,25 +252,28 @@ def main():
       sess.run([iter.initializer, locals_init])
 
       for _ in tqdm(itertools.count()):
-        _, step = sess.run([(train_step, update_metrics), global_step], {
-            training: True
-        })
-
-        if step % args.log_interval == 0:
-          run_summ, im_summ, cl, rl = sess.run([
-              running_summary, image_summary, running_class_loss,
-              running_regr_loss
-          ], {
+        try:
+          _, step = sess.run([(train_step, update_metrics), global_step], {
               training: True
           })
 
-          print('\nstep: {}, class_loss: {}, regr_loss: {}'.format(
-              step, cl, rl))
-          train_writer.add_summary(run_summ, step)
-          train_writer.add_summary(im_summ, step)
-          train_writer.flush()
-          saver.save(sess, os.path.join(args.experiment_path, 'model.ckpt'))
-          sess.run(locals_init)
+          if step % args.log_interval == 0:
+            run_summ, im_summ, cl, rl = sess.run([
+                running_summary, image_summary, running_class_loss,
+                running_regr_loss
+            ], {
+                training: True
+            })
+
+            print('\nstep: {}, class_loss: {}, regr_loss: {}'.format(
+                step, cl, rl))
+            train_writer.add_summary(run_summ, step)
+            train_writer.add_summary(im_summ, step)
+            train_writer.flush()
+            saver.save(sess, os.path.join(args.experiment_path, 'model.ckpt'))
+            sess.run(locals_init)
+        except tf.errors.OutOfRangeError:
+          break
 
 
 if __name__ == '__main__':
