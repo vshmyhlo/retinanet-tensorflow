@@ -187,7 +187,7 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
   def load_image(filename):
     image = tf.read_file(filename)
     image = tf.image.decode_png(image, channels=3)
-    image = tf.image.convert_image_dtype(image, tf.float32)
+    image = tf.to_float(image) - 255 / 2
 
     # size = tf.to_float(tf.shape(image)[:2])
     # shorter_side = tf.argmin(size)

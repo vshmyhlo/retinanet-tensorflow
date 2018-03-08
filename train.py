@@ -12,6 +12,8 @@ import numpy as np
 from tqdm import tqdm
 import L4
 
+# TODO: simplify architecture
+# TODO: hacks from keras mask rccn
 # TODO: try focal cross-entropy
 # TODO: check rounding and float32 conversions
 # TODO: name_scope to variable_scope
