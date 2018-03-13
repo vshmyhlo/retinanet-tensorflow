@@ -4,10 +4,10 @@ import tensorflow.contrib.slim.nets as nets
 import math
 
 
-def conv(x, filters, kernel_size, strides, kernel_initializer,
+def conv(input, filters, kernel_size, strides, kernel_initializer,
          bias_initializer, kernel_regularizer):
     return tf.layers.conv2d(
-        x,
+        input,
         filters,
         kernel_size,
         strides,
@@ -17,7 +17,7 @@ def conv(x, filters, kernel_size, strides, kernel_initializer,
         kernel_regularizer=kernel_regularizer)
 
 
-def conv_norm_relu(x,
+def conv_norm_relu(input,
                    filters,
                    kernel_size,
                    strides,
@@ -31,8 +31,8 @@ def conv_norm_relu(x,
     assert norm_type in ['layer', 'batch']
 
     with tf.name_scope(name):
-        x = conv(
-            x,
+        input = conv(
+            input,
             filters,
             kernel_size,
             strides,
@@ -41,17 +41,17 @@ def conv_norm_relu(x,
             kernel_regularizer=kernel_regularizer)
 
         if norm_type == 'layer':
-            x = tf.contrib.layers.layer_norm(x)
+            input = tf.contrib.layers.layer_norm(input)
         elif norm_type == 'batch':
-            x = tf.layers.batch_normalization(x, training=training)
+            input = tf.layers.batch_normalization(input, training=training)
 
-        x = tf.nn.relu(x)
-        x = tf.layers.dropout(x, rate=dropout, training=training)
+        input = tf.nn.relu(input)
+        input = tf.layers.dropout(input, rate=dropout, training=training)
 
-        return x
+        return input
 
 
-def classification_subnet(x,
+def classification_subnet(input,
                           num_classes,
                           num_anchors,
                           dropout,
@@ -63,8 +63,8 @@ def classification_subnet(x,
                           name='classification_subnet'):
     with tf.name_scope(name):
         for _ in range(4):
-            x = conv_norm_relu(
-                x,
+            input = conv_norm_relu(
+                input,
                 256,
                 3,
                 1,
@@ -79,8 +79,8 @@ def classification_subnet(x,
         bias_prior_initializer = tf.constant_initializer(
             -math.log((1 - pi) / pi))
 
-        x = conv(
-            x,
+        input = conv(
+            input,
             num_anchors * num_classes,
             3,
             1,
@@ -88,14 +88,14 @@ def classification_subnet(x,
             bias_initializer=bias_prior_initializer,
             kernel_regularizer=kernel_regularizer)
 
-        shape = tf.shape(x)
-        x = tf.reshape(
-            x, (shape[0], shape[1], shape[2], num_anchors, num_classes))
+        shape = tf.shape(input)
+        input = tf.reshape(
+            input, (shape[0], shape[1], shape[2], num_anchors, num_classes))
 
-        return x
+        return input
 
 
-def regression_subnet(x,
+def regression_subnet(input,
                       num_anchors,
                       dropout,
                       kernel_initializer,
@@ -106,8 +106,8 @@ def regression_subnet(x,
                       name='regression_subnet'):
     with tf.name_scope(name):
         for _ in range(4):
-            x = conv_norm_relu(
-                x,
+            input = conv_norm_relu(
+                input,
                 256,
                 3,
                 1,
@@ -118,8 +118,8 @@ def regression_subnet(x,
                 norm_type=norm_type,
                 training=training)
 
-        x = conv(
-            x,
+        input = conv(
+            input,
             num_anchors * 4,
             3,
             1,
@@ -127,23 +127,23 @@ def regression_subnet(x,
             bias_initializer=bias_initializer,
             kernel_regularizer=kernel_regularizer)
 
-        shape = tf.shape(x)
-        x = tf.reshape(x, (shape[0], shape[1], shape[2], num_anchors, 4))
+        sh = tf.shape(input)
+        input = tf.reshape(input, (sh[0], sh[1], sh[2], num_anchors, 4))
 
-        return x
+        return input
 
 
-def validate_level_shape(x, output, l, name='validate_level_shape'):
+def validate_level_shape(input, output, l, name='validate_level_shape'):
     with tf.name_scope(name):
-        x_shape = tf.shape(x, out_type=tf.int32)
+        input_shape = tf.shape(input, out_type=tf.int32)
         output_shape = tf.shape(output, out_type=tf.int32)
         return tf.assert_equal(
             tf.to_float(output_shape[1:3]),
-            tf.to_float(tf.ceil(x_shape[1:3] / 2**l)),
+            tf.to_float(tf.ceil(input_shape[1:3] / 2**l)),
         )
 
 
-def backbone(x, levels, training, name='backbone'):
+def backbone(input, levels, training, name='backbone'):
     level_to_layer = [
         None,
         'resnet_v2_50/conv1',
@@ -156,7 +156,7 @@ def backbone(x, levels, training, name='backbone'):
     with tf.name_scope(name):
         with slim.arg_scope(nets.resnet_v2.resnet_arg_scope()):
             _, outputs = nets.resnet_v2.resnet_v2_50(
-                x,
+                input,
                 num_classes=None,
                 global_pool=False,
                 output_stride=None,
@@ -167,18 +167,18 @@ def backbone(x, levels, training, name='backbone'):
         for l in levels:
             output = outputs[level_to_layer[l.number]]
             with tf.control_dependencies(
-                [validate_level_shape(x, output, l.number)]):
+                [validate_level_shape(input, output, l.number)]):
                 bottom_up.append(tf.identity(output))
 
         return bottom_up
 
 
-def validate_lateral_shape(x, lateral, name='validate_lateral_shape'):
+def validate_lateral_shape(input, lateral, name='validate_lateral_shape'):
     with tf.name_scope(name):
-        x_shape = tf.shape(x, out_type=tf.int32)
+        input_shape = tf.shape(input, out_type=tf.int32)
         lateral_shape = tf.shape(lateral, out_type=tf.int32)
         return tf.assert_equal(
-            tf.to_float(tf.round(lateral_shape[1:3] / x_shape[1:3])),
+            tf.to_float(tf.round(lateral_shape[1:3] / input_shape[1:3])),
             tf.to_float(2.0),
         )
 
@@ -192,9 +192,9 @@ def fpn(bottom_up,
         norm_type,
         training,
         name='fpn'):
-    def conv(x, kernel_size, strides):
+    def conv(input, kernel_size, strides):
         return conv_norm_relu(
-            x,
+            input,
             256,
             kernel_size,
             strides,
@@ -205,36 +205,36 @@ def fpn(bottom_up,
             norm_type=norm_type,
             training=training)
 
-    def upsample_merge(x, lateral):
-        with tf.control_dependencies([validate_lateral_shape(x, lateral)]):
+    def upsample_merge(input, lateral):
+        with tf.control_dependencies([validate_lateral_shape(input, lateral)]):
             lateral = conv(lateral, 1, 1)
-            x = tf.image.resize_images(
-                x,
+            input = tf.image.resize_images(
+                input,
                 tf.shape(lateral)[1:3],
                 method=tf.image.ResizeMethod.BILINEAR)
 
-            return x + lateral
+            return input + lateral
 
     with tf.name_scope(name):
-        x = bottom_up[-1]
+        input = bottom_up[-1]
         top_down = []
 
-        for l in extra_levels:
-            x = conv(x, 3, 2)
-            top_down.insert(0, x)
+        for l in einputtra_levels:
+            input = conv(input, 3, 2)
+            top_down.insert(0, input)
 
-        x = conv(bottom_up.pop(), 1, 1)
-        top_down.append(x)
+        input = conv(bottom_up.pop(), 1, 1)
+        top_down.append(input)
 
         for _ in range(len(bottom_up)):
-            x = upsample_merge(x, bottom_up.pop())
-            x = conv(x, 3, 1)
-            top_down.append(x)
+            input = upsample_merge(input, bottom_up.pop())
+            input = conv(input, 3, 1)
+            top_down.append(input)
 
         return top_down
 
 
-def retinanet_base(x,
+def retinanet_base(input,
                    num_classes,
                    levels,
                    dropout,
@@ -248,7 +248,7 @@ def retinanet_base(x,
     extra_levels = [l for l in levels if l.number > 5]
 
     with tf.name_scope(name):
-        bottom_up = backbone(x, levels=backbone_levels, training=training)
+        bottom_up = backbone(input, levels=backbone_levels, training=training)
 
         top_down = fpn(
             bottom_up,
@@ -264,7 +264,7 @@ def retinanet_base(x,
 
         classifications = [
             classification_subnet(
-                x,
+                input,
                 num_classes=num_classes,
                 num_anchors=len(l.anchor_aspect_ratios) * len(
                     l.anchor_scale_ratios),
@@ -278,7 +278,7 @@ def retinanet_base(x,
 
         regressions = [
             regression_subnet(
-                x,
+                input,
                 num_anchors=len(l.anchor_aspect_ratios) * len(
                     l.anchor_scale_ratios),
                 dropout=dropout,
@@ -292,7 +292,7 @@ def retinanet_base(x,
         return classifications, regressions
 
 
-def retinaneet(x,
+def retinaneet(input,
                num_classes,
                levels,
                dropout,
@@ -305,7 +305,7 @@ def retinaneet(x,
     kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=weight_decay)
 
     return retinanet_base(
-        x,
+        input,
         num_classes=num_classes,
         levels=levels,
         dropout=dropout,
