@@ -178,7 +178,7 @@ def main():
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
-    classifications_pred, regressions_pred = retinaneet.retinanet(
+    classifications_pred, regressions_pred = retinanet.retinanet(
         image,
         num_classes=num_classes,
         levels=levels,
