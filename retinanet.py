@@ -46,7 +46,12 @@ def conv_norm_relu(input,
             input = tf.layers.batch_normalization(input, training=training)
 
         input = tf.nn.relu(input)
-        input = tf.layers.dropout(input, rate=dropout, training=training)
+        shape = tf.shape(input)
+        input = tf.layers.dropout(
+            input,
+            rate=dropout,
+            noise_shape=(shape[0], 1, 1, shape[3]),
+            training=training)
 
         return input
 
