@@ -27,7 +27,7 @@ def classification_loss(labels, logits, non_background_mask):
     denom = tf.reduce_sum(tf.to_float(non_background_mask))
     class_loss = tf.where(
         tf.equal(denom, 0.), 0.,
-        tf.reduce_sum(class_loss) / denom)
+        tf.reduce_sum(class_loss) / tf.where(tf.equal(denom, 0.), 1, denom))
 
     return class_loss
 

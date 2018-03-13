@@ -43,7 +43,6 @@ def iou(box_a, box_b):
     # areas - the interesection area
     iou = intersection_area / np.float32(
         box_a_area + box_b_area - intersection_area)
-    # TODO: zero division
     iou = np.where(invalid_mask, 0, iou)
 
     assert np.all(iou >= 0.0)

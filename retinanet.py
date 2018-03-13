@@ -127,8 +127,9 @@ def regression_subnet(input,
             bias_initializer=bias_initializer,
             kernel_regularizer=kernel_regularizer)
 
-        sh = tf.shape(input)
-        input = tf.reshape(input, (sh[0], sh[1], sh[2], num_anchors, 4))
+        shape = tf.shape(input)
+        input = tf.reshape(input,
+                           (shape[0], shape[1], shape[2], num_anchors, 4))
         shifts = input[..., :2]
         scales = tf.exp(input[..., 2:])
         input = tf.concat([shifts, scales], -1)

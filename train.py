@@ -13,20 +13,15 @@ from tqdm import tqdm
 import L4
 
 # TODO: why some image does not have assigned boxes
-# TODO: merge heatmap for render
 # TODO: check shuffle
 # TODO: simplify architecture
 # TODO: hacks from keras mask rccn
 # TODO: try focal cross-entropy
 # TODO: check rounding and float32 conversions
 # TODO: name_scope to variable_scope
-# TODO: divide by zero cv_utils:45
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
-# TODO: weight initialization
-# TODO: concat classifications and regressions
 # TODO: remove unnecessary validations
-# TODO: does nn output should be exponentiated?
 # TODO: set trainable parts
 # TODO: try without dropout
 
