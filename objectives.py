@@ -23,6 +23,7 @@ def focal_sigmoid_cross_entropy_with_logits(
 
 def loss(labels, logits, name='loss'):
     with tf.name_scope(name):
+        # TODO: extract values
         assert len(labels[0]) == len(labels[1]) == len(logits[0]) == len(
             logits[1])
 

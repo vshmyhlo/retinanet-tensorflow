@@ -152,6 +152,64 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
             zip(clipped_gradients, params), global_step=global_step)
 
 
+def make_metrics(class_loss, regr_loss, image, true, pred, levels):
+    image = (image + 255 / 2) / 255
+    classifications_true, regressions_true = true
+    classifications_pred, regressions_pred = pred
+
+    running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
+    running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
+    running_true_class_dist, update_true_class_dist = tf.metrics.mean_tensor(
+        class_distribution(classifications_true))
+    running_pred_class_dist, update_pred_class_dist = tf.metrics.mean_tensor(
+        class_distribution(classifications_pred))
+
+    update_metrics = tf.group(update_class_loss, update_regr_loss,
+                              update_true_class_dist, update_pred_class_dist)
+
+    running_loss = running_class_loss + running_regr_loss
+
+    metrics = {
+        'loss': running_loss,
+        'class_loss': running_class_loss,
+        'regr_loss': running_regr_loss
+    }
+
+    running_summary = tf.summary.merge([
+        tf.summary.scalar('class_loss', running_class_loss),
+        tf.summary.scalar('regr_loss', running_regr_loss),
+        tf.summary.scalar('loss', running_loss),
+        tf.summary.histogram('classifications_true', running_true_class_dist),
+        tf.summary.histogram('classifications_pred', running_pred_class_dist)
+    ])
+
+    image_summary = []
+
+    for name, classifications, regressions in (
+        ('true', classifications_true, regressions_true),
+        ('pred', classifications_pred, regressions_pred),
+    ):
+        with tf.name_scope(name):
+            image_with_boxes = draw_bounding_boxes(
+                image[0], [y[0] for y in regressions],
+                [y[0] for y in classifications], levels)
+            image_summary.append(
+                tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
+                                                          0)))
+
+            heatmap_image = tf.zeros_like(image[0])
+            for l, c in zip(levels, classifications):
+                heatmap_image += heatmap_to_image(image[0], c[0])
+
+            heatmap_image = image[0] * 0.5 + heatmap_image * 0.5
+            image_summary.append(
+                tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
+
+    image_summary = tf.summary.merge(image_summary)
+
+    return metrics, update_metrics, running_summary, image_summary
+
+
 def main():
     args = make_parser().parse_args()
     utils.log_args(args)
@@ -193,65 +251,13 @@ def main():
         learning_rate=args.learning_rate,
         clip_norm=args.clip_norm)
 
-    with tf.name_scope('summary'):
-        running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
-        running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
-        running_true_class_dist, update_true_class_dist = tf.metrics.mean_tensor(
-            class_distribution(classifications_true))
-        running_pred_class_dist, update_pred_class_dist = tf.metrics.mean_tensor(
-            class_distribution(classifications_pred))
-
-        update_metrics = tf.group(update_class_loss, update_regr_loss,
-                                  update_true_class_dist,
-                                  update_pred_class_dist)
-
-        running_loss = running_class_loss + running_regr_loss
-
-        running_summary = tf.summary.merge([
-            tf.summary.scalar('class_loss', running_class_loss),
-            tf.summary.scalar('regr_loss', running_regr_loss),
-            tf.summary.scalar('loss', running_loss),
-            tf.summary.histogram('classifications_true',
-                                 running_true_class_dist),
-            tf.summary.histogram('classifications_pred',
-                                 running_pred_class_dist)
-        ])
-
-        image_summary = []
-
-        with tf.name_scope('true'):
-            image_with_boxes = draw_bounding_boxes(
-                image[0], [y[0] for y in regressions_true],
-                [y[0] for y in classifications_true], levels)
-            image_summary.append(
-                tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
-                                                          0)))
-
-            heatmap_image = tf.zeros_like(image[0])
-            for l, c in zip(levels, classifications_true):
-                heatmap_image += heatmap_to_image(image[0], c[0])
-
-            heatmap_image = image[0] * 0.5 + heatmap_image * 0.5
-            image_summary.append(
-                tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
-
-        with tf.name_scope('pred'):
-            image_with_boxes = draw_bounding_boxes(
-                image[0], [y[0] for y in regressions_pred],
-                [y[0] for y in classifications_pred], levels)
-            image_summary.append(
-                tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
-                                                          0)))
-
-            heatmap_image = tf.zeros_like(image[0])
-            for l, c in zip(levels, classifications_pred):
-                heatmap_image += heatmap_to_image(image[0], c[0])
-
-            heatmap_image = image[0] * 0.5 + heatmap_image * 0.5
-            image_summary.append(
-                tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
-
-        image_summary = tf.summary.merge(image_summary)
+    metrics, update_metrics, running_summary, image_summary = make_metrics(
+        class_loss,
+        regr_loss,
+        image=image,
+        true=(classifications_true, regressions_true),
+        pred=(classifications_pred, regressions_pred),
+        levels=levels)
 
     locals_init = tf.local_variables_initializer()
 
@@ -281,18 +287,17 @@ def main():
                         })
 
                     if step % args.log_interval == 0:
-                        run_summ, im_summ, cl, rl = sess.run([
-                            running_summary, image_summary, running_class_loss,
-                            running_regr_loss
-                        ], {
-                            training: True
-                        })
+                        m, run_summ, img_summ = sess.run(
+                            [metrics, running_summary, image_summary], {
+                                training: True
+                            })
 
                         print(
-                            '\nstep: {}, class_loss: {}, regr_loss: {}'.format(
-                                step, cl, rl))
+                            '\nstep: {}, loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}'.
+                            format(step, m['loss'], m['class_loss'],
+                                   m['regr_loss']))
                         train_writer.add_summary(run_summ, step)
-                        train_writer.add_summary(im_summ, step)
+                        train_writer.add_summary(img_summ, step)
                         train_writer.flush()
                         saver.save(sess,
                                    os.path.join(args.experiment, 'model.ckpt'))
