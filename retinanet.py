@@ -219,7 +219,7 @@ def fpn(bottom_up,
         input = bottom_up[-1]
         top_down = []
 
-        for l in einputtra_levels:
+        for l in extra_levels:
             input = conv(input, 3, 2)
             top_down.insert(0, input)
 

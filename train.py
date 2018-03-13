@@ -3,7 +3,7 @@ import argparse
 import itertools
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-import retinanet
+from retinanet import Retinanet
 from utils import log_args
 from level import make_levels
 import objectives
@@ -25,6 +25,7 @@ import L4
 # TODO: remove unnecessary validations
 # TODO: does nn output should be exponentiated?
 # TODO: set trainable parts
+# TODO: try without dropout
 
 
 def draw_heatmap(image, classification):
@@ -177,7 +178,8 @@ def main():
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
-    classifications_pred, regressions_pred = retinanet.retinaneet(
+    retinanet = Retinanet()
+    classifications_pred, regressions_pred = retinaneet(
         image,
         num_classes=num_classes,
         levels=levels,
