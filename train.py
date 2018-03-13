@@ -12,6 +12,8 @@ import numpy as np
 from tqdm import tqdm
 import L4
 
+# TODO: why some image does not have assigned boxes
+# TODO: merge heatmap for render
 # TODO: check shuffle
 # TODO: simplify architecture
 # TODO: hacks from keras mask rccn
@@ -29,7 +31,7 @@ import L4
 # TODO: try without dropout
 
 
-def draw_heatmap(image, classification):
+def heatmap_to_image(image, classification):
     image_size = tf.shape(image)[:2]
     heatmap = tf.argmax(classification, -1)
     heatmap = tf.reduce_max(heatmap, -1)
@@ -39,9 +41,7 @@ def draw_heatmap(image, classification):
     heatmap = tf.image.resize_images(
         heatmap, image_size, method=tf.image.ResizeMethod.AREA)
 
-    image_with_heatmap = image * 0.5 + heatmap * 0.5
-
-    return image_with_heatmap
+    return heatmap
 
 
 def draw_bounding_boxes(image,
@@ -227,11 +227,13 @@ def main():
                 tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
                                                           0)))
 
+            heatmap_image = tf.zeros_like(image)
             for l, c in zip(levels, classifications_true):
-                image_with_heatmap = draw_heatmap(image[0], c[0])
-                image_summary.append(
-                    tf.summary.image('heatmap_level_{}'.format(l.number),
-                                     tf.expand_dims(image_with_heatmap, 0)))
+                heatmap_image += heatmap_to_image(image[0], c[0])
+
+            heatmap_image = image * 0.5 + heatmap_image * 0.5
+            image_summary.append(
+                tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
 
         with tf.name_scope('pred'):
             image_with_boxes = draw_bounding_boxes(
@@ -241,11 +243,13 @@ def main():
                 tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
                                                           0)))
 
+            heatmap_image = tf.zeros_like(image)
             for l, c in zip(levels, classifications_pred):
-                image_with_heatmap = draw_heatmap(image[0], c[0])
-                image_summary.append(
-                    tf.summary.image('heatmap_level_{}'.format(l.number),
-                                     tf.expand_dims(image_with_heatmap, 0)))
+                heatmap_image += heatmap_to_image(image[0], c[0])
+
+            heatmap_image = image * 0.5 + heatmap_image * 0.5
+            image_summary.append(
+                tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
 
         image_summary = tf.summary.merge(image_summary)
 
