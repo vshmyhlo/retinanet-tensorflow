@@ -76,9 +76,6 @@ def draw_bounding_boxes(image,
             tf.linspace(cell_size[1] / 2, 1 - cell_size[1] / 2, grid_size[1]),
             (1, -1, 1, 1))
 
-        print(regression)
-        print(anchor_boxes)
-        fail
         boxes = tf.concat([
             regression[..., 0:1] * anchor_boxes[..., 0:1] + y_pos,
             regression[..., 1:2] * anchor_boxes[..., 1:2] + x_pos,
