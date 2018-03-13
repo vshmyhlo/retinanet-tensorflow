@@ -31,13 +31,12 @@ def loss(labels, logits, name='loss'):
 
         non_background_mask = tf.not_equal(tf.argmax(labels[0], -1), 0)
 
-        # with tf.control_dependencies([
-        #         tf.assert_none_equal(
-        #             tf.reduce_sum(tf.to_float(non_background_mask)), 0)
-        # ]):
-
         class_loss = focal_sigmoid_cross_entropy_with_logits(
             labels=labels[0], logits=logits[0])
+        class_loss = tf.Print(
+            class_loss,
+            [tf.reduce_sum(class_loss),
+             tf.reduce_mean(class_loss)])
         class_loss = tf.reduce_sum(class_loss) / tf.reduce_sum(
             tf.to_float(non_background_mask))
 
