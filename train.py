@@ -227,11 +227,11 @@ def main():
                 tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
                                                           0)))
 
-            heatmap_image = tf.zeros_like(image)
+            heatmap_image = tf.zeros_like(image[0])
             for l, c in zip(levels, classifications_true):
                 heatmap_image += heatmap_to_image(image[0], c[0])
 
-            heatmap_image = image * 0.5 + heatmap_image * 0.5
+            heatmap_image = image[0] * 0.5 + heatmap_image * 0.5
             image_summary.append(
                 tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
 
@@ -243,11 +243,11 @@ def main():
                 tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
                                                           0)))
 
-            heatmap_image = tf.zeros_like(image)
+            heatmap_image = tf.zeros_like(image[0])
             for l, c in zip(levels, classifications_pred):
                 heatmap_image += heatmap_to_image(image[0], c[0])
 
-            heatmap_image = image * 0.5 + heatmap_image * 0.5
+            heatmap_image = image[0] * 0.5 + heatmap_image * 0.5
             image_summary.append(
                 tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
 
