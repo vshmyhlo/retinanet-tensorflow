@@ -129,6 +129,9 @@ def regression_subnet(input,
 
         sh = tf.shape(input)
         input = tf.reshape(input, (sh[0], sh[1], sh[2], num_anchors, 4))
+        shifts = input[..., :2]
+        scales = tf.exp(input[..., 2:])
+        input = tf.concat([shifts, scales], -1)
 
         return input
 

@@ -102,7 +102,6 @@ def make_level_labels(image, anns, level, num_classes):
               ) / grid_anchors[..., 2:]  # [OBJECTS, H, W, SIZES, 2]
     scales = boxes_true[..., 2:] / grid_anchors[
         ..., 2:]  # [OBJECTS, H, W, SIZES, 2]
-    scales = np.where(scales > 0, np.log(scales), scales * 0)
     shift_scales = np.concatenate([shifts, scales],
                                   -1)  # [OBJECTS, H, W, SIZES, 4]
     del shifts, scales

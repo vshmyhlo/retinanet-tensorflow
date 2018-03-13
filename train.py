@@ -70,7 +70,7 @@ def draw_bounding_boxes(image,
 
         boxes = tf.concat([
             regression[..., :2] * anchor_boxes,
-            tf.exp(regression[..., 2:]) * anchor_boxes,
+            regression[..., 2:] * anchor_boxes,
         ], -1)
         boxes = utils.boxmap_anchor_relative_to_image_relative(boxes)
         boxes = tf.concat([
