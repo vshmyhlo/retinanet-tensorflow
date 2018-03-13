@@ -62,12 +62,10 @@ def classification_subnet(x,
                           training,
                           name='classification_subnet'):
     with tf.name_scope(name):
-        filters = x.shape[-1]
-
         for _ in range(4):
             x = conv_norm_relu(
                 x,
-                filters,
+                256,
                 3,
                 1,
                 dropout=dropout,
@@ -76,9 +74,6 @@ def classification_subnet(x,
                 kernel_regularizer=kernel_regularizer,
                 norm_type=norm_type,
                 training=training)
-
-            tf.summary.image('activations',
-                             tf.reduce_mean(x[:1, ...], -1, keep_dims=True))
 
         pi = 0.01
         bias_prior_initializer = tf.constant_initializer(
@@ -100,7 +95,7 @@ def classification_subnet(x,
         return x
 
 
-def regresison_subnet(x,
+def regression_subnet(x,
                       num_anchors,
                       dropout,
                       kernel_initializer,
@@ -108,14 +103,12 @@ def regresison_subnet(x,
                       kernel_regularizer,
                       norm_type,
                       training,
-                      name='regresison_subnet'):
+                      name='regression_subnet'):
     with tf.name_scope(name):
-        filters = x.shape[-1]
-
         for _ in range(4):
             x = conv_norm_relu(
                 x,
-                filters,
+                256,
                 3,
                 1,
                 dropout=dropout,
@@ -284,7 +277,7 @@ def retinanet_base(x,
         ]
 
         regressions = [
-            regresison_subnet(
+            regression_subnet(
                 x,
                 num_anchors=len(l.anchor_aspect_ratios) * len(
                     l.anchor_scale_ratios),
@@ -307,7 +300,6 @@ def retinaneet(x,
                norm_type,
                training,
                name='retinanet'):
-    # kernel_initializer = tf.contrib.layers.xavier_initializer_conv2d()
     kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
     bias_initializer = tf.zeros_initializer()
     kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=weight_decay)

@@ -24,6 +24,7 @@ import L4
 # TODO: concat classifications and regressions
 # TODO: remove unnecessary validations
 # TODO: does nn output should be exponentiated?
+# TODO: set trainable parts
 
 
 def draw_heatmap(image, classification):
@@ -107,12 +108,12 @@ def make_parser():
     parser.add_argument('--learning-rate', type=float, default=1e-2)
     parser.add_argument('--weight-decay', type=float, default=1e-4)
     parser.add_argument('--dropout', type=float, default=0.2)
-    parser.add_argument('--dataset-path', type=str, nargs=2, required=True)
+    parser.add_argument('--dataset', type=str, nargs=2, required=True)
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--log-interval', type=int, default=200)
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--shuffle', type=int)
-    parser.add_argument('--experiment-path', type=str, required=True)
+    parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument(
         '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
     parser.add_argument(
@@ -166,14 +167,12 @@ def main():
         'global_step', initializer=0, trainable=False)
 
     ds, num_classes = dataset.make_dataset(
-        ann_path=args.dataset_path[0],
-        dataset_path=args.dataset_path[1],
+        ann_path=args.dataset[0],
+        dataset_path=args.dataset[1],
         levels=levels,
         scale=args.scale,
         shuffle=args.shuffle,
         download=False)
-
-    ds = ds.prefetch(4)
     assert num_classes == 80 + 1  # COCO + background
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()

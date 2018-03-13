@@ -1,54 +1,14 @@
 import os
 import numpy as np
 import tensorflow as tf
-import pycocotools.coco as pycoco
+from coco import COCO
 import cv_utils
 from itertools import product
 
 IOU_THRESHOLD = 0.5
 
 
-class COCO(object):
-    class Image(object):
-        def __init__(self, img):
-            self.id = img['id']
-            self.filename = img['file_name']
-            self.size = np.array(
-                [img['height'], img['width']], dtype=np.float32)
-
-    class Annotation(object):
-        def __init__(self, ann, category_ids):
-            [left, top, width, height] = ann['bbox']
-            self.bbox = np.array(
-                [top + height / 2, left + width / 2, height, width],
-                dtype=np.float32)
-            self.category_id = category_ids.index(ann['category_id'])
-
-    def __init__(self, ann_path, dataset_path, download):
-        self.coco = pycoco.COCO(ann_path)
-        self.category_ids = ['BG'] + sorted(self.coco.getCatIds())
-        self.num_classes = len(self.category_ids)
-
-        if download:
-            self.coco.download(tarDir=dataset_path)
-
-    def get_img_ids(self):
-        return self.coco.getImgIds()
-
-    def load_imgs(self, ids):
-        return [self.Image(img) for img in self.coco.loadImgs(ids=ids)]
-
-    def get_ann_ids(self, img_ids):
-        return self.coco.getAnnIds(imgIds=img_ids)
-
-    def load_anns(self, ids):
-        return [
-            self.Annotation(ann, self.category_ids)
-            for ann in self.coco.loadAnns(ids=ids)
-        ]
-
-
-def box_size(base_size, aspect_ratio, scale_ratio):
+def compute_box_size(base_size, aspect_ratio, scale_ratio):
     h = np.sqrt(base_size**2 / (
         aspect_ratio[0] * aspect_ratio[1])) * aspect_ratio[0] * scale_ratio
     w = np.sqrt(base_size**2 / (
@@ -85,7 +45,7 @@ def make_level_labels(image, anns, level, num_classes):
     # build grid anchor sizes ##################################################
     grid_anchor_sizes = np.array(
         [
-            box_size(level.anchor_size, aspect_ratio, scale_ratio)
+            compute_box_size(level.anchor_size, aspect_ratio, scale_ratio)
             for aspect_ratio, scale_ratio in product(
                 level.anchor_aspect_ratios, level.anchor_scale_ratios)
         ],
@@ -194,14 +154,6 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
         image = tf.read_file(filename)
         image = tf.image.decode_png(image, channels=3)
         image = tf.to_float(image) - 255 / 2
-
-        # size = tf.to_float(tf.shape(image)[:2])
-        # shorter_side = tf.argmin(size)
-        # ratio = scale / size[shorter_side]
-        # new_size = tf.to_int32(tf.round(size * ratio))
-        # image = tf.image.resize_images(image, new_size)
-        #
-        # image = tf.Print(image, [tf.shape(image)], summarize=10)
 
         return image
 
