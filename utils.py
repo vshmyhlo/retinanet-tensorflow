@@ -33,3 +33,17 @@ def merge_outputs(tensors, name='merge_outputs'):
                 reshaped.append(tf.reshape(t, sh))
 
             return tf.concat(reshaped, 1)
+
+
+def boxmap_anchor_relative_to_image_relative(boxmap):
+    grid_size = tf.shape(boxmap)[:2]
+    cell_size = tf.to_float(1 / grid_size)
+
+    y_pos = tf.linspace(cell_size[0] / 2, 1 - cell_size[0] / 2, grid_size[0])
+    x_pos = tf.linspace(cell_size[1] / 2, 1 - cell_size[1] / 2, grid_size[1])
+
+    x_pos, y_pos = tf.meshgrid(x_pos, y_pos)
+    pos = tf.stack([y_pos, x_pos], -1)
+    pos = tf.expand_dims(pos, -2)
+
+    return tf.concat([boxmap[..., :2] + pos, boxmap[..., 2:]], -1)

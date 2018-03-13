@@ -21,7 +21,6 @@ def focal_sigmoid_cross_entropy_with_logits(
         return a_balance * modulating_factor * loss
 
 
-# TODO: check why bounding box is not assigned to any anchor box
 def loss(labels, logits, name='loss'):
     with tf.name_scope(name):
         assert len(labels[0]) == len(labels[1]) == len(logits[0]) == len(

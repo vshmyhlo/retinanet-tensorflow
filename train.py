@@ -3,7 +3,7 @@ import argparse
 import itertools
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from utils import log_args
+import utils
 import retinanet
 from level import make_levels
 import objectives
@@ -67,20 +67,11 @@ def draw_bounding_boxes(image,
 
         anchor_boxes = tf.reshape(anchor_boxes, (1, 1, -1, 2))
 
-        grid_size = tf.shape(regression)[:2]
-        cell_size = tf.to_float(1 / grid_size)
-        y_pos = tf.reshape(
-            tf.linspace(cell_size[0] / 2, 1 - cell_size[0] / 2, grid_size[0]),
-            (-1, 1, 1, 1))
-        x_pos = tf.reshape(
-            tf.linspace(cell_size[1] / 2, 1 - cell_size[1] / 2, grid_size[1]),
-            (1, -1, 1, 1))
-
         boxes = tf.concat([
-            regression[..., 0:1] * anchor_boxes[..., 0:1] + y_pos,
-            regression[..., 1:2] * anchor_boxes[..., 1:2] + x_pos,
+            regression[..., :2] * anchor_boxes,
             tf.exp(regression[..., 2:]) * anchor_boxes,
         ], -1)
+        boxes = utils.boxmap_anchor_relative_to_image_relative(boxes)
         boxes = tf.concat([
             boxes[..., :2] - boxes[..., 2:] / 2,
             boxes[..., :2] + boxes[..., 2:] / 2
@@ -160,7 +151,7 @@ def make_train_step(loss,
 
 def main():
     args = make_parser().parse_args()
-    log_args(args)
+    utils.log_args(args)
 
     levels = make_levels()
     training = tf.placeholder(tf.bool, [], name='training')
@@ -252,9 +243,7 @@ def main():
                     tf.summary.image('heatmap_level_{}'.format(l.number),
                                      tf.expand_dims(image_with_heatmap, 0)))
 
-        # TODO:
-        # image_summary = tf.summary.merge(image_summary)
-        image_summary = tf.summary.merge_all()
+        image_summary = tf.summary.merge(image_summary)
 
     locals_init = tf.local_variables_initializer()
 
