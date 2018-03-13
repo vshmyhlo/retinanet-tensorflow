@@ -21,26 +21,42 @@ def focal_sigmoid_cross_entropy_with_logits(
         return a_balance * modulating_factor * loss
 
 
+def classification_loss(labels, logits, non_background_mask):
+    class_loss = focal_sigmoid_cross_entropy_with_logits(
+        labels=labels, logits=logits)
+    class_loss = tf.reduce_sum(class_loss) / tf.reduce_sum(
+        tf.to_float(non_background_mask))
+
+    return class_loss
+
+
+def regression_loss(labels, logits, non_background_mask):
+    regr_loss = tf.losses.huber_loss(
+        labels=labels,
+        predictions=logits,
+        weights=tf.expand_dims(non_background_mask, -1),
+        reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+
+    return regr_loss
+
+
 def loss(labels, logits, name='loss'):
     with tf.name_scope(name):
-        # TODO: extract values
-        assert len(labels[0]) == len(labels[1]) == len(logits[0]) == len(
-            logits[1])
-
         labels = tuple(utils.merge_outputs(x) for x in labels)
         logits = tuple(utils.merge_outputs(x) for x in logits)
 
-        non_background_mask = tf.not_equal(tf.argmax(labels[0], -1), 0)
+        class_labels, regr_labels = labels
+        class_logits, regr_logits = logits
 
-        class_loss = focal_sigmoid_cross_entropy_with_logits(
-            labels=labels[0], logits=logits[0])
-        class_loss = tf.reduce_sum(class_loss) / tf.reduce_sum(
-            tf.to_float(non_background_mask))
+        non_background_mask = tf.not_equal(tf.argmax(class_labels, -1), 0)
 
-        regr_loss = tf.losses.huber_loss(
-            labels[1],
-            logits[1],
-            weights=tf.expand_dims(non_background_mask, -1),
-            reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+        class_loss = classification_loss(
+            labels=class_labels,
+            logits=class_logits,
+            non_background_mask=non_background_mask)
+        regr_loss = regression_loss(
+            labels=regr_labels,
+            logits=regr_logits,
+            non_background_mask=non_background_mask)
 
     return class_loss, regr_loss
