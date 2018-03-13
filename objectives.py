@@ -37,8 +37,9 @@ def loss(labels, logits, name='loss'):
             tf.to_float(non_background_mask))
 
         regr_loss = tf.losses.huber_loss(
-            labels[1], logits[1], reduction=tf.losses.Reduction.NONE)
-        regr_loss = tf.reduce_sum(
-            tf.boolean_mask(regr_loss, non_background_mask))
+            labels[1],
+            logits[1],
+            weights=tf.expand_dims(non_background_mask, -1),
+            reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
     return class_loss, regr_loss
