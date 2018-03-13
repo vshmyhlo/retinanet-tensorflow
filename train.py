@@ -3,8 +3,8 @@ import argparse
 import itertools
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from retinanet import Retinanet
 from utils import log_args
+import retinanet
 from level import make_levels
 import objectives
 import dataset
@@ -178,8 +178,7 @@ def main():
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
-    retinanet = Retinanet()
-    classifications_pred, regressions_pred = retinaneet(
+    classifications_pred, regressions_pred = retinaneet.retinanet(
         image,
         num_classes=num_classes,
         levels=levels,
