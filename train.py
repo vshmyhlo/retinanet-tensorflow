@@ -135,7 +135,9 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
 
     if clip_norm is None:
         # optimization
-        return optimizer.minimize(loss, global_step=global_step)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            return optimizer.minimize(loss, global_step=global_step)
     else:
         # clip gradients
         params = tf.trainable_variables()
@@ -143,8 +145,10 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
 
         # optimization
-        return optimizer.apply_gradients(
-            zip(clipped_gradients, params), global_step=global_step)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            return optimizer.apply_gradients(
+                zip(clipped_gradients, params), global_step=global_step)
 
 
 def make_metrics(class_loss, regr_loss, image, true, pred, levels):
