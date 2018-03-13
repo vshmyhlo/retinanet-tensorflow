@@ -24,8 +24,10 @@ def focal_sigmoid_cross_entropy_with_logits(
 def classification_loss(labels, logits, non_background_mask):
     class_loss = focal_sigmoid_cross_entropy_with_logits(
         labels=labels, logits=logits)
-    class_loss = tf.reduce_sum(class_loss) / tf.reduce_sum(
-        tf.to_float(non_background_mask))
+    denom = tf.reduce_sum(tf.to_float(non_background_mask))
+    class_loss = tf.where(
+        tf.equal(denom, 0.), 0.,
+        tf.reduce_sum(class_loss) / denom)
 
     return class_loss
 
