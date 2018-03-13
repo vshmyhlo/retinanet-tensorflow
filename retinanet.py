@@ -292,14 +292,14 @@ def retinanet_base(input,
         return classifications, regressions
 
 
-def retinaneet(input,
-               num_classes,
-               levels,
-               dropout,
-               weight_decay,
-               norm_type,
-               training,
-               name='retinanet'):
+def retinanet(input,
+              num_classes,
+              levels,
+              dropout,
+              weight_decay,
+              norm_type,
+              training,
+              name='retinanet'):
     kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
     bias_initializer = tf.zeros_initializer()
     kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=weight_decay)
