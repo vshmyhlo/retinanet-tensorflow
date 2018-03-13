@@ -76,6 +76,9 @@ def draw_bounding_boxes(image,
             tf.linspace(cell_size[1] / 2, 1 - cell_size[1] / 2, grid_size[1]),
             (1, -1, 1, 1))
 
+        print(regression)
+        print(anchor_boxes)
+        fail
         boxes = tf.concat([
             regression[..., 0:1] * anchor_boxes[..., 0:1] + y_pos,
             regression[..., 1:2] * anchor_boxes[..., 1:2] + x_pos,
@@ -263,9 +266,9 @@ def main():
     saver = tf.train.Saver()
 
     with tf.Session() as sess, tf.summary.FileWriter(
-            logdir=os.path.join(args.experiment_path, 'train'),
+            logdir=os.path.join(args.experiment, 'train'),
             graph=sess.graph) as train_writer:
-        restore_path = tf.train.latest_checkpoint(args.experiment_path)
+        restore_path = tf.train.latest_checkpoint(args.experiment)
         if restore_path:
             saver.restore(sess, restore_path)
         else:
@@ -298,8 +301,7 @@ def main():
                         train_writer.add_summary(im_summ, step)
                         train_writer.flush()
                         saver.save(sess,
-                                   os.path.join(args.experiment_path,
-                                                'model.ckpt'))
+                                   os.path.join(args.experiment, 'model.ckpt'))
                         sess.run(locals_init)
                 except tf.errors.OutOfRangeError:
                     break
