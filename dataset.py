@@ -131,7 +131,6 @@ def make_labels(image, anns, levels, num_classes):
 
 def gen(coco, dataset_path, levels, download):
     imgs = coco.load_imgs(coco.get_img_ids())
-    assert len(imgs) == 118287
 
     for img in imgs:
         filename = os.path.join(dataset_path, img.filename)
