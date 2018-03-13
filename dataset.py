@@ -130,11 +130,10 @@ def make_labels(image, anns, levels, num_classes):
 
 
 def gen(coco, dataset_path, levels, download):
-    imgs = coco.load_imgs(coco.get_img_ids())
-
-    for img in imgs:
+    for img in coco.load_imgs(coco.get_img_ids()):
         filename = os.path.join(dataset_path, img.filename)
         anns = coco.load_anns(coco.get_ann_ids(img_ids=img.id))
+        anns = list(anns)
         classifications, regressions = make_labels(
             img, anns, levels=levels, num_classes=coco.num_classes)
 
