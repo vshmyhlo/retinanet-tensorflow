@@ -17,8 +17,8 @@ def relative_iou(box_a, box_b):
 
 
 def iou(box_a, box_b):
-    assert np.all(box_a[..., :2] < box_a[..., 2:])
-    assert np.all(box_b[..., :2] < box_b[..., 2:])
+    assert np.all(box_a[..., :2] <= box_a[..., 2:])  # TODO: should be <
+    assert np.all(box_b[..., :2] <= box_b[..., 2:])  # TODO: should be <
 
     # determine the coordinates of the intersection rectangle
     y_top = np.maximum(box_a[..., 0], box_b[..., 0])
