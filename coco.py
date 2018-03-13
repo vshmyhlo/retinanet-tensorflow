@@ -30,13 +30,11 @@ class COCO(object):
         return self.coco.getImgIds()
 
     def load_imgs(self, ids):
-        return [self.Image(img) for img in self.coco.loadImgs(ids=ids)]
+        return (self.Image(img) for img in self.coco.loadImgs(ids=ids))
 
     def get_ann_ids(self, img_ids):
         return self.coco.getAnnIds(imgIds=img_ids)
 
     def load_anns(self, ids):
-        return [
-            self.Annotation(ann, self.category_ids)
-            for ann in self.coco.loadAnns(ids=ids)
-        ]
+        return (self.Annotation(ann, self.category_ids)
+                for ann in self.coco.loadAnns(ids=ids))
