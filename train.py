@@ -59,8 +59,8 @@ def draw_bounding_boxes(image,
         anchor_boxes = tf.to_float(
             tf.stack([
                 np.array(
-                    dataset.box_size(level.anchor_size, aspect_ratio,
-                                     scale_ratio)) / image_size
+                    dataset.compute_box_size(level.anchor_size, aspect_ratio,
+                                             scale_ratio)) / image_size
                 for aspect_ratio, scale_ratio in itertools.product(
                     level.anchor_aspect_ratios, level.anchor_scale_ratios)
             ], 0))
