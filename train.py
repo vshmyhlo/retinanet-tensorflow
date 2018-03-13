@@ -12,6 +12,7 @@ import numpy as np
 from tqdm import tqdm
 import L4
 
+# TODO: check shuffle
 # TODO: simplify architecture
 # TODO: hacks from keras mask rccn
 # TODO: try focal cross-entropy
@@ -106,6 +107,7 @@ def make_parser():
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--shuffle', type=int)
     parser.add_argument('--experiment', type=str, required=True)
+    parser.add_argument('--clip-norm', type=float)
     parser.add_argument(
         '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
     parser.add_argument(
@@ -125,11 +127,8 @@ def class_distribution(tensors):
     ])
 
 
-def make_train_step(loss,
-                    global_step,
-                    optimizer_type,
-                    learning_rate,
-                    clip_norm=5.0):
+def make_train_step(loss, global_step, optimizer_type, learning_rate,
+                    clip_norm):
     assert optimizer_type in ['momentum', 'adam', 'l4']
 
     if optimizer_type == 'momentum':
@@ -139,14 +138,18 @@ def make_train_step(loss,
     elif optimizer_type == 'l4':
         optimizer = L4.L4Adam(fraction=0.15)
 
-    # clip gradients
-    params = tf.trainable_variables()
-    gradients = tf.gradients(loss, params)
-    clipped_gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
+    if clip_norm is None:
+        # optimization
+        return optimizer.minimize(loss, global_step=global_step)
+    else:
+        # clip gradients
+        params = tf.trainable_variables()
+        gradients = tf.gradients(loss, params)
+        clipped_gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
 
-    # optimization
-    return optimizer.apply_gradients(
-        zip(clipped_gradients, params), global_step=global_step)
+        # optimization
+        return optimizer.apply_gradients(
+            zip(clipped_gradients, params), global_step=global_step)
 
 
 def main():
@@ -187,7 +190,8 @@ def main():
         loss,
         global_step=global_step,
         optimizer_type=args.optimizer,
-        learning_rate=args.learning_rate)
+        learning_rate=args.learning_rate,
+        clip_norm=args.clip_norm)
 
     with tf.name_scope('summary'):
         running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
