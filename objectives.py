@@ -30,9 +30,6 @@ def loss(labels, logits, name='loss'):
         logits = tuple(utils.merge_outputs(x) for x in logits)
 
         non_background_mask = tf.not_equal(tf.argmax(labels[0], -1), 0)
-        non_background_mask = tf.Print(
-            non_background_mask,
-            [tf.reduce_sum(tf.to_float(non_background_mask))])
 
         class_loss = focal_sigmoid_cross_entropy_with_logits(
             labels=labels[0], logits=logits[0])
