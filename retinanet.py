@@ -273,7 +273,8 @@ def retinanet_base(input,
                 bias_initializer=bias_initializer,
                 kernel_regularizer=kernel_regularizer,
                 norm_type=norm_type,
-                training=training) for x, l in zip(reversed(top_down), levels)
+                training=training)
+            for input, l in zip(reversed(top_down), levels)
         ]
 
         regressions = [
@@ -286,7 +287,8 @@ def retinanet_base(input,
                 bias_initializer=bias_initializer,
                 kernel_regularizer=kernel_regularizer,
                 norm_type=norm_type,
-                training=training) for x, l in zip(reversed(top_down), levels)
+                training=training)
+            for input, l in zip(reversed(top_down), levels)
         ]
 
         return classifications, regressions
