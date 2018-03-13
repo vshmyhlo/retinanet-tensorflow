@@ -61,4 +61,4 @@ def loss(labels, logits, name='loss'):
             logits=regr_logits,
             non_background_mask=non_background_mask)
 
-    return class_loss, regr_loss
+        return class_loss, regr_loss

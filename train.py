@@ -201,7 +201,7 @@ def make_metrics(class_loss, regr_loss, image, true, pred, levels):
             for l, c in zip(levels, classifications):
                 heatmap_image += heatmap_to_image(image[0], c[0])
 
-            heatmap_image = image[0] * 0.5 + heatmap_image * 0.5
+            heatmap_image = image[0] + heatmap_image
             image_summary.append(
                 tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
 
