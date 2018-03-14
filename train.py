@@ -102,6 +102,7 @@ def make_parser():
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--shuffle', type=int)
     parser.add_argument('--experiment', type=str, required=True)
+    parser.add_argument('--dataset-size', type=int, required=True)
     parser.add_argument('--clip-norm', type=float)
     parser.add_argument(
         '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
@@ -278,7 +279,9 @@ def main():
                 sess, './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
 
         for epoch in range(args.epochs):
-            sess.run([iter.initializer, locals_init], {dataset_size: 50})
+            sess.run([iter.initializer, locals_init], {
+                dataset_size: args.dataset_size
+            })
 
             for _ in tqdm(itertools.count()):
                 try:
