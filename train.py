@@ -215,6 +215,7 @@ def main():
 
     levels = make_levels()
     training = tf.placeholder(tf.bool, [], name='training')
+    dataset_size = tf.placeholder(tf.int64, [], name='dataset_size')
     global_step = tf.get_variable(
         'global_step', initializer=0, trainable=False)
 
@@ -225,6 +226,7 @@ def main():
         scale=args.scale,
         shuffle=args.shuffle,
         download=False)
+    ds = ds.take(dataset_size)
     assert num_classes == 80 + 1  # COCO + background
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
@@ -276,7 +278,7 @@ def main():
                 sess, './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
 
         for epoch in range(args.epochs):
-            sess.run([iter.initializer, locals_init])
+            sess.run([iter.initializer, locals_init], {dataset_size: 50})
 
             for _ in tqdm(itertools.count()):
                 try:
