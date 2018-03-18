@@ -83,6 +83,8 @@ def gen(coco):
         class_ids = np.array([a.category_id for a in anns])
         boxes = np.array([a.box for a in anns])
 
+        print(len(anns))
+        assert len(anns) > 0
         yield filename, class_ids, boxes
 
 
