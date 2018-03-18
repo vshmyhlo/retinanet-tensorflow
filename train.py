@@ -8,10 +8,15 @@ import retinanet
 from level import make_levels
 import objectives
 import dataset
-import numpy as np
+import shapes_dataset
 from tqdm import tqdm
 import L4
 
+# TODO: test network outputs scaling
+# TODO: check allclose in tests
+# TODO: test session to evaluate
+# TODO: tf.constant to tf.convert_to_tensor
+# TODO: refactor loss to use tf.where
 # TODO: why some image does not have assigned boxes
 # TODO: check shuffle
 # TODO: simplify architecture
@@ -23,7 +28,6 @@ import L4
 # TODO: exclude samples without prop IoU
 # TODO: remove unnecessary validations
 # TODO: set trainable parts
-# TODO: try without dropout
 
 
 def heatmap_to_image(image, classification):
@@ -44,7 +48,6 @@ def draw_bounding_boxes(image,
                         classifications,
                         levels,
                         max_output_size=1000):
-    image_size = tf.shape(image)[:2]
     image = tf.expand_dims(image, 0)
     final_boxes = []
     final_scores = []
@@ -52,27 +55,7 @@ def draw_bounding_boxes(image,
     for regression, classification, level in zip(regressions, classifications,
                                                  levels):
         mask = tf.not_equal(tf.argmax(classification, -1), 0)
-        anchor_boxes = tf.to_float(
-            tf.stack([
-                np.array(
-                    dataset.compute_box_size(level.anchor_size, aspect_ratio,
-                                             scale_ratio)) / image_size
-                for aspect_ratio, scale_ratio in itertools.product(
-                    level.anchor_aspect_ratios, level.anchor_scale_ratios)
-            ], 0))
-
-        anchor_boxes = tf.reshape(anchor_boxes, (1, 1, -1, 2))
-
-        boxes = tf.concat([
-            regression[..., :2] * anchor_boxes,
-            regression[..., 2:] * anchor_boxes,
-        ], -1)
-        boxes = utils.boxmap_anchor_relative_to_image_relative(boxes)
-        boxes = tf.concat([
-            boxes[..., :2] - boxes[..., 2:] / 2,
-            boxes[..., :2] + boxes[..., 2:] / 2
-        ], -1)
-        boxes = tf.boolean_mask(boxes, mask)
+        boxes = tf.boolean_mask(regression, mask)
         scores = tf.reduce_max(classification, -1)
         scores = tf.boolean_mask(scores, mask)
 
@@ -102,7 +85,6 @@ def make_parser():
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--shuffle', type=int)
     parser.add_argument('--experiment', type=str, required=True)
-    parser.add_argument('--dataset-size', type=int, required=True)
     parser.add_argument('--clip-norm', type=float)
     parser.add_argument(
         '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
@@ -216,7 +198,6 @@ def main():
 
     levels = make_levels()
     training = tf.placeholder(tf.bool, [], name='training')
-    dataset_size = tf.placeholder(tf.int64, [], name='dataset_size')
     global_step = tf.get_variable(
         'global_step', initializer=0, trainable=False)
 
@@ -227,8 +208,10 @@ def main():
         scale=args.scale,
         shuffle=args.shuffle,
         download=False)
-    ds = ds.take(dataset_size)
-    assert num_classes == 80 + 1  # COCO + background
+
+    # ds, num_classes = shapes_dataset.make_dataset(
+    #     levels=levels, batch_size=8, image_size=(128, 128))
+
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
@@ -279,9 +262,7 @@ def main():
                 sess, './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
 
         for epoch in range(args.epochs):
-            sess.run([iter.initializer, locals_init], {
-                dataset_size: args.dataset_size
-            })
+            sess.run([iter.initializer, locals_init])
 
             for _ in tqdm(itertools.count()):
                 try:

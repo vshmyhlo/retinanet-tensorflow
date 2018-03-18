@@ -1,21 +1,6 @@
 import numpy as np
 
 
-def to_absolute(box):
-    center = box[..., :2]
-    half_size = box[..., 2:] / 2
-    box = np.concatenate([
-        center - half_size,
-        center + half_size,
-    ], -1)
-
-    return box
-
-
-def relative_iou(box_a, box_b):
-    return iou(to_absolute(box_a), to_absolute(box_b))
-
-
 def iou(box_a, box_b):
     assert np.all(box_a[..., :2] <= box_a[..., 2:])  # TODO: should be <
     assert np.all(box_b[..., :2] <= box_b[..., 2:])  # TODO: should be <

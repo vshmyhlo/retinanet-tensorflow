@@ -3,23 +3,9 @@ import pycocotools.coco as pycoco
 
 
 class COCO(object):
-    class Image(object):
-        def __init__(self, img):
-            self.id = img['id']
-            self.filename = img['file_name']
-            self.size = np.array(
-                [img['height'], img['width']], dtype=np.float32)
-
-    class Annotation(object):
-        def __init__(self, ann, category_ids):
-            [left, top, width, height] = ann['bbox']
-            self.bbox = np.array(
-                [top + height / 2, left + width / 2, height, width],
-                dtype=np.float32)
-            self.category_id = category_ids.index(ann['category_id'])
-
     def __init__(self, ann_path, dataset_path, download):
         self.coco = pycoco.COCO(ann_path)
+        self.dataset_path = dataset_path
         self.category_ids = ['BG'] + sorted(self.coco.getCatIds())
         self.num_classes = len(self.category_ids)
 
@@ -38,3 +24,15 @@ class COCO(object):
     def load_anns(self, ids):
         return (self.Annotation(ann, self.category_ids)
                 for ann in self.coco.loadAnns(ids=ids))
+
+    class Image(object):
+        def __init__(self, img):
+            self.id = img['id']
+            self.filename = img['file_name']
+            self.size = np.array([img['height'], img['width']])
+
+    class Annotation(object):
+        def __init__(self, ann, category_ids):
+            [left, top, width, height] = ann['bbox']
+            self.box = np.array([top, left, top + height, left + width])
+            self.category_id = category_ids.index(ann['category_id'])

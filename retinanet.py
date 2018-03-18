@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import tensorflow.contrib.slim.nets as nets
 import math
+import utils
 
 
 def conv(input, filters, kernel_size, strides, kernel_initializer,
@@ -275,8 +276,7 @@ def retinanet_base(input,
             classification_subnet(
                 input,
                 num_classes=num_classes,
-                num_anchors=len(l.anchor_aspect_ratios) * len(
-                    l.anchor_scale_ratios),
+                num_anchors=l.anchor_boxes.shape[0],
                 dropout=dropout,
                 kernel_initializer=kernel_initializer,
                 bias_initializer=bias_initializer,
@@ -289,8 +289,7 @@ def retinanet_base(input,
         regressions = [
             regression_subnet(
                 input,
-                num_anchors=len(l.anchor_aspect_ratios) * len(
-                    l.anchor_scale_ratios),
+                num_anchors=l.anchor_boxes.shape[0],
                 dropout=dropout,
                 kernel_initializer=kernel_initializer,
                 bias_initializer=bias_initializer,
@@ -303,6 +302,14 @@ def retinanet_base(input,
         return classifications, regressions
 
 
+def scale_regression(regression, anchor_boxes):
+    anchor_boxes = tf.tile(anchor_boxes, (1, 2))
+    anchor_boxes = tf.reshape(
+        anchor_boxes, (1, 1, 1, anchor_boxes.shape[0], anchor_boxes.shape[1]))
+
+    return regression * anchor_boxes
+
+
 def retinanet(input,
               num_classes,
               levels,
@@ -311,11 +318,12 @@ def retinanet(input,
               norm_type,
               training,
               name='retinanet'):
+    image_size = tf.shape(input)[1:3]
     kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
     bias_initializer = tf.zeros_initializer()
     kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=weight_decay)
 
-    return retinanet_base(
+    classifications, regressions = retinanet_base(
         input,
         num_classes=num_classes,
         levels=levels,
@@ -326,3 +334,16 @@ def retinanet(input,
         norm_type=norm_type,
         training=training,
         name=name)
+
+    regressions = tuple(
+        scale_regression(r, tf.to_float(l.anchor_boxes / image_size))
+        for r, l in zip(regressions, levels))
+
+    regressions = tuple(
+        utils.boxmap_anchor_relative_to_image_relative(r) for r in regressions)
+
+    regressions = tuple(
+        utils.boxmap_center_relative_to_corner_relative(r)
+        for r in regressions)
+
+    return classifications, regressions

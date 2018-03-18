@@ -1,6 +1,6 @@
 import tensorflow as tf
-import numpy as np
 import utils
+import numpy as np
 
 
 class UtilsTest(tf.test.TestCase):
@@ -17,48 +17,116 @@ class UtilsTest(tf.test.TestCase):
             assert merged.eval().shape == (2, 83, 4)
 
     def test_boxmap_anchor_relative_to_image_relative(self):
-        b = [[0.1, 0.2, 0.8, 0.9], [0.3, 0.4, 0.9, 0.8]]
-
-        boxmap = tf.constant([
-            [b, b, b, b],
-            [b, b, b, b],
-            [b, b, b, b],
+        c = [[0.5, 1.0, 0.25, 0.75]]
+        regression = tf.constant([
+            [c, c, c, c],
+            [c, c, c, c],
+            [c, c, c, c],
         ])
+        regression = tf.expand_dims(regression, 0)
 
         expected = [
             [
-                [[1 / 6 + 0.1, 1 / 8 + 0.2, 0.8, 0.9],
-                 [1 / 6 + 0.3, 1 / 8 + 0.4, 0.9, 0.8]],
-                [[1 / 6 + 0.1, 3 / 8 + 0.2, 0.8, 0.9],
-                 [1 / 6 + 0.3, 3 / 8 + 0.4, 0.9, 0.8]],
-                [[1 / 6 + 0.1, 5 / 8 + 0.2, 0.8, 0.9],
-                 [1 / 6 + 0.3, 5 / 8 + 0.4, 0.9, 0.8]],
-                [[1 / 6 + 0.1, 7 / 8 + 0.2, 0.8, 0.9],
-                 [1 / 6 + 0.3, 7 / 8 + 0.4, 0.9, 0.8]],
+                [[1 / 6 + 0.5, 1 / 8 + 1.0, 0.25, 0.75]],
+                [[1 / 6 + 0.5, 3 / 8 + 1.0, 0.25, 0.75]],
+                [[1 / 6 + 0.5, 5 / 8 + 1.0, 0.25, 0.75]],
+                [[1 / 6 + 0.5, 7 / 8 + 1.0, 0.25, 0.75]],
             ],
             [
-                [[3 / 6 + 0.1, 1 / 8 + 0.2, 0.8, 0.9],
-                 [3 / 6 + 0.3, 1 / 8 + 0.4, 0.9, 0.8]],
-                [[3 / 6 + 0.1, 3 / 8 + 0.2, 0.8, 0.9],
-                 [3 / 6 + 0.3, 3 / 8 + 0.4, 0.9, 0.8]],
-                [[3 / 6 + 0.1, 5 / 8 + 0.2, 0.8, 0.9],
-                 [3 / 6 + 0.3, 5 / 8 + 0.4, 0.9, 0.8]],
-                [[3 / 6 + 0.1, 7 / 8 + 0.2, 0.8, 0.9],
-                 [3 / 6 + 0.3, 7 / 8 + 0.4, 0.9, 0.8]],
+                [[3 / 6 + 0.5, 1 / 8 + 1.0, 0.25, 0.75]],
+                [[3 / 6 + 0.5, 3 / 8 + 1.0, 0.25, 0.75]],
+                [[3 / 6 + 0.5, 5 / 8 + 1.0, 0.25, 0.75]],
+                [[3 / 6 + 0.5, 7 / 8 + 1.0, 0.25, 0.75]],
             ],
             [
-                [[5 / 6 + 0.1, 1 / 8 + 0.2, 0.8, 0.9],
-                 [5 / 6 + 0.3, 1 / 8 + 0.4, 0.9, 0.8]],
-                [[5 / 6 + 0.1, 3 / 8 + 0.2, 0.8, 0.9],
-                 [5 / 6 + 0.3, 3 / 8 + 0.4, 0.9, 0.8]],
-                [[5 / 6 + 0.1, 5 / 8 + 0.2, 0.8, 0.9],
-                 [5 / 6 + 0.3, 5 / 8 + 0.4, 0.9, 0.8]],
-                [[5 / 6 + 0.1, 7 / 8 + 0.2, 0.8, 0.9],
-                 [5 / 6 + 0.3, 7 / 8 + 0.4, 0.9, 0.8]],
+                [[5 / 6 + 0.5, 1 / 8 + 1.0, 0.25, 0.75]],
+                [[5 / 6 + 0.5, 3 / 8 + 1.0, 0.25, 0.75]],
+                [[5 / 6 + 0.5, 5 / 8 + 1.0, 0.25, 0.75]],
+                [[5 / 6 + 0.5, 7 / 8 + 1.0, 0.25, 0.75]],
             ],
         ]
+        expected = tf.expand_dims(expected, 0)
 
-        actual = utils.boxmap_anchor_relative_to_image_relative(boxmap)
+        actual = utils.boxmap_anchor_relative_to_image_relative(regression)
 
-        with self.test_session():
-            assert np.allclose(actual.eval(), expected)
+        a, e = self.evaluate([actual, expected])
+        assert np.allclose(a, e)
+        assert a.shape == (1, 3, 4, 1, 4)
+
+    def test_anchor_boxmap(self):
+        grid_size = tf.constant([3, 4])
+        size1 = [0.2, 0.4]
+        anchor_boxes = tf.constant([size1])
+
+        expected = tf.constant([
+            [
+                [[1 / 6 - 0.1, 1 / 8 - 0.2, 1 / 6 + 0.1, 1 / 8 + 0.2]],
+                [[1 / 6 - 0.1, 3 / 8 - 0.2, 1 / 6 + 0.1, 3 / 8 + 0.2]],
+                [[1 / 6 - 0.1, 5 / 8 - 0.2, 1 / 6 + 0.1, 5 / 8 + 0.2]],
+                [[1 / 6 - 0.1, 7 / 8 - 0.2, 1 / 6 + 0.1, 7 / 8 + 0.2]],
+            ],
+            [
+                [[3 / 6 - 0.1, 1 / 8 - 0.2, 3 / 6 + 0.1, 1 / 8 + 0.2]],
+                [[3 / 6 - 0.1, 3 / 8 - 0.2, 3 / 6 + 0.1, 3 / 8 + 0.2]],
+                [[3 / 6 - 0.1, 5 / 8 - 0.2, 3 / 6 + 0.1, 5 / 8 + 0.2]],
+                [[3 / 6 - 0.1, 7 / 8 - 0.2, 3 / 6 + 0.1, 7 / 8 + 0.2]],
+            ],
+            [
+                [[5 / 6 - 0.1, 1 / 8 - 0.2, 5 / 6 + 0.1, 1 / 8 + 0.2]],
+                [[5 / 6 - 0.1, 3 / 8 - 0.2, 5 / 6 + 0.1, 3 / 8 + 0.2]],
+                [[5 / 6 - 0.1, 5 / 8 - 0.2, 5 / 6 + 0.1, 5 / 8 + 0.2]],
+                [[5 / 6 - 0.1, 7 / 8 - 0.2, 5 / 6 + 0.1, 7 / 8 + 0.2]],
+            ],
+        ])
+        expected = tf.expand_dims(expected, 0)
+        actual = utils.anchor_boxmap(grid_size, anchor_boxes)
+
+        a, e = self.evaluate([actual, expected])
+        assert np.allclose(a, e)
+        assert a.shape == (1, 3, 4, 1, 4)
+
+    def test_boxmap_center_relative_to_corner_relative(self):
+        c = [[0.5, 1.0, 0.2, 0.4]]
+        regression = tf.constant([
+            [c, c, c, c],
+            [c, c, c, c],
+            [c, c, c, c],
+        ])
+        regression = tf.expand_dims(regression, 0)
+
+        c = [[0.4, 0.8, 0.6, 1.2]]
+        expected = tf.constant([
+            [c, c, c, c],
+            [c, c, c, c],
+            [c, c, c, c],
+        ])
+        expected = tf.expand_dims(expected, 0)
+
+        actual = utils.boxmap_center_relative_to_corner_relative(regression)
+
+        with self.test_session() as sess:
+            a, e = sess.run([actual, expected])
+            assert np.array_equal(a, e)
+            assert a.shape == (1, 3, 4, 1, 4)
+
+    def test_iou(self):
+        box_a = tf.constant([
+            [0.1, 0.1, 0.2, 0.2],
+            [100, 100, 200, 200],
+            [0.1, 0.1, 0.2, 0.2],
+            [1., 1., 1., 1.],
+        ])
+        box_b = tf.constant([
+            [0.1, 0.1, 0.3, 0.3],
+            [100, 100, 300, 300],
+            [100, 100, 300, 300],
+            [0., 0., 0., 0.],
+        ])
+
+        actual = utils.iou(box_a, box_b)
+        expected = tf.constant([0.25, 0.25, 0, 0])
+
+        with self.test_session() as sess:
+            a, e = sess.run([actual, expected])
+            assert np.allclose(a, e)
+            assert a.shape == (4, )
