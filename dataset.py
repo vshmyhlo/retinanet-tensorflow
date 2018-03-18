@@ -82,10 +82,8 @@ def gen(coco):
         class_ids = np.array([item.category_id for item in anns])
         boxes = np.array([item.box for item in anns])
 
-        assert class_ids.shape[0] != 0
-        assert boxes.shape[0] != 0
-
-        yield filename, class_ids, boxes
+        if class_ids.shape[0] > 0:
+            yield filename, class_ids, boxes
 
 
 def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
