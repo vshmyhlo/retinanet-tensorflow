@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 from coco import COCO
 import utils
+import augmentation
 
 IOU_THRESHOLD = 0.5
 
@@ -78,18 +79,14 @@ def gen(coco):
     for img in coco.load_imgs(coco.get_img_ids()):
         filename = os.path.join(coco.dataset_path,
                                 img.filename).encode('utf-8')
-        anns = coco.load_anns(coco.get_ann_ids(img_ids=img.id))
-        class_ids = np.array([item.category_id for item in anns])
-        boxes = np.array([item.box for item in anns])
+        anns = list(coco.load_anns(coco.get_ann_ids(img_ids=img.id)))
+        class_ids = np.array([a.category_id for a in anns])
+        boxes = np.array([a.box for a in anns])
 
-        if class_ids.shape[0] > 0:
-            yield filename, class_ids, boxes
+        yield filename, class_ids, boxes
 
 
 def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
-    def one_hot(classifications):
-        return tuple(tf.one_hot(x, coco.num_classes) for x in classifications)
-
     def load_image_with_labels(filename, class_ids, boxes):
         def load_image(filename):
             image = tf.read_file(filename)
@@ -106,30 +103,19 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
         return image, classifications, regressions
 
     def preprocess(image, classifications, regressions):
-        def flip(image, classifications, regressions):
-            # TODO: add flipping
-
-            # image = tf.reverse(image, [1])
-            # classifications = tuple(
-            #     tf.reverse(x, [1]) for x in classifications)
-            # regressions = tuple(tf.reverse(x, [1]) for x in regressions)
-            # regressions = tuple(
-            #     tf.concat([x[..., :1], -x[..., 1:2], x[..., 2:]], -1)
-            #     for x in regressions)
-
-            return image, classifications, regressions
-
-        classifications = one_hot(classifications)
-        image_flipped, classifications_flipped, regressions_flipped = flip(
+        image_flipped, classifications_flipped, regressions_flipped = augmentation.flip(
             image, classifications, regressions)
 
-        image = tf.stack([image, image_flipped], 0)
+        # TODO: add flipping
+        image = tf.stack([image], 0)
         classifications = tuple(
-            tf.stack([x, x_flipped], 0)
+            tf.stack([x], 0)
             for x, x_flipped in zip(classifications, classifications_flipped))
         regressions = tuple(
-            tf.stack([x, x_flipped], 0)
+            tf.stack([x], 0)
             for x, x_flipped in zip(regressions, regressions_flipped))
+        classifications = tuple(
+            tf.one_hot(x, coco.num_classes) for x in classifications)
 
         return image, classifications, regressions
 
