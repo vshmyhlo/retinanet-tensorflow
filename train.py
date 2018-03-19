@@ -134,7 +134,8 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
                 zip(clipped_gradients, params), global_step=global_step)
 
 
-def make_metrics(class_loss, regr_loss, image, true, pred, levels):
+def make_metrics(class_loss, regr_loss, image, true, pred, levels,
+                 learning_rate):
     image = (image + 255 / 2) / 255
     classifications_true, regressions_true = true
     classifications_pred, regressions_pred = pred
@@ -161,6 +162,7 @@ def make_metrics(class_loss, regr_loss, image, true, pred, levels):
         tf.summary.scalar('class_loss', running_class_loss),
         tf.summary.scalar('regr_loss', running_regr_loss),
         tf.summary.scalar('loss', running_loss),
+        tf.summary.scalar('learning_rate', learning_rate),
         tf.summary.histogram('classifications_true', running_true_class_dist),
         tf.summary.histogram('classifications_pred', running_pred_class_dist)
     ])
@@ -242,7 +244,8 @@ def main():
         image=image,
         true=(classifications_true, regressions_true),
         pred=(classifications_pred, regressions_pred),
-        levels=levels)
+        levels=levels,
+        learning_rate=args.learning_rate)
 
     locals_init = tf.local_variables_initializer()
 
