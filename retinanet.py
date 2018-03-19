@@ -172,12 +172,15 @@ def backbone(input, levels, training, name='backbone'):
                 is_training=training)
 
         bottom_up = []
+        validations = []
 
         for l in levels:
             output = outputs[level_to_layer[l.number]]
-            with tf.control_dependencies(
-                [validate_level_shape(input, output, l.number)]):
-                bottom_up.append(tf.identity(output))
+            bottom_up.append(output)
+            validations.append(validate_level_shape(input, output, l.number))
+
+        with tf.control_dependencies(validations):
+            bottom_up = [tf.identity(x) for x in bottom_up]
 
         return bottom_up
 
