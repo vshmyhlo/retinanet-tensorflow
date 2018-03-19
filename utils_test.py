@@ -13,8 +13,8 @@ class UtilsTest(tf.test.TestCase):
 
         merged = utils.merge_outputs(outputs)
 
-        with self.test_session():
-            assert merged.eval().shape == (2, 83, 4)
+        m = self.evaluate(merged)
+        assert m.shape == (2, 83, 4)
 
     def test_boxmap_anchor_relative_to_image_relative(self):
         c = [[0.5, 1.0, 0.25, 0.75]]
@@ -104,10 +104,9 @@ class UtilsTest(tf.test.TestCase):
 
         actual = utils.boxmap_center_relative_to_corner_relative(regression)
 
-        with self.test_session() as sess:
-            a, e = sess.run([actual, expected])
-            assert np.array_equal(a, e)
-            assert a.shape == (1, 3, 4, 1, 4)
+        a, e = self.evaluate([actual, expected])
+        assert np.array_equal(a, e)
+        assert a.shape == (1, 3, 4, 1, 4)
 
     def test_iou(self):
         box_a = tf.convert_to_tensor([
@@ -126,7 +125,6 @@ class UtilsTest(tf.test.TestCase):
         actual = utils.iou(box_a, box_b)
         expected = tf.convert_to_tensor([0.25, 0.25, 0, 0])
 
-        with self.test_session() as sess:
-            a, e = sess.run([actual, expected])
-            assert np.allclose(a, e)
-            assert a.shape == (4, )
+        a, e = self.evaluate([actual, expected])
+        assert np.allclose(a, e)
+        assert a.shape == (4, )

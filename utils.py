@@ -22,17 +22,13 @@ def log_args(args):
 
 def merge_outputs(tensors, name='merge_outputs'):
     with tf.name_scope(name):
-        validate_shapes = [
-            tf.assert_greater_equal(tf.rank(t), 4) for t in tensors
-        ]
-        with tf.control_dependencies(validate_shapes):
-            reshaped = []
-            for t in tensors:
-                sh = tf.shape(t)
-                sh = tf.concat([[sh[0], sh[1] * sh[2]], sh[3:]], 0)
-                reshaped.append(tf.reshape(t, sh))
+        reshaped = []
+        for t in tensors:
+            sh = tf.shape(t)
+            sh = tf.concat([[sh[0], sh[1] * sh[2]], sh[3:]], 0)
+            reshaped.append(tf.reshape(t, sh))
 
-            return tf.concat(reshaped, 1)
+        return tf.concat(reshaped, 1)
 
 
 def boxmap_anchor_relative_to_image_relative(regression):

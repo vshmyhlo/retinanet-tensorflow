@@ -90,7 +90,8 @@ def gen(coco):
             yield filename, np.zeros([0]), np.zeros([0, 4])
 
 
-def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
+def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download,
+                 augment):
     def load_image_with_labels(filename, class_ids, boxes):
         def load_image(filename):
             image = tf.read_file(filename)
@@ -123,6 +124,14 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
 
         return image, classifications, regressions
 
+    def augment(image, classifications, regressions):
+        # TODO: add augmentation
+        # image = tf.image.random_contrast(image, 0.8, 1.2)
+        # image = tf.image.random_brightness(image, 0.2)
+        # image = tf.image.random_saturation(image, 0.8, 1.0)
+
+        return image, classifications, regressions
+
     coco = COCO(ann_path, dataset_path, download)
     ds = tf.data.Dataset.from_generator(
         lambda: gen(coco),
@@ -134,5 +143,8 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download):
 
     ds = ds.map(load_image_with_labels)
     ds = ds.map(preprocess)
+
+    if augment:
+        ds = ds.map(augment)
 
     return ds, coco.num_classes

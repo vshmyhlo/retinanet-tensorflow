@@ -12,12 +12,10 @@ from tqdm import tqdm
 import L4
 
 # TODO: test network outputs scaling
-# TODO: check allclose in tests
 # TODO: test session to evaluate
 # TODO: check loss implementation
 # TODO: check shuffle
 # TODO: simplify architecture
-# TODO: hacks from keras mask rccn
 # TODO: try focal cross-entropy
 # TODO: check rounding and float32 conversions
 # TODO: name_scope to variable_scope
@@ -26,6 +24,7 @@ import L4
 # TODO: remove unnecessary validations
 # TODO: set trainable parts
 # TODO: flipping
+# TODO: add augmentation
 
 
 def print_summary(metrics, step):
@@ -214,7 +213,8 @@ def main():
         levels=levels,
         scale=args.scale,
         shuffle=args.shuffle,
-        download=False)
+        download=False,
+        augment=True)
 
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
