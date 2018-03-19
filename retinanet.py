@@ -336,14 +336,15 @@ def retinanet(input,
         name=name)
 
     regressions = tuple(
-        scale_regression(r, tf.to_float(l.anchor_boxes / image_size))
+        regression_postprocess(r, tf.to_float(l.anchor_boxes / image_size))
         for r, l in zip(regressions, levels))
 
-    regressions = tuple(
-        utils.boxmap_anchor_relative_to_image_relative(r) for r in regressions)
-
-    regressions = tuple(
-        utils.boxmap_center_relative_to_corner_relative(r)
-        for r in regressions)
-
     return classifications, regressions
+
+
+def regression_postprocess(regression, anchor_boxes):
+    regression = scale_regression(regression, anchor_boxes)
+    regression = utils.boxmap_anchor_relative_to_image_relative(regression)
+    regression = utils.boxmap_center_relative_to_corner_relative(regression)
+
+    return regression

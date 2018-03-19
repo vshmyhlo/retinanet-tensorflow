@@ -8,16 +8,13 @@ import retinanet
 from level import make_levels
 import objectives
 import dataset
-import shapes_dataset
 from tqdm import tqdm
 import L4
 
 # TODO: test network outputs scaling
 # TODO: check allclose in tests
 # TODO: test session to evaluate
-# TODO: tf.constant to tf.convert_to_tensor
-# TODO: refactor loss to use tf.where
-# TODO: why some image does not have assigned boxes
+# TODO: check loss implementation
 # TODO: check shuffle
 # TODO: simplify architecture
 # TODO: hacks from keras mask rccn
@@ -28,6 +25,14 @@ import L4
 # TODO: exclude samples without prop IoU
 # TODO: remove unnecessary validations
 # TODO: set trainable parts
+# TODO: flipping
+
+
+def print_summary(metrics, step):
+    print(
+        'step: {}, loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}'.format(
+            step, metrics['loss'], metrics['class_loss'],
+            metrics['regr_loss']))
 
 
 def heatmap_to_image(image, classification):
@@ -211,9 +216,6 @@ def main():
         shuffle=args.shuffle,
         download=False)
 
-    # ds, num_classes = shapes_dataset.make_dataset(
-    #     levels=levels, batch_size=8, image_size=(128, 128))
-
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
@@ -280,10 +282,8 @@ def main():
                                 training: True
                             })
 
-                        print(
-                            '\nstep: {}, loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}'.
-                            format(step, m['loss'], m['class_loss'],
-                                   m['regr_loss']))
+                        print()
+                        print_summary(m, step)
                         train_writer.add_summary(run_summ, step)
                         train_writer.add_summary(img_summ, step)
                         train_writer.flush()

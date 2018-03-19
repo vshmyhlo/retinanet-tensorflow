@@ -10,8 +10,7 @@ class RetinanetTest(tf.test.TestCase):
 
         assertion = retinanet.validate_lateral_shape(input, lateral)
 
-        with self.test_session() as sess:
-            sess.run(assertion)
+        self.evaluate(assertion)
 
     def test_scale_regression(self):
         regression = tf.convert_to_tensor([
@@ -33,7 +32,26 @@ class RetinanetTest(tf.test.TestCase):
         ])
         expected = tf.reshape(expected, (1, 1, 1, 2, 4))
 
-        with self.test_session() as sess:
-            a, e = sess.run([actual, expected])
-            assert np.array_equal(a, e)
-            assert a.shape == (1, 1, 1, 2, 4)
+        a, e = self.evaluate([actual, expected])
+        assert np.array_equal(a, e)
+        assert a.shape == (1, 1, 1, 2, 4)
+
+    def test_regression_postprocess(self):
+        anchor_boxes = tf.convert_to_tensor([[.5, .5]])
+        regression = tf.convert_to_tensor([
+            [[[.5, .5, 1., 1.]], [[0., 0., 0., 0.]]],
+            [[[0., 0., 0., 0.]], [[-.5, -.5, 2., 2.]]],
+        ])
+        regression = tf.expand_dims(regression, 0)
+
+        expected = tf.convert_to_tensor([
+            [[[.25, .25, .75, .75]], [[.25, .75, .25, .75]]],
+            [[[.75, .25, .75, .25]], [[0., 0., 1., 1.]]],
+        ])
+        expected = tf.expand_dims(expected, 0)
+
+        actual = retinanet.regression_postprocess(regression, anchor_boxes)
+
+        a, e = self.evaluate([actual, expected])
+        assert np.array_equal(a, e)
+        assert a.shape == (1, 2, 2, 1, 4)
