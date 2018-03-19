@@ -30,7 +30,7 @@ def focal_sigmoid_cross_entropy_with_logits(
         loss = tf.nn.sigmoid_cross_entropy_with_logits(
             labels=labels, logits=logits)
 
-        labels_eq_1 = tf.equals(labels, 1)
+        labels_eq_1 = tf.equal(labels, 1)
         prob = tf.nn.sigmoid(logits)
         a_balance = tf.where(labels_eq_1, alpha, 1 - alpha)
         prob_true = tf.where(labels_eq_1, prob, 1 - prob)
