@@ -145,12 +145,11 @@ def regression_subnet(input,
 
 def validate_level_shape(input, output, l, name='validate_level_shape'):
     with tf.name_scope(name):
-        input_shape = tf.shape(input, out_type=tf.int32)
-        output_shape = tf.shape(output, out_type=tf.int32)
+        input_size = tf.shape(input)[1:3]
+        output_size = tf.shape(output)[1:3]
+
         return tf.assert_equal(
-            tf.to_float(output_shape[1:3]),
-            tf.to_float(tf.ceil(input_shape[1:3] / 2**l)),
-        )
+            tf.to_int32(output_size), tf.to_int32(tf.ceil(input_size / 2**l)))
 
 
 def backbone(input, levels, training, name='backbone'):
@@ -185,12 +184,10 @@ def backbone(input, levels, training, name='backbone'):
 
 def validate_lateral_shape(input, lateral, name='validate_lateral_shape'):
     with tf.name_scope(name):
-        input_shape = tf.shape(input, out_type=tf.int32)
-        lateral_shape = tf.shape(lateral, out_type=tf.int32)
+        input_size = tf.shape(input)[1:3]
+        lateral_size = tf.shape(lateral)[1:3]
         return tf.assert_equal(
-            tf.to_float(tf.round(lateral_shape[1:3] / input_shape[1:3])),
-            tf.to_float(2.0),
-        )
+            tf.to_int32(tf.round(lateral_size / input_size)), 2)
 
 
 def fpn(bottom_up,
@@ -342,9 +339,13 @@ def retinanet(input,
     return classifications, regressions
 
 
-def regression_postprocess(regression, anchor_boxes):
-    regression = scale_regression(regression, anchor_boxes)
-    regression = utils.boxmap_anchor_relative_to_image_relative(regression)
-    regression = utils.boxmap_center_relative_to_corner_relative(regression)
+def regression_postprocess(regression,
+                           anchor_boxes,
+                           name='regression_postprocess'):
+    with tf.name_scope(name):
+        regression = scale_regression(regression, anchor_boxes)
+        regression = utils.boxmap_anchor_relative_to_image_relative(regression)
+        regression = utils.boxmap_center_relative_to_corner_relative(
+            regression)
 
-    return regression
+        return regression
