@@ -4,6 +4,8 @@ import tensorflow.contrib.slim.nets as nets
 import math
 import utils
 
+# TODO: resnet initialization
+
 
 def conv(input, filters, kernel_size, strides, kernel_initializer,
          bias_initializer, kernel_regularizer):

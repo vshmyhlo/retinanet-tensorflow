@@ -8,12 +8,13 @@ import augmentation
 IOU_THRESHOLD = 0.5
 
 
+# TODO: remove image size and make all boxes 0-1
 # TODO: resize image
 # TODO: background category
 # TODO: ignored boxes
 # TODO: regression exp
-def level_labels(image_size, class_ids, boxes, level):
-    grid_size = tf.to_int32(tf.ceil(image_size / 2**level.number))
+def level_labels(image_size, class_ids, boxes, level, factor):
+    grid_size = tf.to_int32(tf.ceil(image_size / factor))
     anchor_boxes = tf.to_float(level.anchor_boxes / image_size)
 
     # extract targets ##########################################################
@@ -65,12 +66,18 @@ def level_labels(image_size, class_ids, boxes, level):
 
 
 def make_labels(image_size, class_ids, boxes, levels):
-    labels = [
-        level_labels(image_size, class_ids, boxes, level=level)
-        for level in levels
-    ]
+    labels = {
+        pn: level_labels(
+            image_size,
+            class_ids,
+            boxes,
+            level=levels[pn],
+            factor=2**int(pn[-1]))
+        for pn in levels
+    }
 
-    classifications, regressions = tuple(zip(*labels))
+    classifications = {pn: labels[pn][0] for pn in labels}
+    regressions = {pn: labels[pn][1] for pn in labels}
 
     return classifications, regressions
 
@@ -113,14 +120,19 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download,
 
         # TODO: add flipping
         image = tf.stack([image], 0)
-        classifications = tuple(
-            tf.stack([x], 0)
-            for x, x_flipped in zip(classifications, classifications_flipped))
-        regressions = tuple(
-            tf.stack([x], 0)
-            for x, x_flipped in zip(regressions, regressions_flipped))
-        classifications = tuple(
-            tf.one_hot(x, coco.num_classes) for x in classifications)
+        # TODO: use level names
+        classifications = {
+            pn: tf.stack([classifications[pn]], 0)
+            for pn in classifications
+        }
+        regressions = {
+            pn: tf.stack([regressions[pn]], 0)
+            for pn in regressions
+        }
+        classifications = {
+            pn: tf.one_hot(classifications[pn], coco.num_classes)
+            for pn in classifications
+        }
 
         return image, classifications, regressions
 

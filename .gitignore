@@ -1,4 +1,4 @@
-/__pycache__
-/tf_log
-/pretrained
 /.cache
+/.ropeproject
+/__pycache__
+/env

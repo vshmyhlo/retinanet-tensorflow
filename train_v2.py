@@ -2,14 +2,16 @@ import os
 import argparse
 import itertools
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
+# import tensorflow.contrib.slim as slim
 import utils
-import retinanet
+import retinanet_v2 as retinanet
 from level import build_levels
 import objectives
 import dataset
 from tqdm import tqdm
 import L4
+
+# TODO: check regularization and initialization
 
 # TODO: test network outputs scaling
 # TODO: test session to evaluate
@@ -103,8 +105,8 @@ def make_parser():
 def class_distribution(tensors):
     # TODO: do not average over batch
     return tf.stack([
-        tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [0, 1, 2])
-        for x in tensors
+        tf.reduce_mean(tf.to_float(tf.argmax(tensors[k], -1)), [0, 1, 2])
+        for k in tensors
     ])
 
 
@@ -137,7 +139,8 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
                 zip(clipped_gradients, params), global_step=global_step)
 
 
-def make_metrics(class_loss, regr_loss, image, true, pred, learning_rate):
+def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
+                 learning_rate):
     image = (image + 255 / 2) / 255
     classifications_true, regressions_true = true
     classifications_pred, regressions_pred = pred
@@ -177,15 +180,16 @@ def make_metrics(class_loss, regr_loss, image, true, pred, learning_rate):
     ):
         with tf.name_scope(name):
             image_with_boxes = draw_bounding_boxes(
-                image[0], [y[0] for y in regressions],
-                [y[0] for y in classifications])
+                image[0], [regressions[pn][0] for pn in level_names],
+                [classifications[pn][0] for pn in level_names])
             image_summary.append(
                 tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
                                                           0)))
 
             heatmap_image = tf.zeros_like(image[0])
-            for c in classifications:
-                heatmap_image += heatmap_to_image(image[0], c[0])
+            for pn in level_names:
+                heatmap_image += heatmap_to_image(image[0],
+                                                  classifications[pn][0])
 
             heatmap_image = image[0] + heatmap_image
             image_summary.append(
@@ -217,13 +221,15 @@ def main():
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
-    classifications_pred, regressions_pred = retinanet.retinanet(
-        image,
+    net = retinanet.RetinaNet(
+        levels=levels,
         num_classes=num_classes,
-        dropout=args.dropout,
-        weight_decay=args.weight_decay,
-        norm_type=args.norm_type,
-        training=training)
+        # dropout=args.dropout,
+        # weight_decay=args.weight_decay,
+        # norm_type=args.norm_type,
+        # training=training,
+    )
+    classifications_pred, regressions_pred = net(image, training)
 
     class_loss, regr_loss = objectives.loss(
         (classifications_true, regressions_true),
@@ -243,13 +249,13 @@ def main():
         image=image,
         true=(classifications_true, regressions_true),
         pred=(classifications_pred, regressions_pred),
-        levels=levels,
+        level_names=levels.keys(),
         learning_rate=args.learning_rate)
 
     locals_init = tf.local_variables_initializer()
 
-    backbone_variables = slim.get_model_variables(scope="resnet_v2_50")
-    backbone_saver = tf.train.Saver(backbone_variables)
+    # backbone_variables = slim.get_model_variables(scope="resnet_v2_50")
+    # backbone_saver = tf.train.Saver(backbone_variables)
     saver = tf.train.Saver()
 
     with tf.Session() as sess, tf.summary.FileWriter(
@@ -260,8 +266,8 @@ def main():
             saver.restore(sess, restore_path)
         else:
             sess.run(tf.global_variables_initializer())
-            backbone_saver.restore(
-                sess, './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
+            # backbone_saver.restore(
+            #     sess, './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
 
         for epoch in range(args.epochs):
             sess.run([iter.initializer, locals_init])
