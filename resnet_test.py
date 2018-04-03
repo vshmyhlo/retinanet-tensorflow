@@ -7,7 +7,7 @@ class ResNetTest(tf.test.TestCase):
         size = 224
         net = resnet.ResNeXt_50()
         input = tf.zeros((1, size, size, 3))
-        output = net(input, training=False)
+        output = net(input, False)
 
         for c in output:
             factor = int(c[-1])

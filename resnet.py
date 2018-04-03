@@ -1,11 +1,12 @@
 import tensorflow as tf
-import tensorflow.contrib.eager as tfe
+from network import Network, Sequential
 
 # TODO: check regularization
 # TODO: check resize-conv (upsampling)
+# TODO: check training arg
 
 
-class ResNeXt_Bottleneck(tfe.Network):
+class ResNeXt_Bottleneck(Network):
     def __init__(self,
                  filters_base,
                  project,
@@ -18,19 +19,19 @@ class ResNeXt_Bottleneck(tfe.Network):
         # identity
         if project == 'down':
             self.identity = self.track_layer(
-                tfe.Sequential([
+                Sequential([
                     tf.layers.Conv2D(filters_base * 4, 2, 2,
                                      padding='same'),  # TODO: check this
                     tf.layers.BatchNormalization()
                 ]))
         elif project:
             self.identity = self.track_layer(
-                tfe.Sequential([
+                Sequential([
                     tf.layers.Conv2D(filters_base * 4, 1),
                     tf.layers.BatchNormalization()
                 ]))
         else:
-            self.identity = tf.identity
+            self.identity = None
 
         # conv1
         self.conv1 = self.track_layer(tf.layers.Conv2D(filters_base * 2, 1))
@@ -56,7 +57,10 @@ class ResNeXt_Bottleneck(tfe.Network):
         self.bn3 = self.track_layer(tf.layers.BatchNormalization())
 
     def call(self, input, training):
-        identity = self.identity(input)
+        if self.identity is not None:
+            identity = self.identity(input, training)
+        else:
+            identity = input
 
         # conv1
         input = self.conv1(input)
@@ -83,7 +87,7 @@ class ResNeXt_Bottleneck(tfe.Network):
         return input
 
 
-class ResNeXt_Block(tfe.Sequential):
+class ResNeXt_Block(Sequential):
     def __init__(self, filters_base, depth, downsample, name='resnext_block'):
         layers = []
 
@@ -101,7 +105,7 @@ class ResNeXt_Block(tfe.Sequential):
         super().__init__(layers, name=name)
 
 
-class ResNeXt_Conv1(tfe.Network):
+class ResNeXt_Conv1(Network):
     def __init__(self, name='resnext_conv1'):
         super().__init__(name=name)
 
@@ -117,7 +121,7 @@ class ResNeXt_Conv1(tfe.Network):
         return input
 
 
-class ResNeXt(tfe.Network):
+class ResNeXt(Network):
     def __init__(self, name='resnet'):
         super().__init__(name=name)
 

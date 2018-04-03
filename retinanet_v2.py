@@ -1,10 +1,8 @@
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
-import tensorflow.contrib.slim.nets as nets
 import math
 import utils
-import tensorflow.contrib.eager as tfe
 import resnet
+from network import Network, Sequential
 
 # def conv_norm_relu(input,
 #                    filters,
@@ -45,7 +43,7 @@ import resnet
 #         return input
 
 
-class ClassificationSubnet(tfe.Network):
+class ClassificationSubnet(Network):
     def __init__(self, num_anchors, num_classes, name='classification_subnet'):
         super().__init__(name=name)
 
@@ -53,8 +51,8 @@ class ClassificationSubnet(tfe.Network):
         self.num_classes = num_classes
 
         self.pre_conv = self.track_layer(
-            tfe.Sequential([
-                tfe.Sequential([
+            Sequential([
+                Sequential([
                     tf.layers.Conv2D(256, 3, 1, padding='same'),
                     tf.layers.BatchNormalization(),
                     tf.nn.relu,
@@ -85,15 +83,15 @@ class ClassificationSubnet(tfe.Network):
         return input
 
 
-class RegressionSubnet(tfe.Network):
+class RegressionSubnet(Network):
     def __init__(self, num_anchors, name='classification_subnet'):
         super().__init__(name=name)
 
         self.num_anchors = num_anchors
 
         self.pre_conv = self.track_layer(
-            tfe.Sequential([
-                tfe.Sequential([
+            Sequential([
+                Sequential([
                     tf.layers.Conv2D(256, 3, 1, padding='same'),
                     tf.layers.BatchNormalization(),
                     tf.nn.relu,
@@ -166,19 +164,19 @@ class RegressionSubnet(tfe.Network):
 #             tf.to_int32(tf.round(lateral_size / input_size)), 2)
 
 
-class FeaturePyramidNetwork(tfe.Network):
-    class UpsampleMerge(tfe.Network):
+class FeaturePyramidNetwork(Network):
+    class UpsampleMerge(Network):
         def __init__(self, name='upsample_merge'):
             super().__init__(name=name)
 
             self.conv_lateral = self.track_layer(
-                tfe.Sequential([
+                Sequential([
                     tf.layers.Conv2D(256, 1, 1),
                     tf.layers.BatchNormalization()
                 ]))
 
             self.conv_merge = self.track_layer(
-                tfe.Sequential([
+                Sequential([
                     tf.layers.Conv2D(256, 3, 1, padding='same'),
                     tf.layers.BatchNormalization()
                 ]))
@@ -192,7 +190,7 @@ class FeaturePyramidNetwork(tfe.Network):
                 method=tf.image.ResizeMethod.BILINEAR)
 
             merged = lateral + downsampled
-            merged = self.conv_merge(merged)
+            merged = self.conv_merge(merged, training)
 
             return merged
 
@@ -200,20 +198,20 @@ class FeaturePyramidNetwork(tfe.Network):
         super().__init__(name=name)
 
         self.p6_from_c5 = self.track_layer(
-            tfe.Sequential([
+            Sequential([
                 tf.layers.Conv2D(256, 3, 2, padding='same'),
                 tf.layers.BatchNormalization()
             ]))
 
         self.p7_from_p6 = self.track_layer(
-            tfe.Sequential([
+            Sequential([
                 tf.nn.relu,
                 tf.layers.Conv2D(256, 3, 2, padding='same'),
                 tf.layers.BatchNormalization()
             ]))
 
         self.p5_from_c5 = self.track_layer(
-            tfe.Sequential(
+            Sequential(
                 [tf.layers.Conv2D(256, 1, 1),
                  tf.layers.BatchNormalization()]))
 
@@ -232,7 +230,7 @@ class FeaturePyramidNetwork(tfe.Network):
         return {'P3': P3, 'P4': P4, 'P5': P5, 'P6': P6, 'P7': P7}
 
 
-class RetinaNetBase(tfe.Network):
+class RetinaNetBase(Network):
     def __init__(self, levels, num_classes, name='retinanet_base'):
         super().__init__(name=name)
 
@@ -273,7 +271,7 @@ class RetinaNetBase(tfe.Network):
         return classifications, regressions
 
 
-class RetinaNet(tfe.Network):
+class RetinaNet(Network):
     def __init__(self, levels, num_classes, name='retinanet'):
         super().__init__(name=name)
 
