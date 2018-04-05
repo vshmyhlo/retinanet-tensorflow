@@ -252,10 +252,8 @@ def main():
         level_names=levels.keys(),
         learning_rate=args.learning_rate)
 
+    globals_init = tf.global_variables_initializer()
     locals_init = tf.local_variables_initializer()
-
-    # backbone_variables = slim.get_model_variables(scope="resnet_v2_50")
-    # backbone_saver = tf.train.Saver(backbone_variables)
     saver = tf.train.Saver()
 
     with tf.Session() as sess, tf.summary.FileWriter(
@@ -265,9 +263,7 @@ def main():
         if restore_path:
             saver.restore(sess, restore_path)
         else:
-            sess.run(tf.global_variables_initializer())
-            # backbone_saver.restore(
-            #     sess, './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
+            sess.run(globals_init)
 
         for epoch in range(args.epochs):
             sess.run([iter.initializer, locals_init])
