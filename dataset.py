@@ -183,7 +183,7 @@ def compute_mean_std():
         levels={},
         download=False,
         augment=False)
-    iter = ds.make_initializable_iterator()
+    iter = ds.take(1000).make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
     mean = np.array([0., 0., 0.])
