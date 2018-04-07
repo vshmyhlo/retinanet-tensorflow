@@ -287,10 +287,8 @@ def main():
                         train_writer.add_summary(run_summ, step)
                         train_writer.add_summary(img_summ, step)
                         train_writer.flush()
-                        saver.save(
-                            sess,
-                            os.path.join(args.experiment, 'model.ckpt'),
-                            write_meta_graph=False)
+                        saver.save(sess,
+                                   os.path.join(args.experiment, 'model.ckpt'))
                         sess.run(locals_init)
                 except tf.errors.OutOfRangeError:
                     break
