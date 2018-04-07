@@ -200,7 +200,6 @@ def compute_mean_std():
             except tf.errors.OutOfRangeError:
                 break
 
-        print(i)
         mean = mean / i
 
         sess.run(iter.initializer)
@@ -211,7 +210,6 @@ def compute_mean_std():
             except tf.errors.OutOfRangeError:
                 break
 
-        print(std)
         std = np.sqrt(std / i)
 
     return mean, std
