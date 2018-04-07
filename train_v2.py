@@ -286,7 +286,6 @@ def main():
                         print_summary(m, step)
                         train_writer.add_summary(run_summ, step)
                         train_writer.add_summary(img_summ, step)
-                        # train_writer.flush()
                         saver.save(sess,
                                    os.path.join(args.experiment, 'model.ckpt'))
                         sess.run(locals_init)
