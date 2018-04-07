@@ -4,8 +4,13 @@ import tensorflow as tf
 from coco import COCO
 import utils
 import augmentation
+import argparse
+import itertools
+from tqdm import tqdm
 
 IOU_THRESHOLD = 0.5
+MEAN = [1., 2., 3.]
+STD = [4., 5., 6.]
 
 
 # TODO: remove image size and make all boxes 0-1
@@ -97,13 +102,19 @@ def gen(coco):
             yield filename, np.zeros([0]), np.zeros([0, 4])
 
 
-def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download,
-                 augment):
+def make_dataset(ann_path,
+                 dataset_path,
+                 levels,
+                 download,
+                 augment,
+                 scale=None,
+                 shuffle=None):
     def load_image_with_labels(filename, class_ids, boxes):
         def load_image(filename):
             image = tf.read_file(filename)
-            image = tf.image.decode_png(image, channels=3)
-            image = tf.to_float(image) - 255 / 2
+            image = tf.image.decode_jpeg(
+                image, channels=3)
+            image = tf.image.convert_image_dtype(image, tf.float32)
 
             return image
 
@@ -160,3 +171,48 @@ def make_dataset(ann_path, dataset_path, levels, scale, shuffle, download,
         ds = ds.map(augment)
 
     return ds, coco.num_classes
+
+
+def compute_mean_std():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str, nargs=2, required=True)
+
+    args = parser.parse_args()
+    ds, num_classes = make_dataset(
+        ann_path=args.dataset[0],
+        dataset_path=args.dataset[1],
+        levels={},
+        download=False,
+        augment=False)
+    iter = ds.make_initializable_iterator()
+    image, classifications_true, regressions_true = iter.get_next()
+
+    mean = np.array([0., 0., 0.])
+    std = np.array([0., 0., 0.])
+    i = 0
+
+    with tf.Session() as sess:
+        sess.run(iter.initializer)
+        for _ in tqdm(itertools.count()):
+            x = sess.run(image)
+            i += x.shape[0] * x.shape[1] * x.shape[2]
+            mean += x.sum((0, 1, 2))
+
+        print(i)
+        mean = mean / i
+
+        sess.run(iter.initializer)
+        for _ in tqdm(itertools.count()):
+            x = sess.run(image)
+            std += ((x - mean)**2).sum((0, 1, 2))
+
+        print(std)
+        std = np.sqrt(std / i)
+
+    return mean, std
+
+
+if __name__ == '__main__':
+    mean, std = compute_mean_std()
+    print('mean:', mean)
+    print('std:', std)
