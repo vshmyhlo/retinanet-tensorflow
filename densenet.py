@@ -127,13 +127,23 @@ class TransitionLayer(Sequential):
 
 
 class DenseNetBC_ImageNet(Network):
-    def __init__(self, growth_rate, name='densenet_bc_imagenet'):
+    def __init__(self,
+                 growth_rate,
+                 kernel_initializer,
+                 kernel_regularizer,
+                 name='densenet_bc_imagenet'):
         super().__init__(name=name)
 
         self.conv1 = self.track_layer(
             Sequential([
                 tf.layers.Conv2D(
-                    2 * growth_rate, 7, 2, padding='same', name='conv1'),
+                    2 * growth_rate,
+                    7,
+                    2,
+                    padding='same',
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    name='conv1'),
                 tf.layers.BatchNormalization(),
                 tf.nn.relu,
             ]))
@@ -165,13 +175,18 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
                  growth_rate=32,
                  compression_factor=0.5,
                  bottleneck=True,
-                 name='densenet_bc_169'):  # TODO: bottleneck to true
-        super().__init__(growth_rate, name=name)
-
-        blocks = [None, 6, 12, 32, 32]
+                 name='densenet_bc_169'):
         kernel_initializer = tf.contrib.layers.variance_scaling_initializer(
             factor=2.0, mode='FAN_IN', uniform=False)
         kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)
+
+        super().__init__(
+            growth_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name=name)
+
+        blocks = [None, 6, 12, 32, 32]
 
         self.dense_block_1 = self.track_layer(
             DenseNet_Block(

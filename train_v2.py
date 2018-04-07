@@ -11,8 +11,6 @@ import dataset
 from tqdm import tqdm
 import L4
 
-# TODO: check regularization and initialization
-
 # TODO: test network outputs scaling
 # TODO: test session to evaluate
 # TODO: check loss implementation
@@ -20,7 +18,6 @@ import L4
 # TODO: simplify architecture
 # TODO: try focal cross-entropy
 # TODO: check rounding and float32 conversions
-# TODO: name_scope to variable_scope
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
 # TODO: remove unnecessary validations
@@ -28,7 +25,6 @@ import L4
 # TODO: flipping
 # TODO: add augmentation
 # TODO: boxes mapping should consider -1 index
-# TODO: initialization
 
 
 def preprocess_image(image):
@@ -148,7 +144,7 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
 
 def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
                  learning_rate):
-    # image = (image + 255 / 2) / 255
+    image = image * dataset.STD + dataset.MEAN
     classifications_true, regressions_true = true
     classifications_pred, regressions_pred = pred
 

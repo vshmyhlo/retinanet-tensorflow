@@ -1,6 +1,7 @@
 import tensorflow as tf
 from network import Network, Sequential
 
+# TODO: check regularization and initialization
 # TODO: check regularization
 # TODO: check resize-conv (upsampling)
 # TODO: check training arg
