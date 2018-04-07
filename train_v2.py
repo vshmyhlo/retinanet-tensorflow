@@ -31,6 +31,10 @@ import L4
 # TODO: initialization
 
 
+def preprocess_image(image):
+    return (image - dataset.MEAN) / dataset.STD
+
+
 def print_summary(metrics, step):
     print(
         'step: {}, loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}'.format(
@@ -144,7 +148,7 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
 
 def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
                  learning_rate):
-    image = (image + 255 / 2) / 255
+    # image = (image + 255 / 2) / 255
     classifications_true, regressions_true = true
     classifications_pred, regressions_pred = pred
 
@@ -223,6 +227,7 @@ def main():
 
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
+    image = preprocess_image(image)
 
     net = retinanet.RetinaNet(
         levels=levels,
