@@ -116,7 +116,7 @@ class TransitionLayer(Sequential):
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
             tf.layers.Dropout(dropout_rate),
-            tf.layers.AveragePooling2D(2, 2)
+            tf.layers.AveragePooling2D(2, 2, padding='same')
         ]
 
         super().__init__(layers, name=name)

@@ -53,7 +53,12 @@ def build_backbone(backbone, dropout_rate):
 
 
 class ClassificationSubnet(Network):
-    def __init__(self, num_anchors, num_classes, name='classification_subnet'):
+    def __init__(self,
+                 num_anchors,
+                 num_classes,
+                 kernel_initializer,
+                 kernel_regularizer,
+                 name='classification_subnet'):
         super().__init__(name=name)
 
         self.num_anchors = num_anchors
@@ -62,7 +67,13 @@ class ClassificationSubnet(Network):
         self.pre_conv = self.track_layer(
             Sequential([
                 Sequential([
-                    tf.layers.Conv2D(256, 3, 1, padding='same'),
+                    tf.layers.Conv2D(
+                        256,
+                        3,
+                        1,
+                        padding='same',
+                        kernel_initializer=kernel_initializer,
+                        kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization(),
                     tf.nn.relu,
                 ]) for i in range(4)
@@ -78,6 +89,8 @@ class ClassificationSubnet(Network):
                 3,
                 1,
                 padding='same',
+                kernel_initializer=kernel_initializer,
+                kernel_regularizer=kernel_regularizer,
                 bias_initializer=bias_prior_initializer))
 
     def call(self, input, training):
@@ -93,7 +106,11 @@ class ClassificationSubnet(Network):
 
 
 class RegressionSubnet(Network):
-    def __init__(self, num_anchors, name='classification_subnet'):
+    def __init__(self,
+                 num_anchors,
+                 kernel_initializer,
+                 kernel_regularizer,
+                 name='classification_subnet'):
         super().__init__(name=name)
 
         self.num_anchors = num_anchors
@@ -101,14 +118,26 @@ class RegressionSubnet(Network):
         self.pre_conv = self.track_layer(
             Sequential([
                 Sequential([
-                    tf.layers.Conv2D(256, 3, 1, padding='same'),
+                    tf.layers.Conv2D(
+                        256,
+                        3,
+                        1,
+                        padding='same',
+                        kernel_initializer=kernel_initializer,
+                        kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization(),
                     tf.nn.relu,
                 ]) for i in range(4)
             ]))
 
         self.out_conv = self.track_layer(
-            tf.layers.Conv2D(num_anchors * 4, 3, 1, padding='same'))
+            tf.layers.Conv2D(
+                num_anchors * 4,
+                3,
+                1,
+                padding='same',
+                kernel_initializer=kernel_initializer,
+                kernel_regularizer=kernel_regularizer))
 
     def call(self, input, training):
         input = self.pre_conv(input, training)
@@ -175,18 +204,32 @@ class RegressionSubnet(Network):
 
 class FeaturePyramidNetwork(Network):
     class UpsampleMerge(Network):
-        def __init__(self, name='upsample_merge'):
+        def __init__(self,
+                     kernel_initializer,
+                     kernel_regularizer,
+                     name='upsample_merge'):
             super().__init__(name=name)
 
             self.conv_lateral = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D(256, 1, 1),
+                    tf.layers.Conv2D(
+                        256,
+                        1,
+                        1,
+                        kernel_initializer=kernel_initializer,
+                        kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization()
                 ]))
 
             self.conv_merge = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D(256, 3, 1, padding='same'),
+                    tf.layers.Conv2D(
+                        256,
+                        3,
+                        1,
+                        padding='same',
+                        kernel_initializer=kernel_initializer,
+                        kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization()
                 ]))
 
@@ -203,31 +246,58 @@ class FeaturePyramidNetwork(Network):
 
             return merged
 
-    def __init__(self, name='feature_pyramid_network'):
+    def __init__(self,
+                 kernel_initializer,
+                 kernel_regularizer,
+                 name='feature_pyramid_network'):
         super().__init__(name=name)
 
         self.p6_from_c5 = self.track_layer(
             Sequential([
-                tf.layers.Conv2D(256, 3, 2, padding='same'),
+                tf.layers.Conv2D(
+                    256,
+                    3,
+                    2,
+                    padding='same',
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer),
                 tf.layers.BatchNormalization()
             ]))
 
         self.p7_from_p6 = self.track_layer(
             Sequential([
                 tf.nn.relu,
-                tf.layers.Conv2D(256, 3, 2, padding='same'),
+                tf.layers.Conv2D(
+                    256,
+                    3,
+                    2,
+                    padding='same',
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer),
                 tf.layers.BatchNormalization()
             ]))
 
         self.p5_from_c5 = self.track_layer(
-            Sequential(
-                [tf.layers.Conv2D(256, 1, 1),
-                 tf.layers.BatchNormalization()]))
+            Sequential([
+                tf.layers.Conv2D(
+                    256,
+                    1,
+                    1,
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer),
+                tf.layers.BatchNormalization()
+            ]))
 
         self.p4_from_c4p5 = self.track_layer(
-            FeaturePyramidNetwork.UpsampleMerge(name='upsample_merge_c4p5'))
+            FeaturePyramidNetwork.UpsampleMerge(
+                kernel_initializer=kernel_initializer,
+                kernel_regularizer=kernel_regularizer,
+                name='upsample_merge_c4p5'))
         self.p3_from_c3p4 = self.track_layer(
-            FeaturePyramidNetwork.UpsampleMerge(name='upsample_merge_c3p4'))
+            FeaturePyramidNetwork.UpsampleMerge(
+                kernel_initializer=kernel_initializer,
+                kernel_regularizer=kernel_regularizer,
+                name='upsample_merge_c3p4'))
 
     def call(self, input, training):
         P6 = self.p6_from_c5(input['C5'], training)
@@ -245,18 +315,25 @@ class RetinaNetBase(Network):
                  levels,
                  num_classes,
                  dropout_rate,
+                 kernel_initializer,
+                 kernel_regularizer,
                  name='retinanet_base'):
         super().__init__(name=name)
 
         self.backbone = self.track_layer(
             build_backbone(backbone, dropout_rate=dropout_rate))
-        self.fpn = self.track_layer(FeaturePyramidNetwork())
+        self.fpn = self.track_layer(
+            FeaturePyramidNetwork(
+                kernel_initializer=kernel_initializer,
+                kernel_regularizer=kernel_regularizer))
 
         self.classification_subnets = {
             pn: self.track_layer(
                 ClassificationSubnet(
                     num_anchors=levels[pn].anchor_boxes.shape[0],
                     num_classes=num_classes,
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
                     name='classification_subnet_{}'.format(pn)))
             for pn in ['P3', 'P4', 'P5', 'P6', 'P7']
         }
@@ -265,6 +342,8 @@ class RetinaNetBase(Network):
             pn: self.track_layer(
                 RegressionSubnet(
                     num_anchors=levels[pn].anchor_boxes.shape[0],
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
                     name='regression_subnet_{}'.format(pn)))
             for pn in ['P3', 'P4', 'P5', 'P6', 'P7']
         }
@@ -296,11 +375,18 @@ class RetinaNet(Network):
         super().__init__(name=name)
 
         self.levels = levels
+
+        kernel_initializer = tf.random_normal_initializer(
+            mean=0.0, stddev=0.01)
+        kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)
+
         self.base = RetinaNetBase(
             backbone=backbone,
             levels=levels,
             num_classes=num_classes,
-            dropout_rate=dropout_rate)
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer)
 
     def call(self, input, training):
         image_size = tf.shape(input)[1:3]
@@ -325,9 +411,7 @@ class RetinaNet(Network):
 #               training,
 #               name='retinanet'):
 #     image_size = tf.shape(input)[1:3]
-#     kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
 #     bias_initializer = tf.zeros_initializer()
-#     kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=weight_decay)
 #
 #     classifications, regressions = retinanet_base(
 #         input,

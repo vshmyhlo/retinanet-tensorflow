@@ -11,7 +11,8 @@ class FeaturePyramidNetworkTest(tf.test.TestCase):
             size = image_size // 2**i
             input['C{}'.format(i)] = tf.zeros((1, size, size, 512))
 
-        net = retinanet.FeaturePyramidNetwork()
+        net = retinanet.FeaturePyramidNetwork(
+            kernel_initializer=None, kernel_regularizer=None)
         output = net(input, False)
 
         for i in range(3, 7 + 1):
@@ -23,7 +24,11 @@ class ClassificationSubnetTest(tf.test.TestCase):
     def test_output_shapes(self):
         input = tf.zeros((1, 32, 32, 256))
 
-        net = retinanet.ClassificationSubnet(num_anchors=9, num_classes=10)
+        net = retinanet.ClassificationSubnet(
+            num_anchors=9,
+            num_classes=10,
+            kernel_initializer=None,
+            kernel_regularizer=None)
         output = net(input, False)
 
         self.evaluate(tf.global_variables_initializer())
@@ -34,7 +39,8 @@ class RegressionSubnet(tf.test.TestCase):
     def test_output_shapes(self):
         input = tf.zeros((1, 32, 32, 256))
 
-        net = retinanet.RegressionSubnet(num_anchors=9)
+        net = retinanet.RegressionSubnet(
+            num_anchors=9, kernel_initializer=None, kernel_regularizer=None)
         output = net(input, False)
 
         self.evaluate(tf.global_variables_initializer())

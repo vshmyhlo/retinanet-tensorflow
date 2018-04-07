@@ -83,7 +83,6 @@ def draw_bounding_boxes(image,
 def make_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--learning-rate', type=float, default=1e-2)
-    parser.add_argument('--weight-decay', type=float, default=1e-4)
     parser.add_argument('--dropout', type=float, default=0.2)
     parser.add_argument('--dataset', type=str, nargs=2, required=True)
     parser.add_argument('--epochs', type=int, default=10)
@@ -229,9 +228,7 @@ def main():
         levels=levels,
         num_classes=num_classes,
         dropout_rate=args.dropout,
-        backbone=args.backbone,
-        # weight_decay=args.weight_decay,
-    )
+        backbone=args.backbone)
     classifications_pred, regressions_pred = net(image, training)
 
     class_loss, regr_loss = objectives.loss(
