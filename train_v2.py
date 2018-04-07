@@ -175,6 +175,7 @@ def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
         tf.summary.scalar('regr_loss', running_regr_loss),
         tf.summary.scalar('loss', running_loss),
         tf.summary.scalar('learning_rate', learning_rate),
+        tf.summary.histogram('image', image),
         tf.summary.histogram('classifications_true', running_true_class_dist),
         tf.summary.histogram('classifications_pred', running_pred_class_dist)
     ])
