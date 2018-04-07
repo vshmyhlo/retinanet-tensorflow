@@ -228,7 +228,7 @@ def main():
     net = retinanet.RetinaNet(
         levels=levels,
         num_classes=num_classes,
-        dropout=args.dropout,
+        dropout_rate=args.dropout,
         backbone=args.backbone,
         # weight_decay=args.weight_decay,
     )
