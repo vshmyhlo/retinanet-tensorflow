@@ -45,7 +45,11 @@ class RetinaNetTest(tf.test.TestCase):
     def test_output_shapes(self):
         image_size = 256
         input = tf.zeros((1, image_size, image_size, 3))
-        net = retinanet.RetinaNet(levels=build_levels(), num_classes=10)
+        net = retinanet.RetinaNet(
+            backbone='densenet',
+            levels=build_levels(),
+            num_classes=10,
+            dropout_rate=0.2)
         classifications, regressions = net(input, False)
 
         self.evaluate(tf.global_variables_initializer())

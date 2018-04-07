@@ -28,6 +28,8 @@ import L4
 # TODO: flipping
 # TODO: add augmentation
 # TODO: boxes mapping should consider -1 index
+# TODO: dropout
+# TODO: initialization
 
 
 def print_summary(metrics, step):

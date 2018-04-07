@@ -3,7 +3,7 @@ import resnet
 
 
 class ResNetTest(tf.test.TestCase):
-    def test_resnet_v2_50(self):
+    def test_resnet_v2_50_output_shape(self):
         size = 224
         net = resnet.ResNeXt_50()
         input = tf.zeros((1, size, size, 3))

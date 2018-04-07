@@ -2,6 +2,7 @@ import tensorflow as tf
 import math
 import utils
 import resnet
+import densenet
 from network import Network, Sequential
 
 # def conv_norm_relu(input,
@@ -41,6 +42,14 @@ from network import Network, Sequential
 #             training=training)
 #
 #         return input
+
+
+def build_backbone(backbone, dropout_rate):
+    assert backbone in ['resnet', 'densenet']
+    if backbone == 'resnet':
+        return resnet.ResNeXt_50()
+    elif backbone == 'densenet':
+        return densenet.DenseNetBC_169(dropout_rate=dropout_rate)
 
 
 class ClassificationSubnet(Network):
@@ -231,10 +240,16 @@ class FeaturePyramidNetwork(Network):
 
 
 class RetinaNetBase(Network):
-    def __init__(self, levels, num_classes, name='retinanet_base'):
+    def __init__(self,
+                 backbone,
+                 levels,
+                 num_classes,
+                 dropout_rate,
+                 name='retinanet_base'):
         super().__init__(name=name)
 
-        self.backbone = self.track_layer(resnet.ResNeXt_50())
+        self.backbone = self.track_layer(
+            build_backbone(backbone, dropout_rate=dropout_rate))
         self.fpn = self.track_layer(FeaturePyramidNetwork())
 
         self.classification_subnets = {
@@ -272,13 +287,31 @@ class RetinaNetBase(Network):
 
 
 class RetinaNet(Network):
-    def __init__(self, levels, num_classes, name='retinanet'):
+    def __init__(self,
+                 backbone,
+                 levels,
+                 num_classes,
+                 dropout_rate,
+                 name='retinanet'):
         super().__init__(name=name)
 
-        self.base = RetinaNetBase(levels=levels, num_classes=num_classes)
+        self.levels = levels
+        self.base = RetinaNetBase(
+            backbone=backbone,
+            levels=levels,
+            num_classes=num_classes,
+            dropout_rate=dropout_rate)
 
     def call(self, input, training):
+        image_size = tf.shape(input)[1:3]
         classifications, regressions = self.base(input, training)
+
+        regressions = {
+            pn: regression_postprocess(
+                regressions[pn],
+                tf.to_float(self.levels[pn].anchor_boxes / image_size))
+            for pn in self.levels
+        }
 
         return classifications, regressions
 
@@ -323,6 +356,7 @@ def scale_regression(regression, anchor_boxes):
     return regression * anchor_boxes
 
 
+# TODO: make suitable for tf.eager
 def regression_postprocess(regression,
                            anchor_boxes,
                            name='regression_postprocess'):
