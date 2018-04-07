@@ -28,7 +28,6 @@ import L4
 # TODO: flipping
 # TODO: add augmentation
 # TODO: boxes mapping should consider -1 index
-# TODO: dropout
 # TODO: initialization
 
 
@@ -94,7 +93,10 @@ def make_parser():
     parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument('--clip-norm', type=float)
     parser.add_argument(
-        '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
+        '--backbone',
+        type=str,
+        choices=['resnet', 'densenet'],
+        default='densenet')
     parser.add_argument(
         '--optimizer',
         type=str,
@@ -226,10 +228,9 @@ def main():
     net = retinanet.RetinaNet(
         levels=levels,
         num_classes=num_classes,
-        # dropout=args.dropout,
+        dropout=args.dropout,
+        backbone=args.backbone,
         # weight_decay=args.weight_decay,
-        # norm_type=args.norm_type,
-        # training=training,
     )
     classifications_pred, regressions_pred = net(image, training)
 
