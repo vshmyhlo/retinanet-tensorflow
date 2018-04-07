@@ -9,8 +9,8 @@ import itertools
 from tqdm import tqdm
 
 IOU_THRESHOLD = 0.5
-MEAN = [0.46740227, 0.44903536, 0.40535897]
-STD = [0.27827955, 0.27304825, 0.28888941]
+MEAN = [0.46618041, 0.44669811, 0.40252436]
+STD = [0.27940595, 0.27489075, 0.28920765]
 
 
 # TODO: remove image size and make all boxes 0-1
