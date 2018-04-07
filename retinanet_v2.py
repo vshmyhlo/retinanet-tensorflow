@@ -322,6 +322,12 @@ class RetinaNetBase(Network):
 
         self.backbone = self.track_layer(
             build_backbone(backbone, dropout_rate=dropout_rate))
+
+        if backbone == 'densenet':
+            self.postprocess_bottom_up = tf.nn.relu
+        else:
+            self.postprocess_bottom_up = None
+
         self.fpn = self.track_layer(
             FeaturePyramidNetwork(
                 kernel_initializer=kernel_initializer,
@@ -350,6 +356,13 @@ class RetinaNetBase(Network):
 
     def call(self, input, training):
         bottom_up = self.backbone(input, training)
+
+        if self.postprocess_bottom_up is not None:
+            bottom_up = {
+                cn: self.postprocess_bottom_up(bottom_up[cn])
+                for cn in bottom_up
+            }
+
         top_down = self.fpn(bottom_up, training)
 
         classifications = {
@@ -400,36 +413,6 @@ class RetinaNet(Network):
         }
 
         return classifications, regressions
-
-
-# def retinanet(input,
-#               num_classes,
-#               levels,
-#               dropout,
-#               weight_decay,
-#               norm_type,
-#               training,
-#               name='retinanet'):
-#     image_size = tf.shape(input)[1:3]
-#     bias_initializer = tf.zeros_initializer()
-#
-#     classifications, regressions = retinanet_base(
-#         input,
-#         num_classes=num_classes,
-#         levels=levels,
-#         dropout=dropout,
-#         kernel_initializer=kernel_initializer,
-#         bias_initializer=bias_initializer,
-#         kernel_regularizer=kernel_regularizer,
-#         norm_type=norm_type,
-#         training=training,
-#         name=name)
-#
-#     regressions = tuple(
-#         regression_postprocess(r, tf.to_float(l.anchor_boxes / image_size))
-#         for r, l in zip(regressions, levels))
-#
-#     return classifications, regressions
 
 
 def scale_regression(regression, anchor_boxes):
