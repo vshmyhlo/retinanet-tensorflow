@@ -9,8 +9,8 @@ import itertools
 from tqdm import tqdm
 
 IOU_THRESHOLD = 0.5
-MEAN = [1., 2., 3.]
-STD = [4., 5., 6.]
+MEAN = [0.46740227, 0.44903536, 0.40535897]
+STD = [0.27827955, 0.27304825, 0.28888941]
 
 
 # TODO: remove image size and make all boxes 0-1
@@ -183,7 +183,7 @@ def compute_mean_std():
         levels={},
         download=False,
         augment=False)
-    iter = ds.take(1000).make_initializable_iterator()
+    iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
     mean = np.array([0., 0., 0.])
