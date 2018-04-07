@@ -112,8 +112,7 @@ def make_dataset(ann_path,
     def load_image_with_labels(filename, class_ids, boxes):
         def load_image(filename):
             image = tf.read_file(filename)
-            image = tf.image.decode_jpeg(
-                image, channels=3)
+            image = tf.image.decode_jpeg(image, channels=3)
             image = tf.image.convert_image_dtype(image, tf.float32)
 
             return image
@@ -194,17 +193,23 @@ def compute_mean_std():
     with tf.Session() as sess:
         sess.run(iter.initializer)
         for _ in tqdm(itertools.count()):
-            x = sess.run(image)
-            i += x.shape[0] * x.shape[1] * x.shape[2]
-            mean += x.sum((0, 1, 2))
+            try:
+                x = sess.run(image)
+                i += x.shape[0] * x.shape[1] * x.shape[2]
+                mean += x.sum((0, 1, 2))
+            except tf.errors.OutOfRangeError:
+                break
 
         print(i)
         mean = mean / i
 
         sess.run(iter.initializer)
         for _ in tqdm(itertools.count()):
-            x = sess.run(image)
-            std += ((x - mean)**2).sum((0, 1, 2))
+            try:
+                x = sess.run(image)
+                std += ((x - mean)**2).sum((0, 1, 2))
+            except tf.errors.OutOfRangeError:
+                break
 
         print(std)
         std = np.sqrt(std / i)
