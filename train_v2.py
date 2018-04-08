@@ -182,7 +182,7 @@ def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
         ('pred', classifications_pred, regressions_pred),
     ):
         for i in range(image.shape[0]):
-            with tf.name_scope(name):
+            with tf.name_scope('{}/{}'.format(name, i)):
                 image_with_boxes = draw_bounding_boxes(
                     image[i], [regressions[pn][i] for pn in level_names],
                     [classifications[pn][i] for pn in level_names])
