@@ -324,6 +324,8 @@ class RetinaNetBase(Network):
             build_backbone(backbone, dropout_rate=dropout_rate))
 
         if backbone == 'densenet':
+            # DenseNet has preactivation architecture,
+            # so we need to apply acitvation before passing features to FPN
             self.postprocess_bottom_up = {
                 cn: self.track_layer(
                     Sequential([

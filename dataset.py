@@ -129,17 +129,16 @@ def make_dataset(ann_path,
         image_flipped, classifications_flipped, regressions_flipped = augmentation.flip(
             image, classifications, regressions)
 
-        # TODO: add flipping
-        image = tf.stack([image], 0)
-        # TODO: use level names
+        image = tf.stack([image, image_flipped], 0)
         classifications = {
-            pn: tf.stack([classifications[pn]], 0)
+            pn: tf.stack([classifications[pn], classifications_flipped[pn]], 0)
             for pn in classifications
         }
         regressions = {
-            pn: tf.stack([regressions[pn]], 0)
+            pn: tf.stack([regressions[pn], regressions_flipped[pn]], 0)
             for pn in regressions
         }
+        # TODO: use level names
         classifications = {
             pn: tf.one_hot(classifications[pn], coco.num_classes)
             for pn in classifications
