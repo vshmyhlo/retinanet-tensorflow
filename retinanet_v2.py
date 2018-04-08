@@ -324,7 +324,11 @@ class RetinaNetBase(Network):
             build_backbone(backbone, dropout_rate=dropout_rate))
 
         if backbone == 'densenet':
-            self.postprocess_bottom_up = tf.nn.relu
+            self.postprocess_bottom_up = self.track_layer(
+                Sequential([
+                    tf.layers.BatchNormalization(),
+                    tf.nn.relu,
+                ]))
         else:
             self.postprocess_bottom_up = None
 
@@ -359,7 +363,7 @@ class RetinaNetBase(Network):
 
         if self.postprocess_bottom_up is not None:
             bottom_up = {
-                cn: self.postprocess_bottom_up(bottom_up[cn])
+                cn: self.postprocess_bottom_up(bottom_up[cn], training)
                 for cn in bottom_up
             }
 
