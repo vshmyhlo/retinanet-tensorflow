@@ -10,7 +10,6 @@ def flip(image, classifications, regressions):
     }
     regressions = {pn: tf.reverse(regressions[pn], [1]) for pn in regressions}
     for pn in regressions:
-        print(regressions[pn])
         y1, x1, y2, x2 = tf.split(regressions[pn], 4, -1)
         regressions[pn] = tf.concat([y1, 1 - x2, y2, 1 - x1], -1)
 

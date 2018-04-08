@@ -181,22 +181,24 @@ def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
         ('true', classifications_true, regressions_true),
         ('pred', classifications_pred, regressions_pred),
     ):
-        with tf.name_scope(name):
-            image_with_boxes = draw_bounding_boxes(
-                image[0], [regressions[pn][0] for pn in level_names],
-                [classifications[pn][0] for pn in level_names])
-            image_summary.append(
-                tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
-                                                          0)))
+        for i in range(image.shape[0]):
+            with tf.name_scope(name):
+                image_with_boxes = draw_bounding_boxes(
+                    image[i], [regressions[pn][i] for pn in level_names],
+                    [classifications[pn][i] for pn in level_names])
+                image_summary.append(
+                    tf.summary.image('boxmap',
+                                     tf.expand_dims(image_with_boxes, 0)))
 
-            heatmap_image = tf.zeros_like(image[0])
-            for pn in level_names:
-                heatmap_image += heatmap_to_image(image[0],
-                                                  classifications[pn][0])
+                heatmap_image = tf.zeros_like(image[i])
+                for pn in level_names:
+                    heatmap_image += heatmap_to_image(image[i],
+                                                      classifications[pn][i])
 
-            heatmap_image = image[0] + heatmap_image
-            image_summary.append(
-                tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
+                heatmap_image = image[i] + heatmap_image
+                image_summary.append(
+                    tf.summary.image('heatmap', tf.expand_dims(
+                        heatmap_image, 0)))
 
     image_summary = tf.summary.merge(image_summary)
 
