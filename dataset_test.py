@@ -14,9 +14,10 @@ class DatasetTest(tf.test.TestCase):
             [16, 16, 32, 32],
             [-4, -4, 20, 20],
         ])
-        level = Level(4, 16, [(1, 1)], [1, 1.5])
+        level = Level(16, [(1, 1)], [1, 1.5])
+        factor = 2**4
 
-        actual = dataset.level_labels(image_size, class_ids, boxes, level)
+        actual = dataset.level_labels(image_size, class_ids, boxes, level, factor)
         expected = (
             tf.convert_to_tensor([
                 [[100, 400], [0, 0]],

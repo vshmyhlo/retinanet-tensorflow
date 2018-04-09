@@ -2,7 +2,6 @@ import os
 import argparse
 import itertools
 import tensorflow as tf
-# import tensorflow.contrib.slim as slim
 import utils
 import retinanet_v2 as retinanet
 from level import build_levels
@@ -14,16 +13,12 @@ import L4
 # TODO: test network outputs scaling
 # TODO: test session to evaluate
 # TODO: check loss implementation
-# TODO: check shuffle
-# TODO: simplify architecture
 # TODO: try focal cross-entropy
 # TODO: check rounding and float32 conversions
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
 # TODO: remove unnecessary validations
 # TODO: set trainable parts
-# TODO: flipping
-# TODO: add augmentation
 # TODO: boxes mapping should consider -1 index
 
 
