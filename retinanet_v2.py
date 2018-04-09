@@ -5,44 +5,6 @@ import resnet
 import densenet
 from network import Network, Sequential
 
-# def conv_norm_relu(input,
-#                    filters,
-#                    kernel_size,
-#                    strides,
-#                    dropout,
-#                    kernel_initializer,
-#                    bias_initializer,
-#                    kernel_regularizer,
-#                    norm_type,
-#                    training,
-#                    name='conv_norm_relu'):
-#     assert norm_type in ['layer', 'batch']
-#
-#     with tf.name_scope(name):
-#         input = conv(
-#             input,
-#             filters,
-#             kernel_size,
-#             strides,
-#             kernel_initializer=kernel_initializer,
-#             bias_initializer=bias_initializer,
-#             kernel_regularizer=kernel_regularizer)
-#
-#         if norm_type == 'layer':
-#             input = tf.contrib.layers.layer_norm(input)
-#         elif norm_type == 'batch':
-#             input = tf.layers.batch_normalization(input, training=training)
-#
-#         input = tf.nn.relu(input)
-#         shape = tf.shape(input)
-#         input = tf.layers.dropout(
-#             input,
-#             rate=dropout,
-#             noise_shape=(shape[0], 1, 1, shape[3]),
-#             training=training)
-#
-#         return input
-
 
 def build_backbone(backbone, dropout_rate):
     assert backbone in ['resnet', 'densenet']
@@ -152,54 +114,6 @@ class RegressionSubnet(Network):
         input = tf.concat([shifts, scales], -1)
 
         return input
-
-
-# def validate_level_shape(input, output, l, name='validate_level_shape'):
-#     with tf.name_scope(name):
-#         input_size = tf.shape(input)[1:3]
-#         output_size = tf.shape(output)[1:3]
-#
-#         return tf.assert_equal(
-#             tf.to_int32(output_size), tf.to_int32(tf.ceil(input_size / 2**l)))
-
-# def backbone(input, levels, training, name='backbone'):
-#     level_to_layer = [
-#         None,
-#         'resnet_v2_50/conv1',
-#         'resnet_v2_50/block1/unit_3/bottleneck_v2/conv1',
-#         'resnet_v2_50/block2/unit_4/bottleneck_v2/conv1',
-#         'resnet_v2_50/block3/unit_6/bottleneck_v2/conv1',
-#         'resnet_v2_50/block4',
-#     ]
-#
-#     with tf.name_scope(name):
-#         with slim.arg_scope(nets.resnet_v2.resnet_arg_scope()):
-#             _, outputs = nets.resnet_v2.resnet_v2_50(
-#                 input,
-#                 num_classes=None,
-#                 global_pool=False,
-#                 output_stride=None,
-#                 is_training=training)
-#
-#         bottom_up = []
-#         validations = []
-#
-#         for l in levels:
-#             output = outputs[level_to_layer[l.number]]
-#             bottom_up.append(output)
-#             validations.append(validate_level_shape(input, output, l.number))
-#
-#         with tf.control_dependencies(validations):
-#             bottom_up = [tf.identity(x) for x in bottom_up]
-#
-#         return bottom_up
-
-# def validate_lateral_shape(input, lateral, name='validate_lateral_shape'):
-#     with tf.name_scope(name):
-#         input_size = tf.shape(input)[1:3]
-#         lateral_size = tf.shape(lateral)[1:3]
-#         return tf.assert_equal(
-#             tf.to_int32(tf.round(lateral_size / input_size)), 2)
 
 
 class FeaturePyramidNetwork(Network):
