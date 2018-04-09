@@ -342,26 +342,22 @@ class RetinaNetBase(Network):
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer))
 
-        self.classification_subnets = {
-            pn: self.track_layer(
-                ClassificationSubnet(
-                    num_anchors=levels[pn].anchor_boxes.shape[0],
-                    num_classes=num_classes,
-                    kernel_initializer=kernel_initializer,
-                    kernel_regularizer=kernel_regularizer,
-                    name='classification_subnet_{}'.format(pn)))
-            for pn in ['P3', 'P4', 'P5', 'P6', 'P7']
-        }
+        # TODO: level anchor boxes
+        self.classification_subnet = self.track_layer(
+            ClassificationSubnet(
+                num_anchors=levels['P3'].anchor_boxes.shape[0],
+                num_classes=num_classes,
+                kernel_initializer=kernel_initializer,
+                kernel_regularizer=kernel_regularizer,
+                name='classification_subnet'))
 
-        self.regression_subnets = {
-            pn: self.track_layer(
-                RegressionSubnet(
-                    num_anchors=levels[pn].anchor_boxes.shape[0],
-                    kernel_initializer=kernel_initializer,
-                    kernel_regularizer=kernel_regularizer,
-                    name='regression_subnet_{}'.format(pn)))
-            for pn in ['P3', 'P4', 'P5', 'P6', 'P7']
-        }
+        # TODO: level anchor boxes
+        self.regression_subnet = self.track_layer(
+            RegressionSubnet(
+                num_anchors=levels['P3'].anchor_boxes.shape[0],
+                kernel_initializer=kernel_initializer,
+                kernel_regularizer=kernel_regularizer,
+                name='regression_subnet'))
 
     def call(self, input, training):
         bottom_up = self.backbone(input, training)
@@ -375,12 +371,12 @@ class RetinaNetBase(Network):
         top_down = self.fpn(bottom_up, training)
 
         classifications = {
-            k: self.classification_subnets[k](top_down[k], training)
+            k: self.classification_subnet(top_down[k], training)
             for k in top_down
         }
 
         regressions = {
-            k: self.regression_subnets[k](top_down[k], training)
+            k: self.regression_subnet(top_down[k], training)
             for k in top_down
         }
 
