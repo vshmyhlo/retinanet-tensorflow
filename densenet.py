@@ -1,9 +1,6 @@
 import tensorflow as tf
 from network import Network, Sequential
 
-# TODO: check input normalization
-# TODO: check outputs followed by activation
-
 
 class CompositeFunction(Sequential):
     def __init__(self,

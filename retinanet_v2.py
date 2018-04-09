@@ -342,7 +342,6 @@ def scale_regression(regression, anchor_boxes):
     return regression * anchor_boxes
 
 
-# TODO: make suitable for tf.eager
 def regression_postprocess(regression,
                            anchor_boxes,
                            name='regression_postprocess'):
