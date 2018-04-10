@@ -10,9 +10,9 @@ import dataset
 from tqdm import tqdm
 import L4
 
+
 # TODO: test network outputs scaling
 # TODO: test session to evaluate
-# TODO: check loss implementation
 # TODO: try focal cross-entropy
 # TODO: check rounding and float32 conversions
 # TODO: add dataset downloading to densenet
@@ -173,8 +173,8 @@ def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
     image_summary = []
 
     for name, classifications, regressions in (
-        ('true', classifications_true, regressions_true),
-        ('pred', classifications_pred, regressions_pred),
+            ('true', classifications_true, regressions_true),
+            ('pred', classifications_pred, regressions_pred),
     ):
         for i in range(image.shape[0]):
             with tf.name_scope('{}/{}'.format(name, i)):
