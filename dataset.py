@@ -26,8 +26,6 @@ def level_labels(image_size, class_ids, boxes, level, factor):
     classes_true = tf.concat([[0], class_ids], 0)
     # [OBJECTS, 4]
     boxes_true = tf.concat([[[0, 0, 0, 0]], boxes], 0)
-    boxes_true = tf.to_float(
-        boxes_true / tf.concat([image_size, image_size], 0))
 
     # compute iou ##############################################################
 
@@ -126,19 +124,22 @@ def make_dataset(ann_path,
             return image
 
         image = load_image(filename)
+        image_size = tf.shape(image)[:2]
+        boxes = tf.to_float(
+            boxes / tf.concat([image_size, image_size], 0))
 
         if scale is not None:
             image = rescale_image(image, scale)
+            image_size = tf.shape(image)[:2]
 
-        image_size = tf.shape(image)[:2]
         classifications, regressions = make_labels(
             image_size, class_ids, boxes, levels=levels)
 
         return image, classifications, regressions
 
     def preprocess(image, classifications, regressions):
-        image_flipped, classifications_flipped, regressions_flipped = augmentation.flip(
-            image, classifications, regressions)
+        image_flipped, classifications_flipped, regressions_flipped = augmentation.flip(image, classifications,
+                                                                                        regressions)
 
         image = tf.stack([image, image_flipped], 0)
         classifications = {
