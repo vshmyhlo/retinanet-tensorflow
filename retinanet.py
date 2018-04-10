@@ -4,6 +4,7 @@ import tensorflow.contrib.slim.nets as nets
 import math
 import utils
 
+
 # TODO: resnet initialization
 
 

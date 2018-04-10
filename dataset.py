@@ -105,6 +105,7 @@ def rescale_image(image, scale):
     shorter = tf.argmin(size)
     ratio = scale / size[shorter]
     new_size = tf.to_int32(tf.round(size * ratio))
+    new_size = tf.Print(new_size, [new_size])
 
     return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR)
 
@@ -126,7 +127,9 @@ def make_dataset(ann_path,
             return image
 
         image = load_image(filename)
-        image = rescale_image(image, scale)
+
+        if scale is not None:
+            image = rescale_image(image, scale)
 
         image_size = tf.shape(image)[:2]
         classifications, regressions = make_labels(
