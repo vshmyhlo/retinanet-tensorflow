@@ -155,7 +155,7 @@ def make_dataset(ann_path,
 
         return image, classifications, regressions
 
-    def augment(image, classifications, regressions):
+    def augment_sample(image, classifications, regressions):
         # TODO: add augmentation
         # image = tf.image.random_contrast(image, 0.8, 1.2)
         # image = tf.image.random_brightness(image, 0.2)
@@ -176,7 +176,7 @@ def make_dataset(ann_path,
     ds = ds.map(preprocess, num_parallel_calls=num_threads)
 
     if augment:
-        ds = ds.map(augment, num_parallel_calls=num_threads)
+        ds = ds.map(augment_sample, num_parallel_calls=num_threads)
 
     return ds, coco.num_classes
 
