@@ -85,7 +85,6 @@ def make_parser():
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--shuffle', type=int)
     parser.add_argument('--experiment', type=str, required=True)
-    parser.add_argument('--clip-norm', type=float)
     parser.add_argument(
         '--backbone',
         type=str,
@@ -108,8 +107,7 @@ def class_distribution(tensors):
     ])
 
 
-def make_train_step(loss, global_step, optimizer_type, learning_rate,
-                    clip_norm):
+def make_train_step(loss, global_step, optimizer_type, learning_rate):
     assert optimizer_type in ['momentum', 'adam', 'l4']
 
     if optimizer_type == 'momentum':
@@ -119,22 +117,10 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
     elif optimizer_type == 'l4':
         optimizer = L4.L4Adam(fraction=0.15)
 
-    if clip_norm is None:
-        # optimization
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
-            return optimizer.minimize(loss, global_step=global_step)
-    else:
-        # clip gradients
-        params = tf.trainable_variables()
-        gradients = tf.gradients(loss, params)
-        clipped_gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
-
-        # optimization
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
-            return optimizer.apply_gradients(
-                zip(clipped_gradients, params), global_step=global_step)
+    # optimization
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(update_ops):
+        return optimizer.minimize(loss, global_step=global_step)
 
 
 def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
@@ -238,8 +224,7 @@ def main():
         loss,
         global_step=global_step,
         optimizer_type=args.optimizer,
-        learning_rate=args.learning_rate,
-        clip_norm=args.clip_norm)
+        learning_rate=args.learning_rate)
 
     metrics, update_metrics, running_summary, image_summary = make_metrics(
         class_loss,
