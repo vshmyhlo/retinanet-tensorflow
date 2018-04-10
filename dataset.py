@@ -14,7 +14,6 @@ STD = [0.27940595, 0.27489075, 0.28920765]
 
 
 # TODO: remove image size and make all boxes 0-1
-# TODO: resize image
 # TODO: background category
 # TODO: ignored boxes
 def level_labels(image_size, class_ids, boxes, level, factor):
@@ -105,7 +104,7 @@ def rescale_image(image, scale):
     size = tf.shape(image)[:2]
     shorter = tf.argmin(size)
     ratio = scale / size[shorter]
-    new_size = size * ratio
+    new_size = tf.to_int32(tf.round(size * ratio))
 
     return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR)
 
