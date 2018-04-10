@@ -251,7 +251,7 @@ def main():
         for epoch in range(args.epochs):
             sess.run([iter.initializer, locals_init])
 
-            for _ in tqdm(itertools.count(sess.run(global_step))):
+            for _ in tqdm(itertools.count(), initial=sess.run(global_step)):
                 try:
                     _, step = sess.run(
                         [(train_step, update_metrics), global_step], {
