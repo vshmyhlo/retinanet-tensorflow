@@ -116,14 +116,14 @@ def make_dataset(ann_path,
                  scale=None,
                  shuffle=None):
     def load_image_with_labels(filename, class_ids, boxes):
-        def load_image(filename):
+        def load_image():
             image = tf.read_file(filename)
             image = tf.image.decode_jpeg(image, channels=3)
             image = tf.image.convert_image_dtype(image, tf.float32)
 
             return image
-       
-        image = load_image(filename)
+
+        image = load_image()
         image_size = tf.shape(image)[:2]
         boxes = tf.to_float(
             boxes / tf.concat([image_size, image_size], 0))
