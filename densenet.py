@@ -217,7 +217,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
         self.transition_layer_2 = self.track_layer(
             TransitionLayer(
                 input_filters=blocks[2] * growth_rate +
-                self.transition_layer_1.layers[1].filters,
+                              self.transition_layer_1.layers[1].filters,
                 compression_factor=compression_factor,
                 dropout_rate=dropout_rate,
                 kernel_initializer=kernel_initializer,
@@ -237,7 +237,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
         self.transition_layer_3 = self.track_layer(
             TransitionLayer(
                 input_filters=blocks[3] * growth_rate +
-                self.transition_layer_2.layers[1].filters,
+                              self.transition_layer_2.layers[1].filters,
                 compression_factor=compression_factor,
                 dropout_rate=dropout_rate,
                 kernel_initializer=kernel_initializer,

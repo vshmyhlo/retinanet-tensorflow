@@ -101,6 +101,15 @@ def gen(coco):
             yield filename, np.zeros([0]), np.zeros([0, 4])
 
 
+def rescale_image(image, scale):
+    size = tf.shape(image)[:2]
+    shorter = tf.argmin(size)
+    ratio = scale / size[shorter]
+    new_size = size * ratio
+
+    return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR)
+
+
 def make_dataset(ann_path,
                  dataset_path,
                  levels,
@@ -118,6 +127,8 @@ def make_dataset(ann_path,
             return image
 
         image = load_image(filename)
+        image = rescale_image(image, scale)
+
         image_size = tf.shape(image)[:2]
         classifications, regressions = make_labels(
             image_size, class_ids, boxes, levels=levels)

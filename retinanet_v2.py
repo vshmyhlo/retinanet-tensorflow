@@ -239,7 +239,7 @@ class RetinaNetBase(Network):
 
         if backbone == 'densenet':
             # DenseNet has preactivation architecture,
-            # so we need to apply acitvation before passing features to FPN
+            # so we need to apply activation before passing features to FPN
             self.postprocess_bottom_up = {
                 cn: self.track_layer(
                     Sequential([
