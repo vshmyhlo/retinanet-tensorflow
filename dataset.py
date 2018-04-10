@@ -105,7 +105,6 @@ def rescale_image(image, scale):
     shorter = tf.argmin(size)
     ratio = scale / size[shorter]
     new_size = tf.to_int32(tf.round(size * ratio))
-    new_size = tf.Print(new_size, [new_size])
 
     return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR)
 
