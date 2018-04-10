@@ -14,6 +14,9 @@ class DatasetTest(tf.test.TestCase):
             [16, 16, 32, 32],
             [-4, -4, 20, 20],
         ])
+        boxes = boxes / tf.concat([image_size, image_size], 0)
+        boxes = tf.to_float(boxes)
+
         level = Level(16, [(1, 1)], [1, 1.5])
         factor = 2**4
 
