@@ -114,7 +114,7 @@ def make_dataset(ann_path,
                  levels,
                  download,
                  augment,
-                 num_threads=os.cpu_count() // 2,
+                 num_threads=4,
                  scale=None,
                  shuffle=None):
     def load_image_with_labels(filename, class_ids, boxes):
