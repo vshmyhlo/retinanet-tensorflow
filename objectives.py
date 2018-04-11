@@ -33,8 +33,17 @@ def classification_loss(labels, logits, non_background_mask):
     return class_loss
 
 
+# def regression_loss(labels, logits, non_background_mask):
+#     regr_loss = tf.losses.huber_loss(
+#         labels=labels,
+#         predictions=logits,
+#         weights=tf.expand_dims(non_background_mask, -1),
+#         reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+#
+#     return regr_loss
+
 def regression_loss(labels, logits, non_background_mask):
-    regr_loss = tf.losses.huber_loss(
+    regr_loss = tf.losses.absolute_difference(
         labels=labels,
         predictions=logits,
         weights=tf.expand_dims(non_background_mask, -1),

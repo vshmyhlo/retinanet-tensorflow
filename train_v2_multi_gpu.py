@@ -254,11 +254,10 @@ def main():
             image = preprocess_image(image)
             classifications_pred, regressions_pred = net(image, training)
 
-        class_loss, regr_loss = objectives.loss(
-            (classifications_true, regressions_true),
-            (classifications_pred, regressions_pred))
+            class_loss, regr_loss = objectives.loss(
+                (classifications_true, regressions_true),
+                (classifications_pred, regressions_pred))
 
-        with tf.device(gpu):
             loss = class_loss + regr_loss
             grads = optimizer.compute_gradients(loss)
             tower_grads.append(grads)
