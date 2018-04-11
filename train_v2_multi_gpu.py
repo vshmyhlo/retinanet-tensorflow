@@ -246,10 +246,11 @@ def main():
     iter_initializer = []
 
     for i, gpu in enumerate(available_gpus):
+        iter = ds.shard(len(available_gpus), i).make_initializable_iterator()
+        iter_initializer.append(iter.initializer)
+        image, classifications_true, regressions_true = iter.get_next()
+       
         with tf.device(gpu):
-            iter = ds.shard(len(available_gpus), i).make_initializable_iterator()
-            iter_initializer.append(iter.initializer)
-            image, classifications_true, regressions_true = iter.get_next()
             image = preprocess_image(image)
 
             classifications_pred, regressions_pred = net(image, training)
@@ -259,9 +260,7 @@ def main():
                 (classifications_pred, regressions_pred))
 
             loss = class_loss + regr_loss
-
             grads = optimizer.compute_gradients(loss)
-
             tower_grads.append(grads)
 
     grads = average_gradients(tower_grads)
