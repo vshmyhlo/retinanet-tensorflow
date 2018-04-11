@@ -3,12 +3,13 @@ import argparse
 import itertools
 import tensorflow as tf
 import utils
-import retinanet_v2 as retinanet
+import retinanet
 from level import build_levels
 import objectives
 import dataset
 from tqdm import tqdm
 import L4
+from tensorflow.python.client import device_lib
 
 
 # TODO: test network outputs scaling
@@ -20,6 +21,11 @@ import L4
 # TODO: remove unnecessary validations
 # TODO: set trainable parts
 # TODO: boxes mapping should consider -1 index
+
+
+def get_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    return [x.name for x in local_device_protos if x.device_type == 'GPU']
 
 
 def preprocess_image(image):
@@ -107,20 +113,15 @@ def class_distribution(tensors):
     ])
 
 
-def make_train_step(loss, global_step, optimizer_type, learning_rate):
+def make_optimizer(optimizer_type, learning_rate):
     assert optimizer_type in ['momentum', 'adam', 'l4']
 
     if optimizer_type == 'momentum':
-        optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
+        return tf.train.MomentumOptimizer(learning_rate, 0.9)
     elif optimizer_type == 'adam':
-        optimizer = tf.train.AdamOptimizer(learning_rate)
+        return tf.train.AdamOptimizer(learning_rate)
     elif optimizer_type == 'l4':
-        optimizer = L4.L4Adam(fraction=0.15)
-
-    # optimization
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    with tf.control_dependencies(update_ops):
-        return optimizer.minimize(loss, global_step=global_step)
+        return L4.L4Adam(fraction=0.15)
 
 
 def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
@@ -186,6 +187,34 @@ def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
     return metrics, update_metrics, running_summary, image_summary
 
 
+def average_gradients(tower_grads):
+    average_grads = []
+
+    for grad_and_vars in zip(*tower_grads):
+        # Note that each grad_and_vars looks like the following:
+        #   ((grad0_gpu0, var0_gpu0), ... , (grad0_gpuN, var0_gpuN))
+        grads = []
+        for g, _ in grad_and_vars:
+            # Add 0 dimension to the gradients to represent the tower.
+            expanded_g = tf.expand_dims(g, 0)
+
+            # Append on a 'tower' dimension which we will average over below.
+            grads.append(expanded_g)
+
+        # Average over the 'tower' dimension.
+        grad = tf.concat(axis=0, values=grads)
+        grad = tf.reduce_mean(grad, 0)
+
+        # Keep in mind that the Variables are redundant because they are shared
+        # across towers. So .. we will just return the first tower's pointer to
+        # the Variable.
+        v = grad_and_vars[0][1]
+        grad_and_var = (grad, v)
+        average_grads.append(grad_and_var)
+
+    return average_grads
+
+
 def main():
     args = make_parser().parse_args()
     utils.log_args(args)
@@ -204,27 +233,41 @@ def main():
         download=False,
         augment=True)
 
-    iter = ds.make_initializable_iterator()
-    image, classifications_true, regressions_true = iter.get_next()
-    image = preprocess_image(image)
-
     net = retinanet.RetinaNet(
         levels=levels,
         num_classes=num_classes,
         dropout_rate=args.dropout,
         backbone=args.backbone)
-    classifications_pred, regressions_pred = net(image, training)
 
-    class_loss, regr_loss = objectives.loss(
-        (classifications_true, regressions_true),
-        (classifications_pred, regressions_pred))
+    optimizer = make_optimizer(args.optimizer, args.learning_rate)
 
-    loss = class_loss + regr_loss
-    train_step = make_train_step(
-        loss,
-        global_step=global_step,
-        optimizer_type=args.optimizer,
-        learning_rate=args.learning_rate)
+    tower_grads = []
+    iter_initializer = []
+
+    available_gpus = get_available_gpus()
+    for i, gpu in enumerate(available_gpus):
+        iter = ds.shard(len(available_gpus), i).make_initializable_iterator()
+        iter_initializer.append(iter.initializer)
+        image, classifications_true, regressions_true = iter.get_next()
+
+        with tf.device(gpu):
+            image = preprocess_image(image)
+            classifications_pred, regressions_pred = net(image, training)
+
+            class_loss, regr_loss = objectives.loss(
+                (classifications_true, regressions_true),
+                (classifications_pred, regressions_pred))
+
+            loss = class_loss + regr_loss
+            grads = optimizer.compute_gradients(loss)
+            tower_grads.append(grads)
+
+    grads = average_gradients(tower_grads)
+
+    # optimization
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(update_ops):
+        train_step = optimizer.apply_gradients(grads, global_step=global_step)
 
     metrics, update_metrics, running_summary, image_summary = make_metrics(
         class_loss,
@@ -249,7 +292,7 @@ def main():
             sess.run(globals_init)
 
         for epoch in range(args.epochs):
-            sess.run([iter.initializer, locals_init])
+            sess.run([iter_initializer, locals_init])
 
             for _ in tqdm(itertools.count()):
                 try:

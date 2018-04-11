@@ -2,7 +2,6 @@ import os
 import argparse
 import itertools
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
 import utils
 import retinanet
 from level import build_levels
@@ -11,21 +10,20 @@ import dataset
 from tqdm import tqdm
 import L4
 
+
 # TODO: test network outputs scaling
 # TODO: test session to evaluate
-# TODO: check loss implementation
-# TODO: check shuffle
-# TODO: simplify architecture
 # TODO: try focal cross-entropy
 # TODO: check rounding and float32 conversions
-# TODO: name_scope to variable_scope
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
 # TODO: remove unnecessary validations
 # TODO: set trainable parts
-# TODO: flipping
-# TODO: add augmentation
 # TODO: boxes mapping should consider -1 index
+
+
+def preprocess_image(image):
+    return (image - dataset.MEAN) / dataset.STD
 
 
 def print_summary(metrics, step):
@@ -80,7 +78,6 @@ def draw_bounding_boxes(image,
 def make_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--learning-rate', type=float, default=1e-2)
-    parser.add_argument('--weight-decay', type=float, default=1e-4)
     parser.add_argument('--dropout', type=float, default=0.2)
     parser.add_argument('--dataset', type=str, nargs=2, required=True)
     parser.add_argument('--epochs', type=int, default=10)
@@ -88,9 +85,11 @@ def make_parser():
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--shuffle', type=int)
     parser.add_argument('--experiment', type=str, required=True)
-    parser.add_argument('--clip-norm', type=float)
     parser.add_argument(
-        '--norm-type', type=str, choices=['layer', 'batch'], default='layer')
+        '--backbone',
+        type=str,
+        choices=['resnet', 'densenet'],
+        default='densenet')
     parser.add_argument(
         '--optimizer',
         type=str,
@@ -103,13 +102,12 @@ def make_parser():
 def class_distribution(tensors):
     # TODO: do not average over batch
     return tf.stack([
-        tf.reduce_mean(tf.to_float(tf.argmax(x, -1)), [0, 1, 2])
-        for x in tensors
+        tf.reduce_mean(tf.to_float(tf.argmax(tensors[k], -1)), [0, 1, 2])
+        for k in tensors
     ])
 
 
-def make_train_step(loss, global_step, optimizer_type, learning_rate,
-                    clip_norm):
+def make_train_step(loss, global_step, optimizer_type, learning_rate):
     assert optimizer_type in ['momentum', 'adam', 'l4']
 
     if optimizer_type == 'momentum':
@@ -119,26 +117,15 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate,
     elif optimizer_type == 'l4':
         optimizer = L4.L4Adam(fraction=0.15)
 
-    if clip_norm is None:
-        # optimization
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
-            return optimizer.minimize(loss, global_step=global_step)
-    else:
-        # clip gradients
-        params = tf.trainable_variables()
-        gradients = tf.gradients(loss, params)
-        clipped_gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
-
-        # optimization
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
-            return optimizer.apply_gradients(
-                zip(clipped_gradients, params), global_step=global_step)
+    # optimization
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(update_ops):
+        return optimizer.minimize(loss, global_step=global_step)
 
 
-def make_metrics(class_loss, regr_loss, image, true, pred, learning_rate):
-    image = (image + 255 / 2) / 255
+def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
+                 learning_rate):
+    image = image * dataset.STD + dataset.MEAN
     classifications_true, regressions_true = true
     classifications_pred, regressions_pred = pred
 
@@ -172,24 +159,27 @@ def make_metrics(class_loss, regr_loss, image, true, pred, learning_rate):
     image_summary = []
 
     for name, classifications, regressions in (
-        ('true', classifications_true, regressions_true),
-        ('pred', classifications_pred, regressions_pred),
+            ('true', classifications_true, regressions_true),
+            ('pred', classifications_pred, regressions_pred),
     ):
-        with tf.name_scope(name):
-            image_with_boxes = draw_bounding_boxes(
-                image[0], [y[0] for y in regressions],
-                [y[0] for y in classifications])
-            image_summary.append(
-                tf.summary.image('boxmap', tf.expand_dims(image_with_boxes,
-                                                          0)))
+        for i in range(image.shape[0]):
+            with tf.name_scope('{}/{}'.format(name, i)):
+                image_with_boxes = draw_bounding_boxes(
+                    image[i], [regressions[pn][i] for pn in level_names],
+                    [classifications[pn][i] for pn in level_names])
+                image_summary.append(
+                    tf.summary.image('boxmap',
+                                     tf.expand_dims(image_with_boxes, 0)))
 
-            heatmap_image = tf.zeros_like(image[0])
-            for c in classifications:
-                heatmap_image += heatmap_to_image(image[0], c[0])
+                heatmap_image = tf.zeros_like(image[i])
+                for pn in level_names:
+                    heatmap_image += heatmap_to_image(image[i],
+                                                      classifications[pn][i])
 
-            heatmap_image = image[0] + heatmap_image
-            image_summary.append(
-                tf.summary.image('heatmap', tf.expand_dims(heatmap_image, 0)))
+                heatmap_image = image[i] + heatmap_image
+                image_summary.append(
+                    tf.summary.image('heatmap', tf.expand_dims(
+                        heatmap_image, 0)))
 
     image_summary = tf.summary.merge(image_summary)
 
@@ -216,14 +206,14 @@ def main():
 
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
+    image = preprocess_image(image)
 
-    classifications_pred, regressions_pred = retinanet.retinanet(
-        image,
+    net = retinanet.RetinaNet(
+        levels=levels,
         num_classes=num_classes,
-        dropout=args.dropout,
-        weight_decay=args.weight_decay,
-        norm_type=args.norm_type,
-        training=training)
+        dropout_rate=args.dropout,
+        backbone=args.backbone)
+    classifications_pred, regressions_pred = net(image, training)
 
     class_loss, regr_loss = objectives.loss(
         (classifications_true, regressions_true),
@@ -234,8 +224,7 @@ def main():
         loss,
         global_step=global_step,
         optimizer_type=args.optimizer,
-        learning_rate=args.learning_rate,
-        clip_norm=args.clip_norm)
+        learning_rate=args.learning_rate)
 
     metrics, update_metrics, running_summary, image_summary = make_metrics(
         class_loss,
@@ -243,13 +232,11 @@ def main():
         image=image,
         true=(classifications_true, regressions_true),
         pred=(classifications_pred, regressions_pred),
-        levels=levels,
+        level_names=levels.keys(),
         learning_rate=args.learning_rate)
 
+    globals_init = tf.global_variables_initializer()
     locals_init = tf.local_variables_initializer()
-
-    backbone_variables = slim.get_model_variables(scope="resnet_v2_50")
-    backbone_saver = tf.train.Saver(backbone_variables)
     saver = tf.train.Saver()
 
     with tf.Session() as sess, tf.summary.FileWriter(
@@ -259,9 +246,7 @@ def main():
         if restore_path:
             saver.restore(sess, restore_path)
         else:
-            sess.run(tf.global_variables_initializer())
-            backbone_saver.restore(
-                sess, './pretrained/resnet_v2_50/resnet_v2_50.ckpt')
+            sess.run(globals_init)
 
         for epoch in range(args.epochs):
             sess.run([iter.initializer, locals_init])
@@ -283,7 +268,6 @@ def main():
                         print_summary(m, step)
                         train_writer.add_summary(run_summ, step)
                         train_writer.add_summary(img_summ, step)
-                        train_writer.flush()
                         saver.save(sess,
                                    os.path.join(args.experiment, 'model.ckpt'))
                         sess.run(locals_init)
