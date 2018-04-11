@@ -234,10 +234,6 @@ def main():
         download=False,
         augment=True)
 
-    iter = ds.make_initializable_iterator()
-    image, classifications_true, regressions_true = iter.get_next()
-    image = preprocess_image(image)
-
     net = retinanet.RetinaNet(
         levels=levels,
         num_classes=num_classes,
@@ -247,9 +243,15 @@ def main():
     optimizer = make_optimizer(args.optimizer, args.learning_rate)
 
     tower_grads = []
+    iter_initializer = []
 
-    for gpu in available_gpus:
+    for i, gpu in enumerate(available_gpus):
         with tf.device(gpu):
+            iter = ds.shard(len(available_gpus), i).make_initializable_iterator()
+            iter_initializer.append(iter.initializer)
+            image, classifications_true, regressions_true = iter.get_next()
+            image = preprocess_image(image)
+
             classifications_pred, regressions_pred = net(image, training)
 
             class_loss, regr_loss = objectives.loss(
@@ -292,7 +294,7 @@ def main():
             sess.run(globals_init)
 
         for epoch in range(args.epochs):
-            sess.run([iter.initializer, locals_init])
+            sess.run([iter_initializer, locals_init])
 
             for _ in tqdm(itertools.count()):
                 try:
