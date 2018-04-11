@@ -218,7 +218,6 @@ def average_gradients(tower_grads):
 def main():
     args = make_parser().parse_args()
     utils.log_args(args)
-    available_gpus = get_available_gpus()
 
     levels = build_levels()
     training = tf.placeholder(tf.bool, [], name='training')
@@ -245,20 +244,21 @@ def main():
     tower_grads = []
     iter_initializer = []
 
+    available_gpus = get_available_gpus()
     for i, gpu in enumerate(available_gpus):
         iter = ds.shard(len(available_gpus), i).make_initializable_iterator()
         iter_initializer.append(iter.initializer)
         image, classifications_true, regressions_true = iter.get_next()
-       
+
         with tf.device(gpu):
             image = preprocess_image(image)
-
             classifications_pred, regressions_pred = net(image, training)
 
-            class_loss, regr_loss = objectives.loss(
-                (classifications_true, regressions_true),
-                (classifications_pred, regressions_pred))
+        class_loss, regr_loss = objectives.loss(
+            (classifications_true, regressions_true),
+            (classifications_pred, regressions_pred))
 
+        with tf.device(gpu):
             loss = class_loss + regr_loss
             grads = optimizer.compute_gradients(loss)
             tower_grads.append(grads)
