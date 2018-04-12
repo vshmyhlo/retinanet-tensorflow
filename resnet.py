@@ -1,6 +1,7 @@
 import tensorflow as tf
 from network import Network, Sequential
 
+
 # TODO: check regularization and initialization
 # TODO: check regularization
 # TODO: check resize-conv (upsampling)
@@ -35,27 +36,36 @@ class ResNeXt_Bottleneck(Network):
             self.identity = None
 
         # conv1
-        self.conv1 = self.track_layer(tf.layers.Conv2D(filters_base * 2, 1))
-        self.bn1 = self.track_layer(tf.layers.BatchNormalization())
+        self.conv1 = self.track_layer(Sequential([
+            tf.layers.Conv2D(filters_base * 2, 1),
+            tf.layers.BatchNormalization(),
+            tf.nn.relu
+        ]))
 
         # conv2
-        self.conv_bn2 = []
+        self.conv2 = []
         for i in range(cardinality):
             strides = 2 if project == 'down' else 1
 
-            conv2 = self.track_layer(
-                tf.layers.Conv2D(
-                    (filters_base * 2) // cardinality,
-                    3,
-                    strides,
-                    padding='same'))
-            bn2 = self.track_layer(tf.layers.BatchNormalization())
-            self.conv_bn2.append((conv2, bn2))
+            conv = self.track_layer(
+                Sequential([
+                    tf.layers.Conv2D(
+                        (filters_base * 2) // cardinality,
+                        3,
+                        strides,
+                        padding='same'),
+                    tf.layers.BatchNormalization(),
+                    tf.nn.relu
+                ]))
+
+            self.conv2.append(conv)
             # TODO: refactor
 
         # conv3
-        self.conv3 = self.track_layer(tf.layers.Conv2D(filters_base * 4, 1))
-        self.bn3 = self.track_layer(tf.layers.BatchNormalization())
+        self.conv3 = self.track_layer(Sequential([
+            tf.layers.Conv2D(filters_base * 4, 1),
+            tf.layers.BatchNormalization()
+        ]))
 
     def call(self, input, training):
         if self.identity is not None:
@@ -64,24 +74,19 @@ class ResNeXt_Bottleneck(Network):
             identity = input
 
         # conv1
-        input = self.conv1(input)
-        input = self.bn1(input, training)
-        input = tf.nn.relu(input)
+        input = self.conv1(input, training)
 
         # conv2
-        splits = tf.split(input, len(self.conv_bn2), -1)
-        assert len(splits) == len(self.conv_bn2)
+        splits = tf.split(input, len(self.conv2), -1)
+        assert len(splits) == len(self.conv2)
         transformations = []
-        for trans, (conv, bn) in zip(splits, self.conv_bn2):
-            trans = conv(trans)
-            trans = bn(trans, training)
-            trans = tf.nn.relu(trans)
+        for trans, conv in zip(splits, self.conv2):
+            trans = conv(trans, training)
             transformations.append(trans)
         input = tf.concat(transformations, -1)
 
         # conv3
-        input = self.conv3(input)
-        input = self.bn3(input, training)
+        input = self.conv3(input, training)
         input = input + identity
         input = tf.nn.relu(input)
 
@@ -123,7 +128,7 @@ class ResNeXt_Conv1(Network):
 
 
 class ResNeXt(Network):
-    def __init__(self, name='resnet'):
+    def __init__(self, name='resnext'):
         super().__init__(name=name)
 
         self.conv1 = self.track_layer(ResNeXt_Conv1(name='conv1'))
@@ -147,7 +152,7 @@ class ResNeXt(Network):
 
 
 class ResNeXt_50(ResNeXt):
-    def __init__(self, name='resnet_v2_50'):
+    def __init__(self, name='resnext_v2_50'):
         super().__init__(name=name)
 
         self.conv2 = self.track_layer(
