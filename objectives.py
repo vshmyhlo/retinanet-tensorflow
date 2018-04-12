@@ -46,7 +46,7 @@ def classification_loss(labels, logits, non_background_mask):
 #     return regr_loss
 
 def regression_loss(labels, logits, non_background_mask):
-    regr_loss = tf.abs(labels - logits)
+    regr_loss = tf.log(tf.cosh(labels - logits))
     regr_loss = tf.boolean_mask(regr_loss, non_background_mask)
     regr_loss = safe_div(tf.reduce_sum(regr_loss), tf.reduce_sum(tf.to_float(non_background_mask)))
 
