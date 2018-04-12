@@ -112,7 +112,6 @@ def make_dataset(ann_path,
                  levels,
                  download,
                  augment,
-                 num_threads=4,
                  scale=None,
                  shuffle=None):
     def load_image_with_labels(filename, class_ids, boxes):
@@ -170,11 +169,11 @@ def make_dataset(ann_path,
     if shuffle is not None:
         ds = ds.shuffle(shuffle)
 
-    ds = ds.map(load_image_with_labels, num_parallel_calls=num_threads)
-    ds = ds.map(preprocess, num_parallel_calls=num_threads)
+    ds = ds.map(load_image_with_labels)
+    ds = ds.map(preprocess)
 
     if augment:
-        ds = ds.map(augment_sample, num_parallel_calls=num_threads)
+        ds = ds.map(augment_sample)
 
     return ds, coco.num_classes
 
