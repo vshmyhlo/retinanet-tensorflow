@@ -22,6 +22,30 @@ def focal_sigmoid_cross_entropy_with_logits(
         return a_balance * modulating_factor * loss
 
 
+def focal_softmax_cross_entropy_with_logits(
+        labels,
+        logits,
+        focus=2.0,
+        alpha=0.25,
+        name='focal_sigmoid_cross_entropy_with_logits'):
+    with tf.name_scope(name):
+        alpha = tf.ones_like(labels) * alpha
+
+        prob = tf.nn.softmax(logits, -1)
+
+        labels_eq_1 = tf.equal(labels, 1)
+        a_balance = tf.where(labels_eq_1, alpha, 1 - alpha)
+        prob_true = tf.where(labels_eq_1, prob, 1 - prob)
+        modulating_factor = (1.0 - prob_true)**focus
+
+        log_prob = tf.log(prob)
+        log_prob = a_balance * modulating_factor * log_prob
+
+        loss = -tf.reduce_sum(labels * log_prob, -1)
+
+        return loss
+
+
 def safe_div(numerator, denominator):
     return tf.where(tf.greater(denominator, 0),
                     tf.div(numerator, tf.where(tf.equal(denominator, 0), tf.ones_like(denominator), denominator)),
@@ -29,7 +53,7 @@ def safe_div(numerator, denominator):
 
 
 def classification_loss(labels, logits, non_background_mask):
-    class_loss = focal_sigmoid_cross_entropy_with_logits(
+    class_loss = focal_softmax_cross_entropy_with_logits(
         labels=labels, logits=logits)
     class_loss = safe_div(tf.reduce_sum(class_loss), tf.reduce_sum(tf.to_float(non_background_mask)))
 

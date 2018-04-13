@@ -11,6 +11,8 @@ from tqdm import tqdm
 import L4
 
 
+# anchors assignment
+
 # TODO: test network outputs scaling
 # TODO: test session to evaluate
 # TODO: try focal cross-entropy
