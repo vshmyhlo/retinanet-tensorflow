@@ -36,14 +36,16 @@ def boxmap_anchor_relative_to_image_relative(regression):
     grid_size = tf.shape(regression)[1:3]
     cell_size = tf.to_float(1 / grid_size)
 
-    y_pos = tf.linspace(cell_size[0] / 2, 1 - cell_size[0] / 2, grid_size[0])
-    x_pos = tf.linspace(cell_size[1] / 2, 1 - cell_size[1] / 2, grid_size[1])
+    grid_y_pos = tf.linspace(cell_size[0] / 2, 1 - cell_size[0] / 2, grid_size[0])
+    grid_x_pos = tf.linspace(cell_size[1] / 2, 1 - cell_size[1] / 2, grid_size[1])
 
-    x_pos, y_pos = tf.meshgrid(x_pos, y_pos)
-    pos = tf.stack([y_pos, x_pos], -1)
-    pos = tf.expand_dims(pos, -2)
+    grid_x_pos, grid_y_pos = tf.meshgrid(grid_x_pos, grid_y_pos)
+    grid_pos = tf.stack([grid_y_pos, grid_x_pos], -1)
+    grid_pos = tf.expand_dims(grid_pos, -2)
 
-    return tf.concat([regression[..., :2] + pos, regression[..., 2:]], -1)
+    pos, size = tf.split(regression, 2, -1)
+
+    return tf.concat([pos + grid_pos, size], -1)
 
 
 def boxmap_center_relative_to_corner_relative(regression):

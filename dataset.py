@@ -176,8 +176,9 @@ def make_labels(image_size, class_ids, boxes, levels):
 
     classifications = {pn: labels[pn][0] for pn in labels}
     regressions = {pn: labels[pn][1] for pn in labels}
+    ignored_mask = {pn: labels[pn][2] for pn in labels}
 
-    return classifications, regressions
+    return classifications, regressions, ignored_mask
 
 
 def gen(coco):
@@ -223,42 +224,41 @@ def make_dataset(ann_path,
             image = rescale_image(image, scale)
             image_size = tf.shape(image)[:2]
 
-        classifications, regressions = make_labels(
+        classifications, regressions, ignored_mask = make_labels(
             image_size, class_ids, boxes, levels=levels)
 
-        return image, classifications, regressions
+        return image, classifications, regressions, ignored_mask
 
-    def preprocess(image, classifications, regressions):
-        image_flipped, classifications_flipped, regressions_flipped = augmentation.flip(image, classifications,
-                                                                                        regressions)
+    def preprocess(image, classifications, regressions, ignored_mask):
+        flipped = augmentation.flip(image, classifications, regressions, ignored_mask)
+        image_flipped, classifications_flipped, regressions_flipped, ignored_mask_flipped = flipped
 
         image = tf.stack([image, image_flipped], 0)
         classifications = {
             pn: tf.stack([classifications[pn], classifications_flipped[pn]], 0)
-            for pn in classifications
-        }
+            for pn in classifications}
         regressions = {
             pn: tf.stack([regressions[pn], regressions_flipped[pn]], 0)
-            for pn in regressions
-        }
-        # TODO: use level names
+            for pn in regressions}
+        ignored_mask = {
+            pn: tf.stack([ignored_mask[pn], ignored_mask_flipped[pn]], 0)
+            for pn in ignored_mask}
         classifications = {
             pn: tf.one_hot(classifications[pn], coco.num_classes)
-            for pn in classifications
-        }
+            for pn in classifications}
 
-        return image, classifications, regressions
+        return image, classifications, regressions, ignored_mask
 
-    def augment_sample(image, classifications, regressions):
+    def augment_sample(image, classifications, regressions, ignored_mask):
         # TODO: add augmentation
         # image = tf.image.random_contrast(image, 0.8, 1.2)
         # image = tf.image.random_brightness(image, 0.2)
         # image = tf.image.random_saturation(image, 0.8, 1.0)
 
-        return image, classifications, regressions
+        return image, classifications, regressions, ignored_mask
 
-    coco = COCO(ann_path, dataset_path, download)
-    # coco = type("", (), dict(num_classes=81))()
+    # coco = COCO(ann_path, dataset_path, download)
+    coco = type("", (), dict(num_classes=81))()
     ds = tf.data.Dataset.from_generator(
         lambda: gen(coco),
         output_types=(tf.string, tf.int32, tf.int32),

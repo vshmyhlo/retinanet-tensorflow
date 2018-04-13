@@ -22,7 +22,8 @@ import L4
 # TODO: remove unnecessary validations
 # TODO: set trainable parts
 # TODO: boxes mapping should consider -1 index
-
+# TODO: use ignored mask for visualization
+# TODO: use dict for complex output
 
 def preprocess_image(image):
     return (image - dataset.MEAN) / dataset.STD
@@ -214,7 +215,7 @@ def main():
         augment=True)
 
     iter = ds.make_initializable_iterator()
-    image, classifications_true, regressions_true = iter.get_next()
+    image, classifications_true, regressions_true, ignored_mask = iter.get_next()
     image = preprocess_image(image)
 
     net = retinanet.RetinaNet(
@@ -226,7 +227,8 @@ def main():
 
     class_loss, regr_loss = objectives.loss(
         (classifications_true, regressions_true),
-        (classifications_pred, regressions_pred))
+        (classifications_pred, regressions_pred),
+        ignored_mask=ignored_mask)
 
     loss = class_loss + regr_loss
     train_step = make_train_step(
