@@ -131,10 +131,12 @@ def make_metrics(class_loss, regr_loss, image, true, pred, levels,
     image = image * dataset.STD + dataset.MEAN
     classifications_true, regressions_true = true
     classifications_pred, regressions_pred = pred
-    regressions_true = {pn: utils.regression_postprocess(regressions_true[pn], levels[pn].anchor_boxes / image_size) for
-                        pn in regressions_true}
-    regressions_pred = {pn: utils.regression_postprocess(regressions_pred[pn], levels[pn].anchor_boxes / image_size) for
-                        pn in regressions_pred}
+    regressions_true = {
+        pn: utils.regression_postprocess(regressions_true[pn], tf.to_float(levels[pn].anchor_boxes / image_size)) for
+        pn in regressions_true}
+    regressions_pred = {
+        pn: utils.regression_postprocess(regressions_pred[pn], tf.to_float(levels[pn].anchor_boxes / image_size)) for
+        pn in regressions_pred}
 
     running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
     running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
