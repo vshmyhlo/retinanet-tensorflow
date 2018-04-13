@@ -191,8 +191,8 @@ def gen(coco):
         # TODO: check why dataset has samples without boxes
         if len(anns) > 0:
             yield filename, class_ids, boxes
-        else:
-            yield filename, np.zeros([0]), np.zeros([0, 4])
+        # else:
+        #     yield filename, np.zeros([0]), np.zeros([0, 4])
 
 
 def rescale_image(image, scale):
