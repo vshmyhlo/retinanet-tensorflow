@@ -112,7 +112,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     # [1, 1, 1, SCALES, 2]
     anchor_size = tf.reshape(anchor_size, (1, 1, 1, n_scales, 2))
     # [1, H, W, SCALES, 2]
-    anchor_size = tf.tile(anchor_size, [1, h, w, 1, 1])
+    anchor_size = tf.tile(anchor_size, (1, h, w, 1, 1))
     # [1, H, W, SCALES, 4]
     anchor = tf.concat([anchor_position, anchor_size], -1)
 
@@ -146,10 +146,8 @@ def level_labels(image_size, class_id, true_box, level, factor):
 
     # [OBJECTS, H, W, SCALES, 2]
     shifts = (true_position - anchor_position) / anchor_size
-    # [OBJECTS, 1, 1, SCALES, 2]
-    scales = true_size / anchor_size
     # [OBJECTS, H, W, SCALES, 2]
-    scales = tf.tile(scales, (1, h, w, 1, 1))
+    scales = true_size / anchor_size
     # [OBJECTS, H, W, SCALES, 4]
     regression = tf.concat([shifts, tf.log(scales)], -1)
 
