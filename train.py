@@ -11,8 +11,8 @@ from tqdm import tqdm
 import L4
 
 
-# anchors assignment
-
+# TODO: net output
+# TODO: anchor assignment
 # TODO: test network outputs scaling
 # TODO: test session to evaluate
 # TODO: try focal cross-entropy
@@ -130,6 +130,8 @@ def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
     image = image * dataset.STD + dataset.MEAN
     classifications_true, regressions_true = true
     classifications_pred, regressions_pred = pred
+    regressions_true = utils.regression_postprocess(regressions_true)
+    regressions_pred = utils.regression_postprocess(regressions_pred)
 
     running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
     running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)

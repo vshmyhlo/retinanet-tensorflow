@@ -1,6 +1,5 @@
 import tensorflow as tf
 import math
-import utils
 import resnet
 import densenet
 from network import Network, Sequential
@@ -108,10 +107,6 @@ class RegressionSubnet(Network):
         shape = tf.shape(input)
         input = tf.reshape(input,
                            (shape[0], shape[1], shape[2], self.num_anchors, 4))
-
-        shifts, scales = tf.split(input, 2, -1)
-        scales = tf.exp(scales)
-        input = tf.concat([shifts, scales], -1)
 
         return input
 
@@ -321,34 +316,11 @@ class RetinaNet(Network):
             kernel_regularizer=kernel_regularizer)
 
     def call(self, input, training):
-        image_size = tf.shape(input)[1:3]
-        classifications, regressions = self.base(input, training)
+        return self.base(input, training)
 
-        regressions = {
-            pn: regression_postprocess(
-                regressions[pn],
-                tf.to_float(self.levels[pn].anchor_boxes / image_size))
-            for pn in self.levels
-        }
-
-        return classifications, regressions
-
-
-def scale_regression(regression, anchor_boxes):
-    anchor_boxes = tf.tile(anchor_boxes, (1, 2))
-    anchor_boxes = tf.reshape(
-        anchor_boxes, (1, 1, 1, anchor_boxes.shape[0], anchor_boxes.shape[1]))
-
-    return regression * anchor_boxes
-
-
-def regression_postprocess(regression,
-                           anchor_boxes,
-                           name='regression_postprocess'):
-    with tf.name_scope(name):
-        regression = scale_regression(regression, anchor_boxes)
-        regression = utils.boxmap_anchor_relative_to_image_relative(regression)
-        regression = utils.boxmap_center_relative_to_corner_relative(
-            regression)
-
-        return regression
+# regressions = {
+#     pn: regression_postprocess(
+#         regressions[pn],
+#         tf.to_float(self.levels[pn].anchor_boxes / image_size))
+#     for pn in self.levels
+# }
