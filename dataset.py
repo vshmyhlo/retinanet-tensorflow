@@ -102,7 +102,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
 
     grid_size = tf.to_int32(tf.ceil(image_size / factor))
     h = tf.shape(grid_size)[0]
-    w = tf.shape(grid_size)[0]
+    w = tf.shape(grid_size)[1]
     # [H, W, 2]
     anchor_position = position_grid(grid_size)
     del grid_size
