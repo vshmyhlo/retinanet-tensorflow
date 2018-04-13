@@ -101,10 +101,10 @@ def level_labels(image_size, class_id, true_box, level, factor):
     anchor_size = tf.to_float(level.anchor_boxes / image_size)
 
     grid_size = tf.to_int32(tf.ceil(image_size / factor))
+    # [H, W, 2]
+    anchor_position = position_grid(grid_size)
     h, w = grid_size[0], grid_size[1]
     del grid_size
-    # [H, W, 2]
-    anchor_position = position_grid((h, w))
     # [1, H, W, 1, 2]
     anchor_position = tf.reshape(anchor_position, (1, h, w, 1, 2))
     # [1, H, W, SCALES, 2]
