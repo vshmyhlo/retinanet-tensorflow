@@ -317,10 +317,3 @@ class RetinaNet(Network):
 
     def call(self, input, training):
         return self.base(input, training)
-
-# regressions = {
-#     pn: regression_postprocess(
-#         regressions[pn],
-#         tf.to_float(self.levels[pn].anchor_boxes / image_size))
-#     for pn in self.levels
-# }

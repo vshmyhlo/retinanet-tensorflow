@@ -120,8 +120,7 @@ def regression_postprocess(regression,
                            name='regression_postprocess'):
     with tf.name_scope(name):
         shifts, scales = tf.split(regression, 2, -1)
-        scales = tf.exp(scales)
-        regression = tf.concat([shifts, scales], -1)
+        regression = tf.concat([shifts, tf.exp(scales)], -1)
 
         regression = scale_regression(regression, anchor_boxes)
         regression = boxmap_anchor_relative_to_image_relative(regression)
