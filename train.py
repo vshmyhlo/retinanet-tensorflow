@@ -125,13 +125,16 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate):
         return optimizer.minimize(loss, global_step=global_step)
 
 
-def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
+def make_metrics(class_loss, regr_loss, image, true, pred, levels,
                  learning_rate):
+    image_size = tf.shape(image)[1:3]
     image = image * dataset.STD + dataset.MEAN
     classifications_true, regressions_true = true
     classifications_pred, regressions_pred = pred
-    regressions_true = utils.regression_postprocess(regressions_true)
-    regressions_pred = utils.regression_postprocess(regressions_pred)
+    regressions_true = {pn: utils.regression_postprocess(regressions_true[pn], levels[pn].anchor_boxes / image_size) for
+                        pn in regressions_true}
+    regressions_pred = {pn: utils.regression_postprocess(regressions_pred[pn], levels[pn].anchor_boxes / image_size) for
+                        pn in regressions_pred}
 
     running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
     running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
@@ -169,14 +172,14 @@ def make_metrics(class_loss, regr_loss, image, true, pred, level_names,
         for i in range(image.shape[0]):
             with tf.name_scope('{}/{}'.format(name, i)):
                 image_with_boxes = draw_bounding_boxes(
-                    image[i], [regressions[pn][i] for pn in level_names],
-                    [classifications[pn][i] for pn in level_names])
+                    image[i], [regressions[pn][i] for pn in levels],
+                    [classifications[pn][i] for pn in levels])
                 image_summary.append(
                     tf.summary.image('boxmap',
                                      tf.expand_dims(image_with_boxes, 0)))
 
                 heatmap_image = tf.zeros_like(image[i])
-                for pn in level_names:
+                for pn in levels:
                     heatmap_image += heatmap_to_image(image[i],
                                                       classifications[pn][i])
 
@@ -236,7 +239,7 @@ def main():
         image=image,
         true=(classifications_true, regressions_true),
         pred=(classifications_pred, regressions_pred),
-        level_names=levels.keys(),
+        levels=levels,
         learning_rate=args.learning_rate)
 
     globals_init = tf.global_variables_initializer()

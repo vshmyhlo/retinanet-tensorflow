@@ -260,8 +260,8 @@ def make_dataset(ann_path,
 
         return image, classifications, regressions
 
-    # coco = COCO(ann_path, dataset_path, download)
-    coco = type("", (), dict(num_classes=81))()
+    coco = COCO(ann_path, dataset_path, download)
+    # coco = type("", (), dict(num_classes=81))()
     ds = tf.data.Dataset.from_generator(
         lambda: gen(coco),
         output_types=(tf.string, tf.int32, tf.int32),
