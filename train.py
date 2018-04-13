@@ -11,6 +11,7 @@ from tqdm import tqdm
 import L4
 
 
+# TODO: check focal-CE
 # TODO: net output
 # TODO: anchor assignment
 # TODO: test network outputs scaling
@@ -175,14 +176,14 @@ def make_metrics(class_loss, regr_loss, image, true, pred, levels,
         for i in range(image.shape[0]):
             with tf.name_scope('{}/{}'.format(name, i)):
                 image_with_boxes = draw_bounding_boxes(
-                    image[i], [regressions[pn][i] for pn in levels],
-                    [classifications[pn][i] for pn in levels])
+                    image[i], [regressions[pn][i] for pn in regressions],
+                    [classifications[pn][i] for pn in classifications])
                 image_summary.append(
                     tf.summary.image('boxmap',
                                      tf.expand_dims(image_with_boxes, 0)))
 
                 heatmap_image = tf.zeros_like(image[i])
-                for pn in levels:
+                for pn in classifications:
                     heatmap_image += heatmap_to_image(image[i],
                                                       classifications[pn][i])
 
