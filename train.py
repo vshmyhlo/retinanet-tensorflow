@@ -225,6 +225,8 @@ def main():
         dropout_rate=args.dropout,
         backbone=args.backbone)
     classifications_pred, regressions_pred = net(image, training)
+    assert classifications_true.keys() == regressions_true.keys() == levels.keys()
+    assert classifications_pred.keys() == regressions_pred.keys() == levels.keys()
 
     class_loss, regr_loss = objectives.loss(
         (classifications_true, regressions_true),

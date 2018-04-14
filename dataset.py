@@ -15,8 +15,6 @@ STD = [0.27940595, 0.27489075, 0.28920765]
 
 
 # TODO: remove image size and make all boxes 0-1
-# TODO: background category
-# TODO: ignored boxes
 # def level_labels(image_size, class_ids, boxes, level, factor):
 #     grid_size = tf.to_int32(tf.ceil(image_size / factor))
 #     anchor_boxes = tf.to_float(level.anchor_boxes / image_size)
@@ -137,7 +135,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     classification = tf.gather(class_id, iou_index)
     # assign background class to anchors with iou < NEG_IOU_THRESHOLD
     # [H, W, SCALES]
-    classification = tf.where(bg_mask, tf.zeros_like(classification), classification)
+    classification = tf.where(bg_mask, tf.zeros_like(classification), classification)  # TODO:
 
     # regression
 
@@ -158,7 +156,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     iou_index_expanded = tf.one_hot(iou_index_expanded, n_objects, axis=0)
 
     # [H, W, SCALES, 1]
-    regression = tf.reduce_sum(regression * iou_index_expanded, 0)
+    regression = tf.reduce_sum(regression * iou_index_expanded, 0)  # TODO: should mask bg?
 
     return classification, regression, ignored_mask
 

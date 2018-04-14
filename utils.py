@@ -69,10 +69,8 @@ def anchor_boxmap(grid_size, anchor_boxes):
 
 def iou(a, b):
     # TODO: should be <
-    with tf.control_dependencies([
-        tf.assert_less_equal(a[..., :2], a[..., 2:]),
-        tf.assert_less_equal(b[..., :2], b[..., 2:]),
-    ]):
+    with tf.control_dependencies([tf.assert_less_equal(a[..., :2], a[..., 2:]),
+                                  tf.assert_less_equal(b[..., :2], b[..., 2:])]):
         # determine the coordinates of the intersection rectangle
         y_top = tf.maximum(a[..., 0], b[..., 0])
         x_left = tf.maximum(a[..., 1], b[..., 1])
