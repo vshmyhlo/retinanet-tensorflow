@@ -187,11 +187,9 @@ def gen(coco):
         class_ids = np.array([a.category_id for a in anns])
         boxes = np.array([a.box for a in anns])
 
-        # TODO: check why dataset has samples without boxes
+        # ignore samples without ground true boxes
         if len(anns) > 0:
             yield filename, class_ids, boxes
-        # else:
-        #     yield filename, np.zeros([0]), np.zeros([0, 4])
 
 
 def rescale_image(image, scale):
