@@ -89,7 +89,7 @@ def loss(labels, logits, ignored_mask, name='loss'):
         class_labels, regr_labels = labels
         class_logits, regr_logits = logits
 
-        with tf.control_dependencies([tf.Assert(tf.is_finite(regr_labels), [regr_labels])]):
+        with tf.control_dependencies([tf.Assert(tf.reduce_all(tf.is_finite(regr_labels)), [regr_labels])]):
             non_background_mask = tf.not_equal(tf.argmax(class_labels, -1), 0)
 
         class_loss = classification_loss(
