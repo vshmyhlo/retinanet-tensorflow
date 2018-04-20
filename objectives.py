@@ -69,14 +69,6 @@ def regression_loss(labels, logits, non_background_mask):
     return regr_loss
 
 
-# def regression_loss(labels, logits, non_background_mask):
-#     regr_loss = tf.log(tf.cosh(labels - logits))
-#     regr_loss = tf.boolean_mask(regr_loss, non_background_mask)
-#     regr_loss = safe_div(tf.reduce_sum(regr_loss), tf.reduce_sum(tf.to_float(non_background_mask)))
-#
-#     return regr_loss
-
-
 def merge_outputs(tensors, ignored_mask, name='merge_outputs'):
     with tf.name_scope(name):
         res = []
@@ -97,7 +89,8 @@ def loss(labels, logits, ignored_mask, name='loss'):
         class_labels, regr_labels = labels
         class_logits, regr_logits = logits
 
-        non_background_mask = tf.not_equal(tf.argmax(class_labels, -1), 0)
+        with tf.control_dependencies([tf.Assert(tf.is_finite(regr_labels), [regr_labels])]):
+            non_background_mask = tf.not_equal(tf.argmax(class_labels, -1), 0)
 
         class_loss = classification_loss(
             labels=class_labels,

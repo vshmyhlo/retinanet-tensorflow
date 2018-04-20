@@ -37,7 +37,7 @@ class ClassificationSubnet(Network):
                         kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization(),
                     tf.nn.relu,
-                ]) for i in range(4)
+                ]) for _ in range(4)
             ]))
 
         pi = 0.01

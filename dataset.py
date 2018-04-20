@@ -128,7 +128,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     bg_mask = iou_value < NEG_IOU_THRESHOLD
     # mask for ignoring unassigned anchors
     # [H, W, SCALES]
-    ignored_mask = tf.logical_or(bg_mask, iou_value >= POS_IOU_THRESHOLD)
+    not_ignored_mask = tf.logical_or(bg_mask, iou_value >= POS_IOU_THRESHOLD)
 
     # assign class labels to anchors
     # [H, W, SCALES]
@@ -158,7 +158,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     # [H, W, SCALES, 1]
     regression = tf.reduce_sum(regression * iou_index_expanded, 0)  # TODO: should mask bg?
 
-    return classification, regression, ignored_mask
+    return classification, regression, not_ignored_mask
 
 
 def make_labels(image_size, class_ids, boxes, levels):
