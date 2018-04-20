@@ -216,7 +216,7 @@ def main():
         augment=True)
 
     iter = ds.make_initializable_iterator()
-    image, classifications_true, regressions_true, ignored_mask = iter.get_next()
+    image, classifications_true, regressions_true, not_ignored_mask = iter.get_next()
     image = preprocess_image(image)
 
     net = retinanet.RetinaNet(
@@ -231,7 +231,7 @@ def main():
     class_loss, regr_loss = objectives.loss(
         (classifications_true, regressions_true),
         (classifications_pred, regressions_pred),
-        ignored_mask=ignored_mask)
+        not_ignored_mask=not_ignored_mask)
 
     loss = class_loss + regr_loss
     train_step = make_train_step(

@@ -1,12 +1,8 @@
 import tensorflow as tf
 
 
-def focal_sigmoid_cross_entropy_with_logits(
-        labels,
-        logits,
-        focus=2.0,
-        alpha=0.25,
-        name='focal_sigmoid_cross_entropy_with_logits'):
+def focal_sigmoid_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.25,
+                                            name='focal_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
         alpha = tf.ones_like(labels) * alpha
         labels_eq_1 = tf.equal(labels, 1)
@@ -21,12 +17,9 @@ def focal_sigmoid_cross_entropy_with_logits(
         return a_balance * modulating_factor * loss
 
 
-def focal_softmax_cross_entropy_with_logits(
-        labels,
-        logits,
-        focus=2.0,
-        alpha=0.25,
-        name='focal_sigmoid_cross_entropy_with_logits'):
+# TODO: check this is corrrect
+def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.25,
+                                            name='focal_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
         alpha = tf.ones_like(labels) * alpha
 
@@ -81,16 +74,15 @@ def merge_outputs(tensors, ignored_mask, name='merge_outputs'):
         return tf.concat(res, 0)
 
 
-def loss(labels, logits, ignored_mask, name='loss'):
+def loss(labels, logits, not_ignored_mask, name='loss'):
     with tf.name_scope(name):
-        labels = tuple(merge_outputs(x, ignored_mask) for x in labels)
-        logits = tuple(merge_outputs(x, ignored_mask) for x in logits)
+        labels = tuple(merge_outputs(x, not_ignored_mask) for x in labels)
+        logits = tuple(merge_outputs(x, not_ignored_mask) for x in logits)
 
         class_labels, regr_labels = labels
         class_logits, regr_logits = logits
 
-        with tf.control_dependencies([tf.Assert(tf.reduce_all(tf.is_finite(regr_labels)), [regr_labels])]):
-            non_background_mask = tf.not_equal(tf.argmax(class_labels, -1), 0)
+        non_background_mask = tf.not_equal(tf.argmax(class_labels, -1), 0)
 
         class_loss = classification_loss(
             labels=class_labels,
