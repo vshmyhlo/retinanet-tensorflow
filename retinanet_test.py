@@ -1,57 +1,69 @@
 import tensorflow as tf
 import retinanet
-import numpy as np
+from level import build_levels
 
 
-class RetinanetTest(tf.test.TestCase):
-    def test_validate_lateral_shape(self):
-        input = tf.ones((1, 15, 15, 3))
-        lateral = tf.ones((1, 30, 30, 3))
+class FeaturePyramidNetworkTest(tf.test.TestCase):
+    def test_output_shapes(self):
+        image_size = 256
+        input = {}
+        for i in range(1, 5 + 1):
+            size = image_size // 2**i
+            input['C{}'.format(i)] = tf.zeros((1, size, size, 512))
 
-        assertion = retinanet.validate_lateral_shape(input, lateral)
+        net = retinanet.FeaturePyramidNetwork(
+            kernel_initializer=None, kernel_regularizer=None)
+        output = net(input, False)
 
-        self.evaluate(assertion)
+        for i in range(3, 7 + 1):
+            size = image_size // 2**i
+            assert output['P{}'.format(i)].shape == (1, size, size, 256)
 
-    def test_scale_regression(self):
-        regression = tf.convert_to_tensor([
-            [0.5, 1.0, 0.5, 1.0],
-            [0.5, 0.5, 0.5, 0.5],
-        ])
-        regression = tf.reshape(regression, (1, 1, 1, 2, 4))
 
-        anchor_boxes = tf.convert_to_tensor([
-            [0.2, 0.4],
-            [0.4, 0.2],
-        ])
+class ClassificationSubnetTest(tf.test.TestCase):
+    def test_output_shapes(self):
+        input = tf.zeros((1, 32, 32, 256))
 
-        actual = retinanet.scale_regression(regression, anchor_boxes)
+        net = retinanet.ClassificationSubnet(
+            num_anchors=9,
+            num_classes=10,
+            kernel_initializer=None,
+            kernel_regularizer=None)
+        output = net(input, False)
 
-        expected = tf.convert_to_tensor([
-            [0.1, 0.4, 0.1, 0.4],
-            [0.2, 0.1, 0.2, 0.1],
-        ])
-        expected = tf.reshape(expected, (1, 1, 1, 2, 4))
+        self.evaluate(tf.global_variables_initializer())
+        assert self.evaluate(output).shape == (1, 32, 32, 9, 10)
 
-        a, e = self.evaluate([actual, expected])
-        assert np.array_equal(a, e)
-        assert a.shape == (1, 1, 1, 2, 4)
 
-    def test_regression_postprocess(self):
-        anchor_boxes = tf.convert_to_tensor([[.5, .5]])
-        regression = tf.convert_to_tensor([
-            [[[.5, .5, 1., 1.]], [[0., 0., 0., 0.]]],
-            [[[0., 0., 0., 0.]], [[-.5, -.5, 2., 2.]]],
-        ])
-        regression = tf.expand_dims(regression, 0)
+class RegressionSubnet(tf.test.TestCase):
+    def test_output_shapes(self):
+        input = tf.zeros((1, 32, 32, 256))
 
-        expected = tf.convert_to_tensor([
-            [[[.25, .25, .75, .75]], [[.25, .75, .25, .75]]],
-            [[[.75, .25, .75, .25]], [[0., 0., 1., 1.]]],
-        ])
-        expected = tf.expand_dims(expected, 0)
+        net = retinanet.RegressionSubnet(
+            num_anchors=9, kernel_initializer=None, kernel_regularizer=None)
+        output = net(input, False)
 
-        actual = retinanet.regression_postprocess(regression, anchor_boxes)
+        self.evaluate(tf.global_variables_initializer())
+        assert self.evaluate(output).shape == (1, 32, 32, 9, 4)
 
-        a, e = self.evaluate([actual, expected])
-        assert np.array_equal(a, e)
-        assert a.shape == (1, 2, 2, 1, 4)
+
+class RetinaNetTest(tf.test.TestCase):
+    def test_output_shapes(self):
+        image_size = 256
+        input = tf.zeros((1, image_size, image_size, 3))
+        net = retinanet.RetinaNet(
+            backbone='densenet',
+            levels=build_levels(),
+            num_classes=10,
+            dropout_rate=0.2)
+        classifications, regressions = net(input, False)
+
+        self.evaluate(tf.global_variables_initializer())
+        classifications, regressions = self.evaluate(
+            [classifications, regressions])
+
+        for i in range(3, 7 + 1):
+            size = image_size // 2**i
+            assert classifications['P{}'.format(i)].shape == (1, size, size, 9,
+                                                              10)
+            assert regressions['P{}'.format(i)].shape == (1, size, size, 9, 4)
