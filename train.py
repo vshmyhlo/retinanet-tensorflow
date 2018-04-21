@@ -127,7 +127,7 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate):
         return optimizer.minimize(loss, global_step=global_step)
 
 
-def make_metrics(class_loss, regr_loss, image, true, pred, levels,
+def make_metrics(class_loss, regr_loss, regularization_loss, image, true, pred, levels,
                  learning_rate):
     image_size = tf.shape(image)[1:3]
     image = image * dataset.STD + dataset.MEAN
@@ -142,25 +142,28 @@ def make_metrics(class_loss, regr_loss, image, true, pred, levels,
 
     running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
     running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
+    running_regularization_loss, update_regularization_loss = tf.metrics.mean(regularization_loss)
     running_true_class_dist, update_true_class_dist = tf.metrics.mean_tensor(
         class_distribution(classifications_true))
     running_pred_class_dist, update_pred_class_dist = tf.metrics.mean_tensor(
         class_distribution(classifications_pred))
 
-    update_metrics = tf.group(update_class_loss, update_regr_loss,
+    update_metrics = tf.group(update_class_loss, update_regr_loss, update_regularization_loss,
                               update_true_class_dist, update_pred_class_dist)
 
-    running_loss = running_class_loss + running_regr_loss
+    running_loss = running_class_loss + running_regr_loss + running_regularization_loss
 
     metrics = {
         'loss': running_loss,
         'class_loss': running_class_loss,
-        'regr_loss': running_regr_loss
+        'regr_loss': running_regr_loss,
+        'regularization_loss': running_regularization_loss
     }
 
     running_summary = tf.summary.merge([
         tf.summary.scalar('class_loss', running_class_loss),
         tf.summary.scalar('regr_loss', running_regr_loss),
+        tf.summary.scalar('regularization_loss', running_regularization_loss),
         tf.summary.scalar('loss', running_loss),
         tf.summary.scalar('learning_rate', learning_rate),
         tf.summary.histogram('classifications_true', running_true_class_dist),
@@ -232,8 +235,9 @@ def main():
         (classifications_true, regressions_true),
         (classifications_pred, regressions_pred),
         not_ignored_mask=not_ignored_mask)
+    regularization_loss = tf.losses.get_regularization_loss()
 
-    loss = class_loss + regr_loss
+    loss = class_loss + regr_loss + regularization_loss
     train_step = make_train_step(
         loss,
         global_step=global_step,
@@ -243,6 +247,7 @@ def main():
     metrics, update_metrics, running_summary, image_summary = make_metrics(
         class_loss,
         regr_loss,
+        regularization_loss,
         image=image,
         true=(classifications_true, regressions_true),
         pred=(classifications_pred, regressions_pred),
