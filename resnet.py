@@ -2,7 +2,7 @@ import tensorflow as tf
 from network import Network, Sequential
 
 
-# TODO: check regularization and initialization
+# TODO: check initialization
 # TODO: check regularization
 # TODO: check resize-conv (upsampling)
 # TODO: check training arg
@@ -22,8 +22,7 @@ class ResNeXt_Bottleneck(Network):
         if project == 'down':
             self.identity = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D(filters_base * 4, 2, 2,
-                                     padding='same'),  # TODO: check this
+                    tf.layers.Conv2D(filters_base * 4, 2, 2, padding='same'),  # TODO: check this
                     tf.layers.BatchNormalization()
                 ]))
         elif project:
@@ -59,7 +58,6 @@ class ResNeXt_Bottleneck(Network):
                 ]))
 
             self.conv2.append(conv)
-            # TODO: refactor
 
         # conv3
         self.conv3 = self.track_layer(Sequential([

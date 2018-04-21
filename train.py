@@ -12,19 +12,13 @@ import L4
 
 
 # TODO: check focal-CE
-# TODO: net output
-# TODO: anchor assignment
-# TODO: test network outputs scaling
-# TODO: test session to evaluate
 # TODO: try focal cross-entropy
+# TODO: anchor assignment
 # TODO: check rounding and float32 conversions
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
-# TODO: remove unnecessary validations
 # TODO: set trainable parts
-# TODO: boxes mapping should consider -1 index
-# TODO: use ignored mask for visualization
-# TODO: use dict for complex output
+# TODO: use not_ignored_mask for visualization
 
 def preprocess_image(image):
     return (image - dataset.MEAN) / dataset.STD
