@@ -20,18 +20,6 @@ def log_args(args):
         print(warning('\t{}:').format(key), value)
 
 
-def merge_outputs(tensors, name='merge_outputs'):
-    with tf.name_scope(name):
-        reshaped = []
-        for k in tensors:
-            t = tensors[k]
-            sh = tf.shape(t)
-            sh = tf.concat([[sh[0], sh[1] * sh[2]], sh[3:]], 0)
-            reshaped.append(tf.reshape(t, sh))
-
-        return tf.concat(reshaped, 1)
-
-
 def boxmap_anchor_relative_to_image_relative(regression):
     grid_size = tf.shape(regression)[1:3]
     cell_size = tf.to_float(1 / grid_size)

@@ -5,42 +5,41 @@ import numpy as np
 
 class AugmentationTest(tf.test.TestCase):
     def test_flip(self):
-        input = (tf.convert_to_tensor([
-            [1, 2],
-            [3, 4],
-        ]), {
-            'P3': tf.convert_to_tensor([
-                [[0], [1]],
-                [[2], [3]],
-            ])
-        }, {
-            'P3':
-            tf.convert_to_tensor([
-                [[[0., 0., .25, .25]], [[.25, .25, .5, .5]]],
-                [[[0., 0., .25, .25]], [[0., 0., 0., 0.]]],
-            ])
-        })
+        input = (
+            [
+                [1, 2],
+                [3, 4]
+            ], {'P3': [
+                [[1], [2]],
+                [[3], [4]],
+            ]}, {'P3': [
+                [[[0., 0., .5, .5]], [[.25, .25, .5, .5]]],
+                [[[1., 1., .5, .5]], [[.75, .75, .25, .25]]],
+            ]}, {'P3': [
+                [[True], [False]],
+                [[False], [True]]
+            ]})
 
         actual = augmentation.flip(*input)
 
-        expected = (tf.convert_to_tensor([
-            [2, 1],
-            [4, 3],
-        ]), {
-            'P3': tf.convert_to_tensor([
-                [[1], [0]],
-                [[3], [2]],
-            ])
-        }, {
-            'P3':
-            tf.convert_to_tensor([
-                [[[.25, .5, .5, .75]], [[0., .75, .25, 1.]]],
-                [[[0., 1., 0., 1.]], [[0., .75, .25, 1.]]],
-            ])
-        })
+        expected = (
+            [
+                [2, 1],
+                [4, 3],
+            ], {'P3': [
+                [[2], [1]],
+                [[4], [3]],
+            ]}, {'P3': [
+                [[[.25, -.25, .5, .5]], [[0., 0., .5, .5]]],
+                [[[.75, -.75, .25, .25]], [[1., -1., .5, .5]]],
+            ]}, {'P3': [
+                [[False], [True]],
+                [[True], [False]]
+            ]})
 
-        a, e = self.evaluate([actual, expected])
+        actual = self.evaluate(actual)
 
-        assert np.array_equal(a[0], e[0])
-        assert np.array_equal(a[1]['P3'], e[1]['P3'])
-        assert np.array_equal(a[2]['P3'], e[2]['P3'])
+        assert np.array_equal(actual[0], expected[0])
+        assert np.array_equal(actual[1]['P3'], expected[1]['P3'])
+        assert np.array_equal(actual[2]['P3'], expected[2]['P3'])
+        assert np.array_equal(actual[3]['P3'], expected[3]['P3'])

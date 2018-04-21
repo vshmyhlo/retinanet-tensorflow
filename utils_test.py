@@ -4,18 +4,6 @@ import numpy as np
 
 
 class UtilsTest(tf.test.TestCase):
-    def test_merge_outputs(self):
-        outputs = {
-            'a': tf.ones((2, 3, 3, 4)),
-            'b': tf.ones((2, 5, 5, 4)),
-            'c': tf.ones((2, 7, 7, 4))
-        }
-
-        merged = utils.merge_outputs(outputs)
-
-        m = self.evaluate(merged)
-        assert m.shape == (2, 83, 4)
-
     def test_boxmap_anchor_relative_to_image_relative(self):
         c = [[0.5, 1.0, 0.25, 0.75]]
         regression = tf.convert_to_tensor([
@@ -127,4 +115,4 @@ class UtilsTest(tf.test.TestCase):
 
         a, e = self.evaluate([actual, expected])
         assert np.allclose(a, e)
-        assert a.shape == (4, )
+        assert a.shape == (4,)
