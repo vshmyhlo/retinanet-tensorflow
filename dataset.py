@@ -87,16 +87,16 @@ def from_center_box(box):
 
 
 def level_labels(image_size, class_id, true_box, level, factor):
-    n_objects = tf.shape(true_box)[0]
-    n_scales = level.anchor_boxes.shape[0]
+    num_objects = tf.shape(true_box)[0]
+    num_anchors = level.anchor_sizes.shape[0]
 
     # [OBJECTS, 4]
     true_box = to_center_box(true_box)
     # [OBJECTS, 1, 1, 1, 4]
-    true_box = tf.reshape(true_box, (n_objects, 1, 1, 1, 4))
+    true_box = tf.reshape(true_box, (num_objects, 1, 1, 1, 4))
 
-    # [SCALES, 2]
-    anchor_size = tf.to_float(level.anchor_boxes / image_size)
+    # [ANCHORS, 2]
+    anchor_size = tf.to_float(level.anchor_sizes / image_size)
 
     grid_size = tf.to_int32(tf.ceil(image_size / factor))
     # [H, W, 2]
@@ -105,36 +105,36 @@ def level_labels(image_size, class_id, true_box, level, factor):
     del grid_size
     # [1, H, W, 1, 2]
     anchor_position = tf.reshape(anchor_position, (1, h, w, 1, 2))
-    # [1, H, W, SCALES, 2]
-    anchor_position = tf.tile(anchor_position, (1, 1, 1, n_scales, 1))
-    # [1, 1, 1, SCALES, 2]
-    anchor_size = tf.reshape(anchor_size, (1, 1, 1, n_scales, 2))
-    # [1, H, W, SCALES, 2]
+    # [1, H, W, ANCHORS, 2]
+    anchor_position = tf.tile(anchor_position, (1, 1, 1, num_anchors, 1))
+    # [1, 1, 1, ANCHORS, 2]
+    anchor_size = tf.reshape(anchor_size, (1, 1, 1, num_anchors, 2))
+    # [1, H, W, ANCHORS, 2]
     anchor_size = tf.tile(anchor_size, (1, h, w, 1, 1))
-    # [1, H, W, SCALES, 4]
+    # [1, H, W, ANCHORS, 4]
     anchor = tf.concat([anchor_position, anchor_size], -1)
 
     # classification
 
-    # [OBJECTS, H, W, SCALES]
+    # [OBJECTS, H, W, ANCHORS]
     iou = utils.iou(from_center_box(anchor), from_center_box(true_box))
-    # [H, W, SCALES]
+    # [H, W, ANCHORS]
     iou_index = tf.argmax(iou, 0)
-    # [H, W, SCALES]
+    # [H, W, ANCHORS]
     iou_value = tf.reduce_max(iou, 0)
 
     # mask for assigning background class
-    # [H, W, SCALES]
+    # [H, W, ANCHORS]
     bg_mask = iou_value < NEG_IOU_THRESHOLD
     # mask for ignoring unassigned anchors
-    # [H, W, SCALES]
+    # [H, W, ANCHORS]
     not_ignored_mask = tf.logical_or(bg_mask, iou_value >= POS_IOU_THRESHOLD)
 
     # assign class labels to anchors
-    # [H, W, SCALES]
+    # [H, W, ANCHORS]
     classification = tf.gather(class_id, iou_index)
     # assign background class to anchors with iou < NEG_IOU_THRESHOLD
-    # [H, W, SCALES]
+    # [H, W, ANCHORS]
     classification = tf.where(bg_mask, tf.zeros_like(classification), classification)  # TODO:
 
     # regression
@@ -142,21 +142,25 @@ def level_labels(image_size, class_id, true_box, level, factor):
     # [OBJECTS, 1, 1, 1, 2], [OBJECTS, 1, 1, 1, 2],
     true_position, true_size = tf.split(true_box, 2, -1)
 
-    # [OBJECTS, H, W, SCALES, 2]
+    # [OBJECTS, H, W, ANCHORS, 2]
     shifts = (true_position - anchor_position) / anchor_size
-    # [OBJECTS, H, W, SCALES, 2]
+    # [OBJECTS, H, W, ANCHORS, 2]
     scales = true_size / anchor_size
-    # [OBJECTS, H, W, SCALES, 4]
+    # [OBJECTS, H, W, ANCHORS, 4]
     regression = tf.concat([shifts, tf.log(scales)], -1)
 
     # select regression for assigned anchor
-    # [H, W, SCALES, 1]
+    # [H, W, ANCHORS, 1]
     iou_index_expanded = tf.expand_dims(iou_index, -1)
-    # [OBJECTS, H, W, SCALES, 1]
-    iou_index_expanded = tf.one_hot(iou_index_expanded, n_objects, axis=0)
+    # [OBJECTS, H, W, ANCHORS, 1]
+    iou_index_expanded = tf.one_hot(iou_index_expanded, num_objects, axis=0)
 
-    # [H, W, SCALES, 1]
+    # [H, W, ANCHORS, 1]
     regression = tf.reduce_sum(regression * iou_index_expanded, 0)  # TODO: should mask bg?
+
+    assert_finite = tf.Assert(tf.reduce_all(tf.is_finite(regression)), [regression])
+    with tf.control_dependencies([assert_finite]):
+        regression = tf.identity(regression)
 
     return classification, regression, not_ignored_mask
 

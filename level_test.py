@@ -11,4 +11,4 @@ def test_compute_box_size():
 
 def test_level_anchor_boxes():
     level = Level(32, [(1, 4)], [2**0, 2**1])
-    assert np.array_equal(level.anchor_boxes, [[16, 64], [32, 128]])
+    assert np.array_equal(level.anchor_sizes, [[16, 64], [32, 128]])

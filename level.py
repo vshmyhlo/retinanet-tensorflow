@@ -9,7 +9,7 @@ class Level(object):
         self._anchor_scale_ratios = anchor_scale_ratios
 
     @property
-    def anchor_boxes(self):
+    def anchor_sizes(self):
         return np.stack([
             compute_box_size(self._anchor_size, aspect_ratio, scale_ratio)
             for aspect_ratio, scale_ratio in product(
