@@ -14,52 +14,6 @@ MEAN = [0.46618041, 0.44669811, 0.40252436]
 STD = [0.27940595, 0.27489075, 0.28920765]
 
 
-# TODO: remove image size and make all boxes 0-1
-# def level_labels(image_size, class_ids, boxes, level, factor):
-#     grid_size = tf.to_int32(tf.ceil(image_size / factor))
-#     anchor_boxes = tf.to_float(level.anchor_boxes / image_size)
-#
-#     # extract targets ##########################################################
-#     # [OBJECTS]
-#     classes_true = tf.concat([[0], class_ids], 0)
-#     # [OBJECTS, 4]
-#     boxes_true = tf.concat([[[0, 0, 0, 0]], boxes], 0)
-#
-#     # compute iou ##############################################################
-#     # [OBJECTS, 1, 1, 1, 4]
-#     boxes_true_shape = tf.shape(boxes_true)
-#     boxes_true = tf.reshape(boxes_true, (boxes_true_shape[0], 1, 1, 1, 4))
-#
-#     # [1, H, W, SIZES, 4]
-#     anchor_boxmap = utils.anchor_boxmap(grid_size, anchor_boxes)
-#
-#     # [OBJECTS, H, W, SIZES]
-#     iou = utils.iou(anchor_boxmap, boxes_true)
-#     iou = tf.where(iou > IOU_THRESHOLD, iou, tf.zeros_like(iou))
-#     # for the given anchor box, finds the ground truth box with the highest iou
-#     # [H, W, SIZES]
-#     indices = tf.argmax(iou, 0)
-#     del iou
-#
-#     # build classification targets #############################################
-#     # [H, W, SIZES]
-#     classification = tf.gather(classes_true, indices)
-#
-#     # build regression targets #################################################
-#     # [H, W, SIZES, 1]
-#     indices_expanded = tf.expand_dims(indices, -1)
-#     # [OBJECTS, H, W, SIZES, 1]
-#     indices_expanded = tf.one_hot(
-#         indices_expanded, boxes_true_shape[0], axis=0)
-#     del indices
-#
-#     # [OBJECTS, H, W, SIZES, 4]
-#     regression = boxes_true * indices_expanded
-#     # [H, W, SIZES, 4]
-#     regression = tf.reduce_sum(regression, 0)
-#
-#     return classification, regression
-
 def position_grid(size):
     cell_size = tf.to_float(1 / size)
 
@@ -135,7 +89,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     classification = tf.gather(class_id, iou_index)
     # assign background class to anchors with iou < NEG_IOU_THRESHOLD
     # [H, W, ANCHORS]
-    classification = tf.where(bg_mask, tf.zeros_like(classification), classification)  # TODO:
+    classification = tf.where(bg_mask, tf.zeros_like(classification), classification)  # TODO: check if this is correct
 
     # regression
 
