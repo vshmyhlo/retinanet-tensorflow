@@ -112,9 +112,9 @@ def level_labels(image_size, class_id, true_box, level, factor):
     # [H, W, ANCHORS, 1]
     regression = tf.reduce_sum(regression * iou_index_expanded, 0)  # TODO: should mask bg?
 
-    assert_finite = tf.Assert(tf.reduce_all(tf.is_finite(regression)), [regression])
-    with tf.control_dependencies([assert_finite]):
-        regression = tf.identity(regression)
+    # assert_finite = tf.Assert(tf.reduce_all(tf.is_finite(regression)), [regression])
+    # with tf.control_dependencies([assert_finite]):
+    #     regression = tf.identity(regression)
 
     return classification, regression, not_ignored_mask
 
