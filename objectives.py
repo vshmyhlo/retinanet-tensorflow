@@ -31,9 +31,7 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
         modulating_factor = (1.0 - prob_true)**focus
 
         log_prob = tf.log(prob)
-        log_prob = a_balance * modulating_factor * log_prob
-
-        loss = -tf.reduce_sum(labels * log_prob, -1)
+        loss = -tf.reduce_sum(a_balance * modulating_factor * labels * log_prob, -1)
 
         return loss
 

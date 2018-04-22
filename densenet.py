@@ -2,6 +2,8 @@ import tensorflow as tf
 from network import Network, Sequential
 
 
+# TODO: dropout noise shape
+
 class CompositeFunction(Sequential):
     def __init__(self,
                  filters,
