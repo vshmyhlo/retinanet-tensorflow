@@ -45,8 +45,8 @@ def safe_div(numerator, denominator):
 
 
 def classification_loss(labels, logits, non_background_mask):
-    class_loss = focal_softmax_cross_entropy_with_logits(
-        labels=labels, logits=logits)
+    # TODO: choose loss
+    class_loss = focal_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
     class_loss = safe_div(tf.reduce_sum(class_loss), tf.reduce_sum(tf.to_float(non_background_mask)))
 
     return class_loss
