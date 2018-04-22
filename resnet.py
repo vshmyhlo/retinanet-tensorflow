@@ -6,6 +6,7 @@ from network import Network, Sequential
 # TODO: check regularization
 # TODO: check resize-conv (upsampling)
 # TODO: check training arg
+# TODO: remove bias where not needed
 
 
 class ResNeXt_Bottleneck(Network):
