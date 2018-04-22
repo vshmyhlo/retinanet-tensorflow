@@ -33,6 +33,7 @@ class ClassificationSubnet(Network):
                         3,
                         1,
                         padding='same',
+                        use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization(),
@@ -84,11 +85,12 @@ class RegressionSubnet(Network):
                         3,
                         1,
                         padding='same',
+                        use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization(),
                     tf.nn.relu,
-                ]) for i in range(4)
+                ]) for _ in range(4)
             ]))
 
         self.out_conv = self.track_layer(
@@ -125,6 +127,7 @@ class FeaturePyramidNetwork(Network):
                         256,
                         1,
                         1,
+                        use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization()
@@ -137,6 +140,7 @@ class FeaturePyramidNetwork(Network):
                         3,
                         1,
                         padding='same',
+                        use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization()
@@ -168,6 +172,7 @@ class FeaturePyramidNetwork(Network):
                     3,
                     2,
                     padding='same',
+                    use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
                 tf.layers.BatchNormalization()
@@ -181,6 +186,7 @@ class FeaturePyramidNetwork(Network):
                     3,
                     2,
                     padding='same',
+                    use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
                 tf.layers.BatchNormalization()
@@ -192,6 +198,7 @@ class FeaturePyramidNetwork(Network):
                     256,
                     1,
                     1,
+                    use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
                 tf.layers.BatchNormalization()
