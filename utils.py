@@ -79,7 +79,7 @@ def iou(a, b):
 
     # compute the intersection over union by taking the intersection
     # area and dividing it by the sum of prediction + ground-truth
-    # areas - the interesection area
+    # areas - the intersection area
     iou = intersection_area / tf.to_float(
         box_a_area + box_b_area - intersection_area)
     iou = tf.where(invalid_mask, tf.zeros_like(iou), iou)

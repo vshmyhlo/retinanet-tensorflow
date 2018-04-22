@@ -91,6 +91,6 @@ def loss(labels, logits, not_ignored_mask, name='loss'):
         regr_loss = regression_loss(
             labels=regr_labels,
             logits=regr_logits,
-            non_background_mask=non_background_mask)
+            non_background_mask=non_background_mask) * 0.  # TODO:
 
         return class_loss, regr_loss
