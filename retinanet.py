@@ -258,19 +258,17 @@ class RetinaNetBase(Network):
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer))
 
-        # TODO: level anchor boxes
         self.classification_subnet = self.track_layer(
             ClassificationSubnet(
-                num_anchors=levels['P3'].anchor_sizes.shape[0],
+                num_anchors=levels['P3'].anchor_sizes.shape[0],  # TODO: level anchor boxes
                 num_classes=num_classes,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
                 name='classification_subnet'))
 
-        # TODO: level anchor boxes
         self.regression_subnet = self.track_layer(
             RegressionSubnet(
-                num_anchors=levels['P3'].anchor_sizes.shape[0],
+                num_anchors=levels['P3'].anchor_sizes.shape[0],  # TODO: level anchor boxes
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
                 name='regression_subnet'))

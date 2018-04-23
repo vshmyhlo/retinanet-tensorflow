@@ -23,13 +23,13 @@ class ResNeXt_Bottleneck(Network):
         if project == 'down':
             self.identity = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D(filters_base * 4, 2, 2, padding='same'),  # TODO: check this
+                    tf.layers.Conv2D(filters_base * 4, 2, 2, padding='same', use_bias=False),  # TODO: check this
                     tf.layers.BatchNormalization()
                 ]))
         elif project:
             self.identity = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D(filters_base * 4, 1),
+                    tf.layers.Conv2D(filters_base * 4, 1, use_bias=False),
                     tf.layers.BatchNormalization()
                 ]))
         else:
@@ -37,7 +37,7 @@ class ResNeXt_Bottleneck(Network):
 
         # conv1
         self.conv1 = self.track_layer(Sequential([
-            tf.layers.Conv2D(filters_base * 2, 1),
+            tf.layers.Conv2D(filters_base * 2, 1, use_bias=False),
             tf.layers.BatchNormalization(),
             tf.nn.relu
         ]))
@@ -49,11 +49,7 @@ class ResNeXt_Bottleneck(Network):
 
             conv = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D(
-                        (filters_base * 2) // cardinality,
-                        3,
-                        strides,
-                        padding='same'),
+                    tf.layers.Conv2D((filters_base * 2) // cardinality, 3, strides, padding='same', use_bias=False),
                     tf.layers.BatchNormalization(),
                     tf.nn.relu
                 ]))
@@ -62,7 +58,7 @@ class ResNeXt_Bottleneck(Network):
 
         # conv3
         self.conv3 = self.track_layer(Sequential([
-            tf.layers.Conv2D(filters_base * 4, 1),
+            tf.layers.Conv2D(filters_base * 4, 1, use_bias=False),
             tf.layers.BatchNormalization()
         ]))
 
@@ -115,7 +111,7 @@ class ResNeXt_Conv1(Network):
         super().__init__(name=name)
 
         self.conv = self.track_layer(
-            tf.layers.Conv2D(64, 7, 2, padding='same', name='conv1'))
+            tf.layers.Conv2D(64, 7, 2, padding='same', use_bias=False, name='conv1'))
         self.bn = self.track_layer(tf.layers.BatchNormalization())
 
     def call(self, input, training):
