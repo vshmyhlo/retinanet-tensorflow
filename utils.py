@@ -101,16 +101,13 @@ def scale_regression(regression, anchor_boxes):
     return regression * anchor_boxes
 
 
-def regression_postprocess(regression,
-                           anchor_boxes,
-                           name='regression_postprocess'):
+def regression_postprocess(regression, anchor_boxes, name='regression_postprocess'):
     with tf.name_scope(name):
         shifts, scales = tf.split(regression, 2, -1)
         regression = tf.concat([shifts, tf.exp(scales)], -1)
 
         regression = scale_regression(regression, anchor_boxes)
         regression = boxmap_anchor_relative_to_image_relative(regression)
-        regression = boxmap_center_relative_to_corner_relative(
-            regression)
+        regression = boxmap_center_relative_to_corner_relative(regression)
 
         return regression
