@@ -9,19 +9,10 @@ if tfe_avaiable:
     Network = tfe.Network
     Sequential = tfe.Sequential
 else:
-
-    class Network(object):
-        def __init__(self, name):
-            assert name is not None
-            assert not context.in_eager_mode()
-            self.name = name
-
-        def __call__(self, *args):
-            with tf.name_scope(self.name):
-                return self.call(*args)
-
+    class Network(tf.layers.Layer):
         def track_layer(self, layer):
             return layer
+
 
     class Sequential(Network):
         def __init__(self, layers, name='sequential'):
