@@ -10,6 +10,7 @@ class GroupNormalization(Network):
         self.epsilon = epsilon
 
     def build(self, input_shape):
+        # TODO: use self.add_variable
         self.gamma = tf.get_variable('gamma', [input_shape[-1]], initializer=tf.constant_initializer(1.0))
         self.beta = tf.get_variable('beta', [input_shape[-1]], initializer=tf.constant_initializer(0.0))
 

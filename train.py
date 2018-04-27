@@ -26,9 +26,8 @@ def preprocess_image(image):
 
 def print_summary(metrics, step):
     print(
-        'step: {}, loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}'.format(
-            step, metrics['loss'], metrics['class_loss'],
-            metrics['regr_loss']))
+        'step: {}, loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}, regularization_loss: {:.4f}'.format(
+            step, metrics['loss'], metrics['class_loss'], metrics['regr_loss'], metrics['regularization_loss']))
 
 
 def heatmap_to_image(image, classification):
