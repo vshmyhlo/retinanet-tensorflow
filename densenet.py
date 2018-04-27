@@ -1,5 +1,6 @@
 import tensorflow as tf
 from network import Network, Sequential
+from normalization import GroupNormalization
 
 
 # TODO: dropout noise shape
@@ -12,7 +13,7 @@ class CompositeFunction(Sequential):
                  kernel_regularizer,
                  name='composite_function'):
         layers = [
-            tf.layers.BatchNormalization(),
+            GroupNormalization(),
             tf.nn.relu,
             tf.layers.Conv2D(
                 filters,
@@ -35,7 +36,7 @@ class BottleneckCompositeFunction(Sequential):
                  kernel_regularizer,
                  name='bottleneck_composite_function'):
         layers = [
-            tf.layers.BatchNormalization(),
+            GroupNormalization(name='group_normalization1'),
             tf.nn.relu,
             tf.layers.Conv2D(
                 filters * 4,
@@ -44,7 +45,7 @@ class BottleneckCompositeFunction(Sequential):
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
             tf.layers.Dropout(dropout_rate),
-            tf.layers.BatchNormalization(),
+            GroupNormalization(name='group_normalization2'),
             tf.nn.relu,
             tf.layers.Conv2D(
                 filters,
@@ -111,7 +112,7 @@ class TransitionLayer(Sequential):
         filters = int(input_filters * compression_factor)
 
         layers = [
-            tf.layers.BatchNormalization(),
+            GroupNormalization(),
             tf.layers.Conv2D(
                 filters,
                 1,
@@ -148,7 +149,7 @@ class DenseNetBC_ImageNet(Network):
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer,
                     name='conv1'),
-                tf.layers.BatchNormalization(),
+                GroupNormalization(),
                 tf.nn.relu,
             ]))
         self.conv1_max_pool = self.track_layer(

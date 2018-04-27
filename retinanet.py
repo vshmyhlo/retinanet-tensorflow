@@ -3,6 +3,7 @@ import math
 import resnet
 import densenet
 from network import Network, Sequential
+from normalization import GroupNormalization
 
 
 def build_backbone(backbone, dropout_rate):
@@ -36,7 +37,7 @@ class ClassificationSubnet(Network):
                         use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization(),
+                    GroupNormalization(),
                     tf.nn.relu,
                 ]) for _ in range(4)
             ]))
@@ -86,7 +87,7 @@ class RegressionSubnet(Network):
                         use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization(),
+                    GroupNormalization(),
                     tf.nn.relu,
                 ]) for _ in range(4)
             ]))
@@ -127,7 +128,7 @@ class FeaturePyramidNetwork(Network):
                         use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization()
+                    GroupNormalization()
                 ]))
 
             self.conv_merge = self.track_layer(
@@ -140,7 +141,7 @@ class FeaturePyramidNetwork(Network):
                         use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization()
+                    GroupNormalization()
                 ]))
 
         def call(self, lateral, downsampled, training):
@@ -172,7 +173,7 @@ class FeaturePyramidNetwork(Network):
                     use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
-                tf.layers.BatchNormalization()
+                GroupNormalization()
             ]))
 
         self.p7_from_p6 = self.track_layer(
@@ -186,7 +187,7 @@ class FeaturePyramidNetwork(Network):
                     use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
-                tf.layers.BatchNormalization()
+                GroupNormalization()
             ]))
 
         self.p5_from_c5 = self.track_layer(
@@ -198,7 +199,7 @@ class FeaturePyramidNetwork(Network):
                     use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
-                tf.layers.BatchNormalization()
+                GroupNormalization()
             ]))
 
         self.p4_from_c4p5 = self.track_layer(
@@ -242,7 +243,7 @@ class RetinaNetBase(Network):
             self.postprocess_bottom_up = {
                 cn: self.track_layer(
                     Sequential([
-                        tf.layers.BatchNormalization(),
+                        GroupNormalization(),
                         tf.nn.relu,
                     ]))
                 for cn in ['C3', 'C4', 'C5']
