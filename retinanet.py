@@ -60,9 +60,7 @@ class ClassificationSubnet(Network):
         input = self.out_conv(input)
 
         shape = tf.shape(input)
-        input = tf.reshape(
-            input,
-            (shape[0], shape[1], shape[2], self.num_anchors, self.num_classes))
+        input = tf.reshape(input, (shape[0], shape[1], shape[2], self.num_anchors, self.num_classes))
 
         return input
 
@@ -107,8 +105,7 @@ class RegressionSubnet(Network):
         input = self.out_conv(input)
 
         shape = tf.shape(input)
-        input = tf.reshape(input,
-                           (shape[0], shape[1], shape[2], self.num_anchors, 4))
+        input = tf.reshape(input, (shape[0], shape[1], shape[2], self.num_anchors, 4))
 
         return input
 
@@ -258,9 +255,14 @@ class RetinaNetBase(Network):
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer))
 
+        # all pyramid levels must have the same number of anchors
+        num_anchors = set(levels[pn].anchor_sizes.shape[0] for pn in levels)
+        assert len(num_anchors) == 1
+        num_anchors = list(num_anchors)[0]
+
         self.classification_subnet = self.track_layer(
             ClassificationSubnet(
-                num_anchors=levels['P3'].anchor_sizes.shape[0],  # TODO: level anchor boxes
+                num_anchors=num_anchors,  # TODO: level anchor boxes
                 num_classes=num_classes,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
@@ -268,7 +270,7 @@ class RetinaNetBase(Network):
 
         self.regression_subnet = self.track_layer(
             RegressionSubnet(
-                num_anchors=levels['P3'].anchor_sizes.shape[0],  # TODO: level anchor boxes
+                num_anchors=num_anchors,  # TODO: level anchor boxes
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
                 name='regression_subnet'))
