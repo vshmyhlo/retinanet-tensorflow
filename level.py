@@ -24,8 +24,7 @@ class Level(object):
 
 def compute_box_size(base_size, aspect_ratio, scale_ratio):
     aspect_ratio = np.array(aspect_ratio)
-    size = np.sqrt(
-        base_size**2 / aspect_ratio.prod()) * aspect_ratio * scale_ratio
+    size = np.sqrt(base_size**2 / aspect_ratio.prod()) * aspect_ratio * scale_ratio
     return size
 
 

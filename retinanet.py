@@ -300,12 +300,7 @@ class RetinaNetBase(Network):
 
 
 class RetinaNet(Network):
-    def __init__(self,
-                 backbone,
-                 levels,
-                 num_classes,
-                 dropout_rate,
-                 name='retinanet'):
+    def __init__(self, backbone, levels, num_classes, dropout_rate, name='retinanet'):
         super().__init__(name=name)
 
         self.levels = levels
