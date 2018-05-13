@@ -252,7 +252,9 @@ def main():
     locals_init = tf.local_variables_initializer()
     saver = tf.train.Saver()
 
-    with tf.Session() as sess, tf.summary.FileWriter(
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    with tf.Session(config=config) as sess, tf.summary.FileWriter(
             logdir=os.path.join(args.experiment, 'train'),
             graph=sess.graph) as train_writer:
         restore_path = tf.train.latest_checkpoint(args.experiment)
