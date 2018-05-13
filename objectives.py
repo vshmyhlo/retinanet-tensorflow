@@ -89,6 +89,4 @@ def loss(labels, logits, not_ignored_mask, name='loss'):
             logits=regr_logits,
             non_background_mask=non_background_mask)
 
-        regr_loss = tf.to_float(0.0)  # FIXME: regression is ignored for now
-
         return class_loss, regr_loss
