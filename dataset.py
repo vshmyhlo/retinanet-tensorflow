@@ -167,8 +167,7 @@ def make_dataset(ann_path,
         image = tf.image.decode_jpeg(image, channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
         image_size = tf.shape(image)[:2]
-        boxes = tf.to_float(
-            boxes / tf.concat([image_size, image_size], 0))
+        boxes = tf.to_float(boxes / tf.concat([image_size, image_size], 0))
 
         if scale is not None:
             image = rescale_image(image, scale)

@@ -11,7 +11,8 @@ from tqdm import tqdm
 import L4
 
 
-# TODO: check focal-CE
+# TODO: move label creation to graph
+# TODO: check focal-cross-entropy
 # TODO: try focal cross-entropy
 # TODO: anchor assignment
 # TODO: check rounding and float32 conversions
@@ -19,6 +20,9 @@ import L4
 # TODO: exclude samples without prop IoU
 # TODO: set trainable parts
 # TODO: use not_ignored_mask for visualization
+# TODO: check if batch norm after dropout is ok
+# TODO: balances cross-entropy
+# TODO: try not using bg class
 
 def preprocess_image(image):
     return (image - dataset.MEAN) / dataset.STD
@@ -197,8 +201,7 @@ def main():
 
     levels = build_levels()
     training = tf.placeholder(tf.bool, [], name='training')
-    global_step = tf.get_variable(
-        'global_step', initializer=0, trainable=False)
+    global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
     ds, num_classes = dataset.make_dataset(
         ann_path=args.dataset[0],
@@ -209,7 +212,7 @@ def main():
         download=False,
         augment=True)
 
-    iter = ds.make_initializable_iterator()
+    iter = ds.prefetch(1).make_initializable_iterator()
     image, classifications_true, regressions_true, not_ignored_mask = iter.get_next()
     image = preprocess_image(image)
 
