@@ -175,7 +175,7 @@ def make_metrics(loss, class_loss, regr_loss, regularization_loss, image, true, 
 
                 not_ignored_mask_image = tf.zeros_like(image[i])
                 for pn in not_ignored_masks:
-                    not_ignored_mask_image += classmap_to_image(image[i], not_ignored_masks[pn][i])
+                    not_ignored_mask_image += classmap_to_image(image[i], tf.to_float(not_ignored_masks[pn][i]))
                 not_ignored_mask_image = image[i] + not_ignored_mask_image
                 image_summary.append(tf.summary.image('not_ignored_mask', tf.expand_dims(not_ignored_mask_image, 0)))
 
