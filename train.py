@@ -156,6 +156,7 @@ def make_metrics(loss, class_loss, regr_loss, regularization_loss, image, true, 
 
     image_summary = []
 
+    # TODO: better scope names
     for name, classifications, regressions in (
             ('true', classifications_true, regressions_true),
             ('pred', classifications_pred, regressions_pred),
@@ -173,11 +174,13 @@ def make_metrics(loss, class_loss, regr_loss, regularization_loss, image, true, 
                 classmap_image = image[i] + classmap_image
                 image_summary.append(tf.summary.image('classification', tf.expand_dims(classmap_image, 0)))
 
-                not_ignored_mask_image = tf.zeros_like(image[i])
-                for pn in not_ignored_masks:
-                    not_ignored_mask_image += classmap_to_image(image[i], tf.to_float(not_ignored_masks[pn][i]))
-                not_ignored_mask_image = image[i] + not_ignored_mask_image
-                image_summary.append(tf.summary.image('not_ignored_mask', tf.expand_dims(not_ignored_mask_image, 0)))
+    for i in range(image.shape[0]):
+        with tf.name_scope('{}'.format(name, i)):
+            not_ignored_mask_image = tf.zeros_like(image[i])
+            for pn in not_ignored_masks:
+                not_ignored_mask_image += classmap_to_image(image[i], tf.to_float(not_ignored_masks[pn][i]))
+            not_ignored_mask_image = image[i] + not_ignored_mask_image
+            image_summary.append(tf.summary.image('not_ignored_mask', tf.expand_dims(not_ignored_mask_image, 0)))
 
     image_summary = tf.summary.merge(image_summary)
 
