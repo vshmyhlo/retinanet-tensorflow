@@ -23,6 +23,7 @@ import L4
 # TODO: check if batch norm after dropout is ok
 # TODO: balances cross-entropy
 # TODO: try not using bg class
+# TODO: align corners in interpolation
 
 def preprocess_image(image):
     return (image - dataset.MEAN) / dataset.STD
@@ -34,17 +35,15 @@ def print_summary(metrics, step):
             step, metrics['loss'], metrics['class_loss'], metrics['regr_loss'], metrics['regularization_loss']))
 
 
-def heatmap_to_image(image, classification):
+def classmap_to_image(image, classmap):
     image_size = tf.shape(image)[:2]
-    heatmap = tf.argmax(classification, -1)
-    heatmap = tf.reduce_max(heatmap, -1)
-    heatmap = tf.not_equal(heatmap, 0)
-    heatmap = tf.to_float(heatmap)
-    heatmap = tf.expand_dims(heatmap, -1)
-    heatmap = tf.image.resize_images(
-        heatmap, image_size, method=tf.image.ResizeMethod.AREA)
+    classmap = tf.reduce_max(classmap, -1)
+    classmap = tf.not_equal(classmap, 0)
+    classmap = tf.to_float(classmap)
+    classmap = tf.expand_dims(classmap, -1)
+    classmap = tf.image.resize_images(classmap, image_size, method=tf.image.ResizeMethod.AREA, align_corners=True)
 
-    return heatmap
+    return classmap
 
 
 def draw_bounding_boxes(image, regressions, classifications, max_output_size=1000):
@@ -122,7 +121,7 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate):
         return optimizer.minimize(loss, global_step=global_step)
 
 
-def make_metrics(class_loss, regr_loss, regularization_loss, image, true, pred, levels,
+def make_metrics(loss, class_loss, regr_loss, regularization_loss, image, true, pred, not_ignored_masks, levels,
                  learning_rate):
     image_size = tf.shape(image)[1:3]
     image = image * dataset.STD + dataset.MEAN
@@ -135,34 +134,26 @@ def make_metrics(class_loss, regr_loss, regularization_loss, image, true, pred, 
         pn: utils.regression_postprocess(regressions_pred[pn], tf.to_float(levels[pn].anchor_sizes / image_size)) for
         pn in regressions_pred}
 
-    running_class_loss, update_class_loss = tf.metrics.mean(class_loss)
-    running_regr_loss, update_regr_loss = tf.metrics.mean(regr_loss)
-    running_regularization_loss, update_regularization_loss = tf.metrics.mean(regularization_loss)
-    running_true_class_dist, update_true_class_dist = tf.metrics.mean_tensor(
-        class_distribution(classifications_true))
-    running_pred_class_dist, update_pred_class_dist = tf.metrics.mean_tensor(
-        class_distribution(classifications_pred))
+    metrics = {}
+    update_metrics = {}
 
-    update_metrics = tf.group(update_class_loss, update_regr_loss, update_regularization_loss,
-                              update_true_class_dist, update_pred_class_dist)
-
-    running_loss = running_class_loss + running_regr_loss + running_regularization_loss
-
-    metrics = {
-        'loss': running_loss,
-        'class_loss': running_class_loss,
-        'regr_loss': running_regr_loss,
-        'regularization_loss': running_regularization_loss
-    }
+    metrics['loss'], update_metrics['loss'] = tf.metrics.mean(loss)
+    metrics['class_loss'], update_metrics['class_loss'] = tf.metrics.mean(class_loss)
+    metrics['regr_loss'], update_metrics['regr_loss'] = tf.metrics.mean(regr_loss)
+    metrics['regularization_loss'], update_metrics['regularization_loss'] = tf.metrics.mean(regularization_loss)
+    # running_true_class_dist, update_true_class_dist = tf.metrics.mean_tensor(
+    #     class_distribution(classifications_true))
+    # running_pred_class_dist, update_pred_class_dist = tf.metrics.mean_tensor(
+    #     class_distribution(classifications_pred))
 
     running_summary = tf.summary.merge([
-        tf.summary.scalar('class_loss', running_class_loss),
-        tf.summary.scalar('regr_loss', running_regr_loss),
-        tf.summary.scalar('regularization_loss', running_regularization_loss),
-        tf.summary.scalar('loss', running_loss),
+        tf.summary.scalar('loss', metrics['loss']),
+        tf.summary.scalar('class_loss', metrics['class_loss']),
+        tf.summary.scalar('regr_loss', metrics['regr_loss']),
+        tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
         tf.summary.scalar('learning_rate', learning_rate),
-        tf.summary.histogram('classifications_true', running_true_class_dist),
-        tf.summary.histogram('classifications_pred', running_pred_class_dist)
+        # tf.summary.histogram('classifications_true', running_true_class_dist),
+        # tf.summary.histogram('classifications_pred', running_pred_class_dist)
     ])
 
     image_summary = []
@@ -176,19 +167,19 @@ def make_metrics(class_loss, regr_loss, regularization_loss, image, true, pred, 
                 image_with_boxes = draw_bounding_boxes(
                     image[i], [regressions[pn][i] for pn in regressions],
                     [classifications[pn][i] for pn in classifications])
-                image_summary.append(
-                    tf.summary.image('boxmap',
-                                     tf.expand_dims(image_with_boxes, 0)))
+                image_summary.append(tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0)))
 
-                heatmap_image = tf.zeros_like(image[i])
+                classmap_image = tf.zeros_like(image[i])
                 for pn in classifications:
-                    heatmap_image += heatmap_to_image(image[i],
-                                                      classifications[pn][i])
+                    classmap_image += classmap_to_image(image[i], tf.argmax(classifications[pn][i], -1))
+                classmap_image = image[i] + classmap_image
+                image_summary.append(tf.summary.image('classification', tf.expand_dims(classmap_image, 0)))
 
-                heatmap_image = image[i] + heatmap_image
-                image_summary.append(
-                    tf.summary.image('heatmap', tf.expand_dims(
-                        heatmap_image, 0)))
+                not_ignored_mask_image = tf.zeros_like(image[i])
+                for pn in not_ignored_masks:
+                    not_ignored_mask_image += classmap_to_image(image[i], not_ignored_masks[pn][i])
+                not_ignored_mask_image = image[i] + not_ignored_mask_image
+                image_summary.append(tf.summary.image('not_ignored_mask', tf.expand_dims(not_ignored_mask_image, 0)))
 
     image_summary = tf.summary.merge(image_summary)
 
@@ -213,8 +204,11 @@ def main():
         augment=True)
 
     iter = ds.prefetch(1).make_initializable_iterator()
-    image, classifications_true, regressions_true, not_ignored_mask = iter.get_next()
-    image = preprocess_image(image)
+    input = iter.get_next()
+    print(input['classifications'])
+    print(input['not_ignored_mask'])
+    fails
+    image = preprocess_image(input['image'])
 
     net = retinanet.RetinaNet(
         levels=levels,
@@ -222,13 +216,13 @@ def main():
         dropout_rate=args.dropout,
         backbone=args.backbone)
     classifications_pred, regressions_pred = net(image, training)
-    assert classifications_true.keys() == regressions_true.keys() == levels.keys()
+    assert input['classifications'].keys() == input['regressions'].keys() == levels.keys()
     assert classifications_pred.keys() == regressions_pred.keys() == levels.keys()
 
     class_loss, regr_loss = objectives.loss(
-        (classifications_true, regressions_true),
+        (input['classifications'], input['regressions']),
         (classifications_pred, regressions_pred),
-        not_ignored_mask=not_ignored_mask)
+        not_ignored_mask=input['not_ignored_mask'])
     regularization_loss = tf.losses.get_regularization_loss()
 
     loss = class_loss + regr_loss + regularization_loss
@@ -239,12 +233,14 @@ def main():
         learning_rate=args.learning_rate)
 
     metrics, update_metrics, running_summary, image_summary = make_metrics(
+        loss,
         class_loss,
         regr_loss,
         regularization_loss,
         image=image,
-        true=(classifications_true, regressions_true),
+        true=(input['classifications'], input['regressions']),
         pred=(classifications_pred, regressions_pred),
+        not_ignored_masks=input['not_ignored_masks'],
         levels=levels,
         learning_rate=args.learning_rate)
 
@@ -255,8 +251,7 @@ def main():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess, tf.summary.FileWriter(
-            logdir=os.path.join(args.experiment, 'train'),
-            graph=sess.graph) as train_writer:
+            logdir=os.path.join(args.experiment, 'train'), graph=sess.graph) as train_writer:
         restore_path = tf.train.latest_checkpoint(args.experiment)
         if restore_path:
             saver.restore(sess, restore_path)

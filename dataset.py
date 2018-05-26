@@ -128,9 +128,9 @@ def make_labels(image_size, class_ids, boxes, levels):
 
     classifications = {pn: labels[pn][0] for pn in labels}
     regressions = {pn: labels[pn][1] for pn in labels}
-    not_ignored_mask = {pn: labels[pn][2] for pn in labels}
+    not_ignored_masks = {pn: labels[pn][2] for pn in labels}
 
-    return classifications, regressions, not_ignored_mask
+    return classifications, regressions, not_ignored_masks
 
 
 def gen(coco):
@@ -152,7 +152,7 @@ def rescale_image(image, scale):
     ratio = scale / size[shorter]
     new_size = tf.to_int32(tf.round(size * ratio))
 
-    return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR)
+    return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR, align_corners=True)
 
 
 def make_dataset(ann_path,
@@ -162,55 +162,64 @@ def make_dataset(ann_path,
                  augment,
                  scale=None,
                  shuffle=None):
-    def load_image_with_labels(filename, class_ids, boxes):
-        image = tf.read_file(filename)
+    def load_image_with_labels(input):
+        image = tf.read_file(input['image_file'])
         image = tf.image.decode_jpeg(image, channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
         image_size = tf.shape(image)[:2]
-        boxes = tf.to_float(boxes / tf.concat([image_size, image_size], 0))
+        boxes = tf.to_float(input['boxes'] / tf.concat([image_size, image_size], 0))
 
         if scale is not None:
             image = rescale_image(image, scale)
             image_size = tf.shape(image)[:2]
 
-        classifications, regressions, not_ignored_mask = make_labels(
-            image_size, class_ids, boxes, levels=levels)
+        classifications, regressions, not_ignored_masks = make_labels(
+            image_size, input['class_ids'], boxes, levels=levels)
 
-        return image, classifications, regressions, not_ignored_mask
+        return {
+            'image': image,
+            'classifications': classifications,
+            'regressions': regressions,
+            'not_ignored_masks': not_ignored_masks
+        }
 
-    def preprocess(image, classifications, regressions, not_ignored_mask):
-        flipped = augmentation.flip(image, classifications, regressions, not_ignored_mask)
-        image_flipped, classifications_flipped, regressions_flipped, not_ignored_mask_flipped = flipped
+    def preprocess(input):
+        flipped = augmentation.flip(input)
 
-        image = tf.stack([image, image_flipped], 0)
+        image = tf.stack([input['image'], flipped['image']], 0)
         classifications = {
-            pn: tf.stack([classifications[pn], classifications_flipped[pn]], 0)
-            for pn in classifications}
+            pn: tf.stack([input['classifications'][pn], flipped['classifications'][pn]], 0)
+            for pn in input['classifications']}
         regressions = {
-            pn: tf.stack([regressions[pn], regressions_flipped[pn]], 0)
-            for pn in regressions}
-        not_ignored_mask = {
-            pn: tf.stack([not_ignored_mask[pn], not_ignored_mask_flipped[pn]], 0)
-            for pn in not_ignored_mask}
+            pn: tf.stack([input['regressions'][pn], flipped['regressions'][pn]], 0)
+            for pn in input['regressions']}
+        not_ignored_masks = {
+            pn: tf.stack([input['not_ignored_masks'][pn], flipped['not_ignored_masks'][pn]], 0)
+            for pn in input['not_ignored_masks']}
         classifications = {
             pn: tf.one_hot(classifications[pn], coco.num_classes)
             for pn in classifications}
 
-        return image, classifications, regressions, not_ignored_mask
+        return {
+            'image': image,
+            'classifications': classifications,
+            'regressions': regressions,
+            'not_ignored_masks': not_ignored_masks
+        }
 
-    def augment_sample(image, classifications, regressions, not_ignored_mask):
+    def augment_sample(input):
         # TODO: add augmentation
         # image = tf.image.random_contrast(image, 0.8, 1.2)
         # image = tf.image.random_brightness(image, 0.2)
         # image = tf.image.random_saturation(image, 0.8, 1.0)
 
-        return image, classifications, regressions, not_ignored_mask
+        return input
 
     coco = COCO(ann_path, dataset_path, download)
     ds = tf.data.Dataset.from_generator(
         lambda: gen(coco),
-        output_types=(tf.string, tf.int32, tf.int32),
-        output_shapes=([], [None], [None, 4]))
+        output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.int32},
+        output_shapes={'image_file': [], 'class_ids': [None], 'boxes': [None, 4]})
 
     if shuffle is not None:
         ds = ds.shuffle(shuffle)
