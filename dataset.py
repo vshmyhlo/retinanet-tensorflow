@@ -186,28 +186,30 @@ def make_dataset(ann_path,
         }
 
     def preprocess(input):
-        flipped = augmentation.flip(input)
+        # flipped = augmentation.flip(input)
+        #
+        # image = tf.stack([input['image'], flipped['image']], 0)
+        # classifications = {
+        #     pn: tf.stack([input['classifications'][pn], flipped['classifications'][pn]], 0)
+        #     for pn in input['classifications']}
+        # regressions = {
+        #     pn: tf.stack([input['regressions'][pn], flipped['regressions'][pn]], 0)
+        #     for pn in input['regressions']}
+        # not_ignored_masks = {
+        #     pn: tf.stack([input['not_ignored_masks'][pn], flipped['not_ignored_masks'][pn]], 0)
+        #     for pn in input['not_ignored_masks']}
+        # classifications = {
+        #     pn: tf.one_hot(classifications[pn], coco.num_classes)
+        #     for pn in classifications}
+        #
+        # return {
+        #     'image': image,
+        #     'classifications': classifications,
+        #     'regressions': regressions,
+        #     'not_ignored_masks': not_ignored_masks
+        # }
 
-        image = tf.stack([input['image'], flipped['image']], 0)
-        classifications = {
-            pn: tf.stack([input['classifications'][pn], flipped['classifications'][pn]], 0)
-            for pn in input['classifications']}
-        regressions = {
-            pn: tf.stack([input['regressions'][pn], flipped['regressions'][pn]], 0)
-            for pn in input['regressions']}
-        not_ignored_masks = {
-            pn: tf.stack([input['not_ignored_masks'][pn], flipped['not_ignored_masks'][pn]], 0)
-            for pn in input['not_ignored_masks']}
-        classifications = {
-            pn: tf.one_hot(classifications[pn], coco.num_classes)
-            for pn in classifications}
-
-        return {
-            'image': image,
-            'classifications': classifications,
-            'regressions': regressions,
-            'not_ignored_masks': not_ignored_masks
-        }
+        return input
 
     def augment_sample(input):
         # TODO: add augmentation
