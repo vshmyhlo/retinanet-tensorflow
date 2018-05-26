@@ -35,15 +35,10 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
         return loss
 
 
-def safe_div(numerator, denominator):
-    return tf.where(tf.greater(denominator, 0),
-                    tf.div(numerator, tf.where(tf.equal(denominator, 0), tf.ones_like(denominator), denominator)),
-                    tf.zeros_like(numerator))
-
-
 def classification_loss(labels, logits, non_background_mask):
+    num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
     class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-    class_loss = safe_div(tf.reduce_sum(class_loss), tf.reduce_sum(tf.to_float(non_background_mask)))
+    class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.)
 
     return class_loss
 
