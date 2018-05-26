@@ -209,7 +209,15 @@ def make_dataset(ann_path,
         #     'not_ignored_masks': not_ignored_masks
         # }
 
-        return input
+        return {
+            'image': tf.expand_dims(input['image'], 0),
+            'classifications': {pn: tf.expand_dims(input['classifications'][pn])
+                                for pn in input['classifications']},
+            'regressions': {pn: tf.expand_dims(input['regressions'][pn])
+                            for pn in input['regressions']},
+            'not_ignored_masks': {pn: tf.expand_dims(input['not_ignored_masks'][pn])
+                                  for pn in input['not_ignored_masks']},
+        }
 
     def augment_sample(input):
         # TODO: add augmentation
