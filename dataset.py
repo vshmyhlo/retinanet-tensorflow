@@ -135,15 +135,18 @@ def make_labels(image_size, class_ids, boxes, levels):
 
 def gen(coco):
     for img in coco.load_imgs(coco.get_img_ids()):
-        filename = os.path.join(coco.dataset_path,
-                                img.filename).encode('utf-8')
+        image_file = os.path.join(coco.dataset_path, img.filename).encode('utf-8')
         anns = list(coco.load_anns(coco.get_ann_ids(img_ids=img.id)))
         class_ids = np.array([a.category_id for a in anns])
         boxes = np.array([a.box for a in anns])
 
         # ignore samples without ground true boxes
         if len(anns) > 0:
-            yield filename, class_ids, boxes
+            yield {
+                'image_file': image_file,
+                'class_ids': class_ids,
+                'boxes': boxes
+            }
 
 
 def rescale_image(image, scale):
