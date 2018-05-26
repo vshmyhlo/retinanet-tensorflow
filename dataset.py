@@ -160,8 +160,7 @@ def make_dataset(ann_path,
                  levels,
                  download,
                  augment,
-                 scale=None,
-                 shuffle=None):
+                 scale=None):
     def load_image_with_labels(input):
         image = tf.read_file(input['image_file'])
         image = tf.image.decode_jpeg(image, channels=3)
@@ -220,9 +219,6 @@ def make_dataset(ann_path,
         lambda: gen(coco),
         output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.int32},
         output_shapes={'image_file': [], 'class_ids': [None], 'boxes': [None, 4]})
-
-    if shuffle is not None:
-        ds = ds.shuffle(shuffle)
 
     ds = ds.map(load_image_with_labels)
     ds = ds.map(preprocess)

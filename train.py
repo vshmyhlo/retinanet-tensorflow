@@ -61,10 +61,9 @@ def draw_bounding_boxes(image, regressions, classifications, max_output_size=100
         final_scores.append(scores)
 
     final_boxes = tf.concat(final_boxes, 0)
-    # TODO: add nms
-    # final_scores = tf.concat(final_scores, 0)
-    # nms_indices = tf.image.non_max_suppression(final_boxes, final_scores, max_output_size, iou_threshold=0.5)
-    # final_boxes = tf.gather(final_boxes, nms_indices)
+    final_scores = tf.concat(final_scores, 0)
+    nms_indices = tf.image.non_max_suppression(final_boxes, final_scores, max_output_size, iou_threshold=0.5)
+    final_boxes = tf.gather(final_boxes, nms_indices)
     final_boxes = tf.expand_dims(final_boxes, 0)
 
     image = tf.image.draw_bounding_boxes(image, final_boxes)
@@ -81,7 +80,6 @@ def make_parser():
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--log-interval', type=int, default=1000)
     parser.add_argument('--scale', type=int, default=600)
-    parser.add_argument('--shuffle', type=int)
     parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument(
         '--backbone',
@@ -199,30 +197,29 @@ def main():
         dataset_path=args.dataset[1],
         levels=levels,
         scale=args.scale,
-        shuffle=args.shuffle,
         download=False,
         augment=True)
 
-    iter = ds.prefetch(1).make_initializable_iterator()
+    iter = ds.shuffle(32).prefetch(1).make_initializable_iterator()
     input = iter.get_next()
-    print(input['classifications'])
-    print(input['not_ignored_mask'])
-    fails
-    image = preprocess_image(input['image'])
+    input = {
+        **input,
+        'image': preprocess_image(input['image'])
+    }
 
     net = retinanet.RetinaNet(
         levels=levels,
         num_classes=num_classes,
         dropout_rate=args.dropout,
         backbone=args.backbone)
-    classifications_pred, regressions_pred = net(image, training)
+    classifications_pred, regressions_pred = net(input['image'], training)
     assert input['classifications'].keys() == input['regressions'].keys() == levels.keys()
     assert classifications_pred.keys() == regressions_pred.keys() == levels.keys()
 
     class_loss, regr_loss = objectives.loss(
         (input['classifications'], input['regressions']),
         (classifications_pred, regressions_pred),
-        not_ignored_mask=input['not_ignored_mask'])
+        not_ignored_masks=input['not_ignored_masks'])
     regularization_loss = tf.losses.get_regularization_loss()
 
     loss = class_loss + regr_loss + regularization_loss
@@ -237,7 +234,7 @@ def main():
         class_loss,
         regr_loss,
         regularization_loss,
-        image=image,
+        image=input['image'],
         true=(input['classifications'], input['regressions']),
         pred=(classifications_pred, regressions_pred),
         not_ignored_masks=input['not_ignored_masks'],
