@@ -211,11 +211,11 @@ def make_dataset(ann_path,
 
         return {
             'image': tf.expand_dims(input['image'], 0),
-            'classifications': {pn: tf.expand_dims(input['classifications'][pn])
+            'classifications': {pn: tf.expand_dims(input['classifications'][pn], 0)
                                 for pn in input['classifications']},
-            'regressions': {pn: tf.expand_dims(input['regressions'][pn])
+            'regressions': {pn: tf.expand_dims(input['regressions'][pn], 0)
                             for pn in input['regressions']},
-            'not_ignored_masks': {pn: tf.expand_dims(input['not_ignored_masks'][pn])
+            'not_ignored_masks': {pn: tf.expand_dims(input['not_ignored_masks'][pn], 0)
                                   for pn in input['not_ignored_masks']},
         }
 
