@@ -85,7 +85,7 @@ def make_parser():
         '--backbone',
         type=str,
         choices=['resnet', 'densenet'],
-        default='densenet')
+        default='resnet')
     parser.add_argument(
         '--optimizer',
         type=str,
