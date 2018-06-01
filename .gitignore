@@ -1,5 +1,5 @@
-/.idea
-/.cache
-/.ropeproject
-/__pycache__
-/env
+__pycache__
+.idea
+.cache
+.ropeproject
+venv
