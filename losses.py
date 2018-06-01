@@ -38,7 +38,7 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
 def classification_loss(labels, logits, non_background_mask):
     num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
 
-    with tf.control_dependencies([tf.not_equal(num_non_background, 0.)]):
+    with tf.control_dependencies([tf.is_finite(labels), tf.is_finite(logits), tf.not_equal(num_non_background, 0.)]):
         class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         class_loss = tf.reduce_sum(class_loss) / num_non_background
 
