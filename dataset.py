@@ -102,6 +102,8 @@ def level_labels(image_size, class_id, true_box, level, factor):
     scales = true_size / anchor_size
     # [OBJECTS, H, W, ANCHORS, 4]
     regression = tf.concat([shifts, tf.log(scales)], -1)
+    with tf.control_dependencies([tf.is_finite(regression)]):
+        regression = tf.identity(regression)
 
     # select regression for assigned anchor
     # [H, W, ANCHORS, 1]
@@ -109,7 +111,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     # [OBJECTS, H, W, ANCHORS, 1]
     iou_index_expanded = tf.one_hot(iou_index_expanded, num_objects, axis=0)
 
-    # [H, W, ANCHORS, 1]
+    # [H, W, ANCHORS, 4]
     regression = tf.reduce_sum(regression * iou_index_expanded, 0)  # TODO: should mask bg?
 
     return classification, regression, not_ignored_mask

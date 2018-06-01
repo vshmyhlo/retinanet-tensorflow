@@ -5,7 +5,7 @@ import tensorflow as tf
 import utils
 import retinanet
 from level import build_levels
-import objectives
+import losses
 import dataset
 from tqdm import tqdm
 import L4
@@ -219,7 +219,7 @@ def main():
     assert input['classifications'].keys() == input['regressions'].keys() == levels.keys()
     assert classifications_pred.keys() == regressions_pred.keys() == levels.keys()
 
-    class_loss, regr_loss = objectives.loss(
+    class_loss, regr_loss = losses.loss(
         (input['classifications'], input['regressions']),
         (classifications_pred, regressions_pred),
         not_ignored_masks=input['not_ignored_masks'])
