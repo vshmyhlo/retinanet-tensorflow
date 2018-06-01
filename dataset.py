@@ -102,7 +102,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     scales = true_size / anchor_size
     # [OBJECTS, H, W, ANCHORS, 4]
     regression = tf.concat([shifts, tf.log(scales)], -1)
-    with tf.control_dependencies([tf.is_finite(regression)]):
+    with tf.control_dependencies([tf.is_finite(regression)]):  # FIXME:
         regression = tf.identity(regression)
 
     # select regression for assigned anchor

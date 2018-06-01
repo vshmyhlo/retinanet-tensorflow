@@ -84,10 +84,7 @@ def iou(a, b):
         box_a_area + box_b_area - intersection_area)
     iou = tf.where(invalid_mask, tf.zeros_like(iou), iou)
 
-    with tf.control_dependencies([
-        tf.assert_greater_equal(iou, 0.0),
-        tf.assert_less_equal(iou, 1.0),
-    ]):
+    with tf.control_dependencies([tf.assert_greater_equal(iou, 0.0), tf.assert_less_equal(iou, 1.0)]):
         iou = tf.identity(iou)
 
     return iou
