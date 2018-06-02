@@ -78,9 +78,7 @@ def loss(labels, logits, not_ignored_masks, name='loss'):
         class_labels, regr_labels = labels
         class_logits, regr_logits = logits
 
-        print(class_labels)
         non_background_mask = tf.not_equal(tf.argmax(class_labels, -1), 0)
-        fail
 
         class_loss = classification_loss(
             labels=class_labels,
