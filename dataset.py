@@ -213,7 +213,7 @@ def make_dataset(ann_path,
 
         return {
             'image': tf.expand_dims(input['image'], 0),
-            'classifications': {pn: tf.one_hot(tf.expand_dims(input['classifications'][pn], 0), coco.num_classes)
+            'classifications': {pn: tf.expand_dims(tf.one_hot(input['classifications'][pn], coco.num_classes), 0)
                                 for pn in input['classifications']},
             'regressions': {pn: tf.expand_dims(input['regressions'][pn], 0)
                             for pn in input['regressions']},
