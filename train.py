@@ -175,14 +175,6 @@ def make_metrics(loss, class_loss, regr_loss, regularization_loss, image, true, 
                 classmap_image = image[i] + classmap_image
                 image_summary.append(tf.summary.image('classification', tf.expand_dims(classmap_image, 0)))
 
-    # for i in range(image.shape[0]):
-    #     with tf.name_scope('{}'.format(name, i)):
-    #         not_ignored_mask_image = tf.zeros_like(image[i])
-    #         for pn in not_ignored_masks:
-    #             not_ignored_mask_image += classmap_to_image(image[i], tf.to_float(not_ignored_masks[pn][i]))
-    #         not_ignored_mask_image = image[i] + not_ignored_mask_image
-    #         image_summary.append(tf.summary.image('not_ignored_mask', tf.expand_dims(not_ignored_mask_image, 0)))
-
     image_summary = tf.summary.merge(image_summary)
 
     return metrics, update_metrics, running_summary, image_summary
@@ -265,15 +257,11 @@ def main():
             for _ in tqdm(itertools.count()):
                 try:
                     _, step = sess.run(
-                        [(train_step, update_metrics), global_step], {
-                            training: True
-                        })
+                        [(train_step, update_metrics), global_step], {training: True})
 
                     if step % args.log_interval == 0:
                         m, run_summ, img_summ = sess.run(
-                            [metrics, running_summary, image_summary], {
-                                training: True
-                            })
+                            [metrics, running_summary, image_summary], {training: True})
 
                         print()
                         print_summary(m, step)

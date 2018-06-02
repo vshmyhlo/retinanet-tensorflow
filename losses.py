@@ -51,7 +51,8 @@ def regression_loss(labels, logits, non_background_mask):
         reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
     check = tf.Assert(tf.is_finite(regr_loss),
-                      [tf.reduce_mean(regr_loss), tf.reduce_mean(labels), tf.reduce_mean(logits)])  # FIXME:
+                      [tf.reduce_mean(regr_loss), tf.reduce_mean(labels),
+                       tf.reduce_mean(tf.boolean_mask(labels, non_background_mask)), tf.reduce_mean(logits)])  # FIXME:
     with tf.control_dependencies([check]):
         regr_loss = tf.identity(regr_loss)
 

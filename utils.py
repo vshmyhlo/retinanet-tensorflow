@@ -1,5 +1,8 @@
 import termcolor
 import tensorflow as tf
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def success(str):
@@ -108,3 +111,45 @@ def regression_postprocess(regression, anchor_boxes, name='regression_postproces
         regression = boxmap_center_relative_to_corner_relative(regression)
 
         return regression
+
+
+def draw_bounding_boxes(input, boxes, class_ids, class_names, num_classes):
+    rng = np.random.RandomState(42)
+    colors = [(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)) for _ in range(num_classes)]
+
+    input_size = input.shape[:2]
+    boxes_scale = np.array([*input_size, *input_size]) - 1
+    boxes = (boxes * boxes_scale).round().astype(np.int32)
+    for box, class_id in zip(boxes, class_ids):
+        input = cv2.rectangle(input, (box[1], box[0]), (box[3], box[2]), colors[class_id], 1)
+
+        text_size, baseline = cv2.getTextSize(class_names[class_id], cv2.FONT_HERSHEY_SIMPLEX, 0.8, 1)
+        input = cv2.rectangle(
+            input, (box[1], box[0] - text_size[1] - baseline), (box[1] + text_size[0], box[0]), colors[class_id], -1)
+        input = cv2.putText(
+            input, class_names[class_id], (box[1], box[0] - baseline), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255),
+            lineType=cv2.LINE_AA)
+
+    return input
+
+
+if __name__ == '__main__':
+    image = cv2.imread('./data/tf-logo.png')
+    image = cv2.resize(image, (400, 400))
+
+    boxes = np.array([
+        [0.0, 0.0, 1.0, 1.0],
+        [0.1, 0.1, 0.6, 0.6],
+        [0.25, 0.25, 0.75, 0.75],
+        [0.4, 0.4, 0.9, 0.9],
+    ])
+
+    class_ids = np.array([0, 3, 6, 9])
+
+    class_names = list('abcdefghjk')
+
+    image = draw_bounding_boxes(image, boxes, class_ids, class_names, 10)
+
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    plt.imshow(image)
+    plt.show()
