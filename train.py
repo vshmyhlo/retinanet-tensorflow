@@ -41,7 +41,8 @@ def classmap_to_image(image, classmap):
     classmap = tf.not_equal(classmap, 0)
     classmap = tf.to_float(classmap)
     classmap = tf.expand_dims(classmap, -1)
-    classmap = tf.image.resize_images(classmap, image_size, method=tf.image.ResizeMethod.AREA, align_corners=True)
+    classmap = tf.image.resize_images(
+        classmap, image_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
 
     return classmap
 
