@@ -30,7 +30,7 @@ def to_center_box(box):
     a, b = tf.split(box, 2, -1)
     size = b - a
 
-    with tf.control_dependencies([tf.assert_positive(size)]):
+    with tf.control_dependencies([tf.assert_positive(size, name='SIZE')]):
         size = tf.identity(size)  # FIXME:
 
     return tf.concat([a + size / 2, size], -1)
@@ -46,7 +46,7 @@ def from_center_box(box):
 def level_labels(image_size, class_id, true_box, level, factor):
     num_objects = tf.shape(true_box)[0]
 
-    with tf.control_dependencies([tf.assert_none_equal(num_objects, 0)]):
+    with tf.control_dependencies([tf.assert_none_equal(num_objects, 0, name='NUM OBJECTS')]):
         num_objects = tf.identity(num_objects)  # FIXME:
 
     num_anchors = level.anchor_sizes.shape[0]
@@ -110,7 +110,8 @@ def level_labels(image_size, class_id, true_box, level, factor):
     # [OBJECTS, H, W, ANCHORS, 4]
     regression = tf.concat([shifts, tf.log(scales)], -1)
     check = tf.Assert(tf.is_finite(tf.reduce_mean(regression)),
-                      [tf.reduce_mean(shifts), tf.reduce_mean(scales), tf.reduce_mean(tf.log(scales))], summarize=32)
+                      [tf.reduce_mean(shifts), tf.reduce_mean(scales), tf.reduce_mean(tf.log(scales)),
+                       tf.reduce_min(true_size), tf.reduce_max(anchor_size)], summarize=32, name='AFTER REGRESSION')
     with tf.control_dependencies([check]):  # FIXME:
         regression = tf.identity(regression)
 
