@@ -31,8 +31,8 @@ def preprocess_image(image):
 
 def print_summary(metrics, step):
     print(
-        'step: {}, loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}, regularization_loss: {:.4f}'.format(
-            step, metrics['loss'], metrics['class_loss'], metrics['regr_loss'], metrics['regularization_loss']))
+        'step: {}, total_loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}, regularization_loss: {:.4f}'.format(
+            step, metrics['total_loss'], metrics['class_loss'], metrics['regr_loss'], metrics['regularization_loss']))
 
 
 def classmap_to_image(image, classmap):
@@ -120,7 +120,7 @@ def make_train_step(loss, global_step, optimizer_type, learning_rate):
         return optimizer.minimize(loss, global_step=global_step)
 
 
-def make_metrics(loss, class_loss, regr_loss, regularization_loss, image, true, pred, not_ignored_masks, levels,
+def make_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, not_ignored_masks, levels,
                  learning_rate):
     image_size = tf.shape(image)[1:3]
     image = image * dataset.STD + dataset.MEAN
@@ -136,7 +136,7 @@ def make_metrics(loss, class_loss, regr_loss, regularization_loss, image, true, 
     metrics = {}
     update_metrics = {}
 
-    metrics['loss'], update_metrics['loss'] = tf.metrics.mean(loss)
+    metrics['total_loss'], update_metrics['total_loss'] = tf.metrics.mean(total_loss)
     metrics['class_loss'], update_metrics['class_loss'] = tf.metrics.mean(class_loss)
     metrics['regr_loss'], update_metrics['regr_loss'] = tf.metrics.mean(regr_loss)
     metrics['regularization_loss'], update_metrics['regularization_loss'] = tf.metrics.mean(regularization_loss)
@@ -146,7 +146,7 @@ def make_metrics(loss, class_loss, regr_loss, regularization_loss, image, true, 
     #     class_distribution(classifications_pred))
 
     running_summary = tf.summary.merge([
-        tf.summary.scalar('loss', metrics['loss']),
+        tf.summary.scalar('total_loss', metrics['total_loss']),
         tf.summary.scalar('class_loss', metrics['class_loss']),
         tf.summary.scalar('regr_loss', metrics['regr_loss']),
         tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
@@ -218,15 +218,15 @@ def main():
         not_ignored_masks=input['not_ignored_masks'])
     regularization_loss = tf.losses.get_regularization_loss()
 
-    loss = class_loss + regr_loss + regularization_loss
+    total_loss = class_loss + regr_loss + regularization_loss
     train_step = make_train_step(
-        loss,
+        total_loss,
         global_step=global_step,
         optimizer_type=args.optimizer,
         learning_rate=args.learning_rate)
 
     metrics, update_metrics, running_summary, image_summary = make_metrics(
-        loss,
+        total_loss,
         class_loss,
         regr_loss,
         regularization_loss,
