@@ -113,6 +113,8 @@ def level_labels(image_size, class_id, true_box, level, factor):
 
     # [H, W, ANCHORS, 4]
     regression = tf.reduce_sum(regression * iou_index_expanded, 0)  # TODO: should mask bg?
+    with tf.control_dependencies([tf.is_finite(regression)]):  # FIXME:
+        regression = tf.identity(regression)
 
     return classification, regression, not_ignored_mask
 
@@ -136,7 +138,11 @@ def make_labels(image_size, class_ids, boxes, levels):
 
 
 def gen(coco):
-    for img in coco.load_imgs(coco.get_img_ids()):
+    tmp = coco.load_imgs(coco.get_img_ids())
+    for _ in zip(range(11700), tmp):
+        pass
+
+    for img in tmp:
         image_file = os.path.join(coco.dataset_path, img.filename).encode('utf-8')
         anns = list(coco.load_anns(coco.get_ann_ids(img_ids=img.id)))
         class_ids = np.array([a.category_id for a in anns])
@@ -219,17 +225,22 @@ def make_dataset(ann_path,
 
         return input
 
+    def mapper(input):
+        input = load_image_with_labels(input)
+        input = preprocess(input)
+
+        if augment:
+            input = augment_sample(input)
+
+        return input
+
     coco = COCO(ann_path, dataset_path, download)
     ds = tf.data.Dataset.from_generator(
         lambda: gen(coco),
         output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.int32},
         output_shapes={'image_file': [], 'class_ids': [None], 'boxes': [None, 4]})
 
-    ds = ds.map(load_image_with_labels)
-    ds = ds.map(preprocess)
-
-    if augment:
-        ds = ds.map(augment_sample)
+    ds = ds.map(mapper, num_parallel_calls=min(os.cpu_count(), 8))
 
     return ds, coco.num_classes
 
