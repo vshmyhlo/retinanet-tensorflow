@@ -30,10 +30,6 @@ def to_center_box(box):
     a, b = tf.split(box, 2, -1)
     size = b - a
 
-    check = tf.Assert(tf.reduce_all(size > 0), [size, size > 0, box], summarize=1000, name='SIZE')
-    with tf.control_dependencies([check]):
-        size = tf.identity(size)  # FIXME:
-
     return tf.concat([a + size / 2, size], -1)
 
 
@@ -110,11 +106,6 @@ def level_labels(image_size, class_id, true_box, level, factor):
     scales = true_size / anchor_size
     # [OBJECTS, H, W, ANCHORS, 4]
     regression = tf.concat([shifts, tf.log(scales)], -1)
-    check = tf.Assert(tf.is_finite(tf.reduce_mean(regression)),
-                      [tf.reduce_mean(shifts), tf.reduce_mean(scales), tf.reduce_mean(tf.log(scales)),
-                       tf.reduce_min(true_size), tf.reduce_max(anchor_size)], summarize=32, name='AFTER_REGRESSION')
-    with tf.control_dependencies([check]):  # FIXME:
-        regression = tf.identity(regression)
 
     # select regression for assigned anchor
     # [H, W, ANCHORS, 1]
@@ -124,9 +115,6 @@ def level_labels(image_size, class_id, true_box, level, factor):
 
     # [H, W, ANCHORS, 4]
     regression = tf.reduce_sum(regression * iou_index_expanded, 0)  # TODO: should mask bg?
-    # check = tf.Assert(tf.is_finite(tf.reduce_mean(regression)), [regression], summarize=32)
-    # with tf.control_dependencies([check]):  # FIXME:
-    #     regression = tf.identity(regression)
 
     return classification, regression, not_ignored_mask
 
