@@ -30,7 +30,7 @@ def to_center_box(box):
     a, b = tf.split(box, 2, -1)
     size = b - a
 
-    check = tf.Assert(tf.reduce_all(size > 0), [size], summarize=1000, name='SIZE')
+    check = tf.Assert(tf.reduce_all(size > 0), [size, box], summarize=1000, name='SIZE')
     with tf.control_dependencies([check]):
         size = tf.identity(size)  # FIXME:
 
@@ -151,7 +151,7 @@ def make_labels(image_size, class_ids, boxes, levels):
 
 def gen(coco):
     tmp = coco.load_imgs(coco.get_img_ids())
-    for _ in zip(range(11700), tmp):
+    for _ in zip(range(11700), tmp):  # FIXME:
         pass
 
     for img in tmp:
