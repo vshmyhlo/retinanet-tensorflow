@@ -136,8 +136,8 @@ def make_labels(image_size, class_ids, boxes, levels):
 def gen(coco):
     tmp = coco.load_imgs(coco.get_img_ids())
     # for _ in zip(range(11700), tmp):  # FIXME:
-    for _ in zip(range(16800), tmp):  # FIXME:
-        pass
+    # for _ in zip(range(16800), tmp):  # FIXME:
+    #     pass
 
     for img in tmp:
         image_file = os.path.join(coco.dataset_path, img.filename).encode('utf-8')
