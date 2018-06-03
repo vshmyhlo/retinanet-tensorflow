@@ -30,7 +30,7 @@ def to_center_box(box):
     a, b = tf.split(box, 2, -1)
     size = b - a
 
-    check = tf.Assert(tf.reduce_all(size > 0), [size, box], summarize=1000, name='SIZE')
+    check = tf.Assert(tf.reduce_all(size > 0), [size, size > 0, box], summarize=1000, name='SIZE')
     with tf.control_dependencies([check]):
         size = tf.identity(size)  # FIXME:
 
@@ -151,7 +151,8 @@ def make_labels(image_size, class_ids, boxes, levels):
 
 def gen(coco):
     tmp = coco.load_imgs(coco.get_img_ids())
-    for _ in zip(range(11700), tmp):  # FIXME:
+    # for _ in zip(range(11700), tmp):  # FIXME:
+    for _ in zip(range(16800), tmp):  # FIXME:
         pass
 
     for img in tmp:
@@ -189,7 +190,7 @@ def make_dataset(ann_path,
         image = tf.image.decode_jpeg(image, channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
         image_size = tf.shape(image)[:2]
-        boxes = tf.to_float(input['boxes'] / tf.concat([image_size, image_size], 0))
+        boxes = input['boxes'] / tf.to_float(tf.concat([image_size, image_size], 0))
 
         if scale is not None:
             image = rescale_image(image, scale)
@@ -249,7 +250,7 @@ def make_dataset(ann_path,
     coco = COCO(ann_path, dataset_path, download)
     ds = tf.data.Dataset.from_generator(
         lambda: gen(coco),
-        output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.int32},
+        output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.float32},
         output_shapes={'image_file': [], 'class_ids': [None], 'boxes': [None, 4]})
 
     ds = ds.map(mapper, num_parallel_calls=min(os.cpu_count(), 8))
