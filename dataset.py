@@ -30,7 +30,8 @@ def to_center_box(box):
     a, b = tf.split(box, 2, -1)
     size = b - a
 
-    with tf.control_dependencies([tf.assert_positive(size, name='SIZE')]):
+    check = tf.Assert(tf.reduce_all(size > 0), [size], summarize=1000, name='SIZE')
+    with tf.control_dependencies([check]):
         size = tf.identity(size)  # FIXME:
 
     return tf.concat([a + size / 2, size], -1)
