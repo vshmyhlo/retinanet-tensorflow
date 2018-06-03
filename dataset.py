@@ -42,10 +42,6 @@ def from_center_box(box):
 
 def level_labels(image_size, class_id, true_box, level, factor):
     num_objects = tf.shape(true_box)[0]
-
-    with tf.control_dependencies([tf.assert_none_equal(num_objects, 0, name='NUM_OBJECTS')]):
-        num_objects = tf.identity(num_objects)  # FIXME:
-
     num_anchors = level.anchor_sizes.shape[0]
 
     # [OBJECTS, 4]
