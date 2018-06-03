@@ -34,5 +34,8 @@ class COCO(object):
     class Annotation(object):
         def __init__(self, ann, category_ids):
             [left, top, width, height] = ann['bbox']
+
+            assert height > 0
+            assert width > 0
             self.box = np.array([top, left, top + height, left + width])
             self.category_id = category_ids.index(ann['category_id'])
