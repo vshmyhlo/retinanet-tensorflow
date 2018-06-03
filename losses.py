@@ -40,7 +40,8 @@ def classification_loss(labels, logits, non_background_mask):
     class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
     class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
 
-    with tf.control_dependencies([tf.is_finite(class_loss)]):
+    check = tf.Assert(tf.is_finite(class_loss), [tf.reduce_mean(class_loss)])
+    with tf.control_dependencies([check]):
         class_loss = tf.identity(class_loss)
 
     return class_loss
