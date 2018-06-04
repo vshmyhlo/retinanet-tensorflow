@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-from coco import COCO
+import data_loaders.coco as coco
 import utils
 import augmentation
 import argparse
@@ -139,22 +139,6 @@ def build_labels(image_size, class_ids, boxes, levels, num_classes):
     return classifications, regressions, not_ignored_masks
 
 
-def gen(coco):
-    for img in coco.load_imgs(coco.get_img_ids()):
-        image_file = os.path.join(coco.dataset_path, img.filename).encode('utf-8')
-        anns = list(coco.load_anns(coco.get_ann_ids(img_ids=img.id)))
-        class_ids = np.array([a.category_id for a in anns])
-        boxes = np.array([a.box for a in anns])
-
-        # ignore samples without ground true boxes
-        if len(anns) > 0:
-            yield {
-                'image_file': image_file,
-                'class_ids': class_ids,
-                'boxes': boxes
-            }
-
-
 def rescale_image(image, scale):
     size = tf.to_float(tf.shape(image)[:2])
     shorter = tf.argmin(size)
@@ -177,7 +161,7 @@ def build_dataset(ann_path, dataset_path, levels, download, augment, scale=None)
             image_size = tf.shape(image)[:2]
 
         classifications, regressions, not_ignored_masks = build_labels(
-            image_size, input['class_ids'], boxes, levels=levels, num_classes=coco.num_classes)
+            image_size, input['class_ids'], boxes, levels=levels, num_classes=dl.num_classes)
 
         return {
             'image': image,
@@ -224,15 +208,15 @@ def build_dataset(ann_path, dataset_path, levels, download, augment, scale=None)
 
         return input
 
-    coco = COCO(ann_path, dataset_path, download)
+    dl = coco.COCO(ann_path, dataset_path, download)
     ds = tf.data.Dataset.from_generator(
-        lambda: gen(coco),
+        lambda: dl,
         output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.float32},
         output_shapes={'image_file': [], 'class_ids': [None], 'boxes': [None, 4]})
 
     ds = ds.map(mapper, num_parallel_calls=min(os.cpu_count(), 8))
 
-    return ds, coco.num_classes
+    return ds, dl.num_classes
 
 
 def compute_mean_std():
