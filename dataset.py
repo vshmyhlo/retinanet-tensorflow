@@ -115,7 +115,7 @@ def level_labels(image_size, class_id, true_box, level, factor):
     return classification, regression, not_ignored_mask
 
 
-def make_labels(image_size, class_ids, boxes, levels):
+def build_labels(image_size, class_ids, boxes, levels):
     labels = {
         pn: level_labels(
             image_size,
@@ -158,12 +158,7 @@ def rescale_image(image, scale):
     return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR, align_corners=True)
 
 
-def make_dataset(ann_path,
-                 dataset_path,
-                 levels,
-                 download,
-                 augment,
-                 scale=None):
+def build_dataset(ann_path, dataset_path, levels, download, augment, scale=None):
     def load_image_with_labels(input):
         image = tf.read_file(input['image_file'])
         image = tf.image.decode_jpeg(image, channels=3)
@@ -175,7 +170,7 @@ def make_dataset(ann_path,
             image = rescale_image(image, scale)
             image_size = tf.shape(image)[:2]
 
-        classifications, regressions, not_ignored_masks = make_labels(
+        classifications, regressions, not_ignored_masks = build_labels(
             image_size, input['class_ids'], boxes, levels=levels)
 
         return {
@@ -242,7 +237,7 @@ def compute_mean_std():
     parser.add_argument('--dataset', type=str, nargs=2, required=True)
 
     args = parser.parse_args()
-    ds, num_classes = make_dataset(
+    ds, num_classes = build_dataset(
         ann_path=args.dataset[0],
         dataset_path=args.dataset[1],
         levels={},

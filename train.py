@@ -73,7 +73,7 @@ def draw_bounding_boxes(image, regressions, classifications, max_output_size=100
     return image
 
 
-def make_parser():
+def build_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--learning-rate', type=float, default=1e-2)
     parser.add_argument('--dropout', type=float, default=0.2)
@@ -105,7 +105,7 @@ def class_distribution(tensors):
     ])
 
 
-def make_train_step(loss, global_step, config):
+def build_train_step(loss, global_step, config):
     assert config.optimizer in ['momentum', 'adam', 'l4']
 
     if config.optimizer == 'momentum':
@@ -126,8 +126,7 @@ def make_train_step(loss, global_step, config):
             return optimizer.minimize(loss, global_step=global_step)
 
 
-def make_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, not_ignored_masks, levels,
-                 learning_rate):
+def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, levels, learning_rate):
     image_size = tf.shape(image)[1:3]
     image = image * dataset.STD + dataset.MEAN
     classifications_true, regressions_true = true
@@ -187,14 +186,14 @@ def make_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, 
 
 
 def main():
-    args = make_parser().parse_args()
+    args = build_parser().parse_args()
     utils.log_args(args)
 
     levels = build_levels()
     training = tf.placeholder(tf.bool, [], name='training')
     global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
-    ds, num_classes = dataset.make_dataset(
+    ds, num_classes = dataset.build_dataset(
         ann_path=args.dataset[0],
         dataset_path=args.dataset[1],
         levels=levels,
@@ -225,9 +224,9 @@ def main():
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
-    train_step = make_train_step(total_loss, global_step=global_step, config=args)
+    train_step = build_train_step(total_loss, global_step=global_step, config=args)
 
-    metrics, update_metrics, running_summary, image_summary = make_metrics(
+    metrics, update_metrics, running_summary, image_summary = build_metrics(
         total_loss,
         class_loss,
         regr_loss,
