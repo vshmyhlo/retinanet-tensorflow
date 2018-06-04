@@ -121,7 +121,7 @@ def make_train_step(loss, global_step, config):
             params = tf.trainable_variables()
             gradients = tf.gradients(loss, params)
             clipped_gradients, _ = tf.clip_by_global_norm(gradients, config.grad_clip_norm)
-            return optimizer.apply_gradients(zip(clipped_gradients, params))
+            return optimizer.apply_gradients(zip(clipped_gradients, params), global_step=global_step)
         else:
             return optimizer.minimize(loss, global_step=global_step)
 
