@@ -22,8 +22,6 @@ import L4
 # TODO: use not_ignored_mask for visualization
 # TODO: check if batch norm after dropout is ok
 # TODO: balances cross-entropy
-# TODO: try not using bg class
-# TODO: align corners in interpolation
 
 def preprocess_image(image):
     return (image - dataset.MEAN) / dataset.STD
@@ -234,7 +232,6 @@ def main():
         image=input['image'],
         true=(input['classifications'], input['regressions']),
         pred=(classifications_pred, regressions_pred),
-        not_ignored_masks=input['not_ignored_masks'],
         levels=levels,
         learning_rate=args.learning_rate)
 
