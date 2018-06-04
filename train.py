@@ -80,7 +80,7 @@ def build_parser():
     parser.add_argument('--log-interval', type=int, default=1000)
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
-    parser.add_argument('--grad-clip-norm', type=float, default=1.)
+    parser.add_argument('--grad-clip-norm', type=float)
     parser.add_argument(
         '--backbone',
         type=str,
@@ -192,7 +192,11 @@ def main():
     global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
     ds, num_classes = dataset.build_dataset(
-        ann_path=args.dataset[0], dataset_path=args.dataset[1], levels=levels, scale=args.scale, augment=True)
+        ann_path=args.dataset[0],
+        dataset_path=args.dataset[1],
+        levels=levels,
+        scale=args.scale,
+        augment=True)
 
     iter = ds.shuffle(32).prefetch(1).make_initializable_iterator()
     input = iter.get_next()
