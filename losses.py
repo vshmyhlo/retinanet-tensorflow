@@ -1,4 +1,5 @@
 import tensorflow as tf
+import utils
 
 
 def focal_sigmoid_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.25,
@@ -81,7 +82,7 @@ def loss(labels, logits, not_ignored_masks, name='loss'):
         class_labels, regr_labels = labels
         class_logits, regr_logits = logits
 
-        non_background_mask = tf.not_equal(tf.argmax(class_labels, -1), 0)
+        non_background_mask = tf.not_equal(utils.classmap_decode(class_labels), -1)
 
         class_loss = classification_loss(
             labels=class_labels,

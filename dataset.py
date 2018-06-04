@@ -40,7 +40,7 @@ def from_center_box(box):
     return tf.concat([pos - half_size, pos + half_size], -1)
 
 
-def level_labels(image_size, class_id, true_box, level, factor):
+def level_labels(image_size, class_id, true_box, level, factor, num_classes):
     num_objects = tf.shape(true_box)[0]
     num_anchors = level.anchor_sizes.shape[0]
 
@@ -87,9 +87,14 @@ def level_labels(image_size, class_id, true_box, level, factor):
     # assign class labels to anchors
     # [H, W, ANCHORS]
     classification = tf.gather(class_id, iou_index)
+    # [H, W, ANCHORS, CLASSES]
+    classification = tf.one_hot(classification, num_classes)
     # assign background class to anchors with iou < NEG_IOU_THRESHOLD
-    # [H, W, ANCHORS]
-    classification = tf.where(bg_mask, tf.zeros_like(classification), classification)  # TODO: check if this is correct
+    # [H, W, ANCHORS, CLASSES]
+    bg_mask_expanded = tf.tile(tf.expand_dims(bg_mask, -1), (1, 1, 1, num_classes))
+    # TODO: check if this is correct
+    # [H, W, ANCHORS, CLASSES]
+    classification = tf.where(bg_mask_expanded, tf.zeros_like(classification), classification)
 
     # regression
 
@@ -115,14 +120,15 @@ def level_labels(image_size, class_id, true_box, level, factor):
     return classification, regression, not_ignored_mask
 
 
-def build_labels(image_size, class_ids, boxes, levels):
+def build_labels(image_size, class_ids, boxes, levels, num_classes):
     labels = {
         pn: level_labels(
             image_size,
             class_ids,
             boxes,
             level=levels[pn],
-            factor=2**int(pn[-1]))
+            factor=2**int(pn[-1]),
+            num_classes=num_classes)
         for pn in levels
     }
 
@@ -171,7 +177,7 @@ def build_dataset(ann_path, dataset_path, levels, download, augment, scale=None)
             image_size = tf.shape(image)[:2]
 
         classifications, regressions, not_ignored_masks = build_labels(
-            image_size, input['class_ids'], boxes, levels=levels)
+            image_size, input['class_ids'], boxes, levels=levels, num_classes=coco.num_classes)
 
         return {
             'image': image,
@@ -193,9 +199,6 @@ def build_dataset(ann_path, dataset_path, levels, download, augment, scale=None)
         not_ignored_masks = {
             pn: tf.stack([input['not_ignored_masks'][pn], flipped['not_ignored_masks'][pn]], 0)
             for pn in input['not_ignored_masks']}
-        classifications = {
-            pn: tf.one_hot(classifications[pn], coco.num_classes)
-            for pn in classifications}
 
         return {
             'image': image,

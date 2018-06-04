@@ -116,3 +116,23 @@ class UtilsTest(tf.test.TestCase):
         a, e = self.evaluate([actual, expected])
         assert np.allclose(a, e)
         assert a.shape == (4,)
+
+    def test_classmap_decode(self):
+        classmap = tf.convert_to_tensor([
+            [0.1, 0.9, 0.3, 0.8],
+            [0, 1, 0, 0],
+            [0.1, 0.2, 0.4, 0.3],
+            [0, 0, 0, 0],
+        ])
+
+        expected = tf.convert_to_tensor([
+            1,
+            1,
+            -1,
+            -1
+        ])
+
+        actual = utils.classmap_decode(classmap)
+
+        a, e = self.evaluate([actual, expected])
+        assert np.array_equal(a, e)

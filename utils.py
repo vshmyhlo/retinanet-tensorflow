@@ -1,7 +1,6 @@
 import termcolor
 import tensorflow as tf
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -133,7 +132,17 @@ def draw_bounding_boxes(input, boxes, class_ids, class_names, num_classes):
     return input
 
 
+def classmap_decode(classmap):
+    prob = tf.reduce_max(classmap, -1)
+    non_bg = prob > 0.5
+    classmap = tf.where(non_bg, tf.argmax(classmap, -1), tf.fill(tf.shape(non_bg), tf.to_int64(-1)))
+
+    return classmap
+
+
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+
     image = cv2.imread('./data/tf-logo.png')
     image = cv2.resize(image, (400, 400))
 

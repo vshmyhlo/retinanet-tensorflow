@@ -6,7 +6,7 @@ class COCO(object):
     def __init__(self, ann_path, dataset_path, download):
         self.coco = pycoco.COCO(ann_path)
         self.dataset_path = dataset_path
-        self.category_ids = ['BG'] + sorted(self.coco.getCatIds())
+        self.category_ids = sorted(self.coco.getCatIds())
         self.num_classes = len(self.category_ids)
 
         if download:

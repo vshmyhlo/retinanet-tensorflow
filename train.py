@@ -38,7 +38,7 @@ def print_summary(metrics, step):
 def classmap_to_image(image, classmap):
     image_size = tf.shape(image)[:2]
     classmap = tf.reduce_max(classmap, -1)
-    classmap = tf.not_equal(classmap, 0)
+    classmap = tf.not_equal(classmap, -1)
     classmap = tf.to_float(classmap)
     classmap = tf.expand_dims(classmap, -1)
     classmap = tf.image.resize_images(
@@ -53,7 +53,7 @@ def draw_bounding_boxes(image, regressions, classifications, max_output_size=100
     final_scores = []
 
     for regression, classification in zip(regressions, classifications):
-        mask = tf.not_equal(tf.argmax(classification, -1), 0)
+        mask = tf.not_equal(utils.classmap_decode(classification), -1)
         boxes = tf.boolean_mask(regression, mask)
         scores = tf.reduce_max(classification, -1)
         scores = tf.boolean_mask(scores, mask)
@@ -97,12 +97,12 @@ def build_parser():
     return parser
 
 
-def class_distribution(tensors):
-    # TODO: do not average over batch
-    return tf.stack([
-        tf.reduce_mean(tf.to_float(tf.argmax(tensors[k], -1)), [0, 1, 2])
-        for k in tensors
-    ])
+# def class_distribution(tensors):
+#     # TODO: do not average over batch
+#     return tf.stack([
+#         tf.reduce_mean(tf.to_float(tf.argmax(tensors[k], -1)), [0, 1, 2])
+#         for k in tensors
+#     ])
 
 
 def build_train_step(loss, global_step, config):
@@ -176,7 +176,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
 
                 classmap_image = tf.zeros_like(image[i])
                 for pn in classifications:
-                    classmap_image += classmap_to_image(image[i], tf.argmax(classifications[pn][i], -1))
+                    classmap_image += classmap_to_image(image[i], utils.classmap_decode(classifications[pn][i]))
                 classmap_image = image[i] + classmap_image
                 image_summary.append(tf.summary.image('classification', tf.expand_dims(classmap_image, 0)))
 
