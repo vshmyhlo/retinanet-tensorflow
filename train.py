@@ -192,12 +192,7 @@ def main():
     global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
     ds, num_classes = dataset.build_dataset(
-        ann_path=args.dataset[0],
-        dataset_path=args.dataset[1],
-        levels=levels,
-        scale=args.scale,
-        download=False,
-        augment=True)
+        ann_path=args.dataset[0], dataset_path=args.dataset[1], levels=levels, scale=args.scale, augment=True)
 
     iter = ds.shuffle(32).prefetch(1).make_initializable_iterator()
     input = iter.get_next()

@@ -148,7 +148,7 @@ def rescale_image(image, scale):
     return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR, align_corners=True)
 
 
-def build_dataset(ann_path, dataset_path, levels, download, augment, scale=None):
+def build_dataset(ann_path, dataset_path, levels, augment, scale=None):
     def load_image_with_labels(input):
         image = tf.read_file(input['image_file'])
         image = tf.image.decode_jpeg(image, channels=3)
@@ -208,7 +208,7 @@ def build_dataset(ann_path, dataset_path, levels, download, augment, scale=None)
 
         return input
 
-    dl = coco.COCO(ann_path, dataset_path, download)
+    dl = coco.COCO(ann_path, dataset_path)
     ds = tf.data.Dataset.from_generator(
         lambda: dl,
         output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.float32},
@@ -224,12 +224,7 @@ def compute_mean_std():
     parser.add_argument('--dataset', type=str, nargs=2, required=True)
 
     args = parser.parse_args()
-    ds, num_classes = build_dataset(
-        ann_path=args.dataset[0],
-        dataset_path=args.dataset[1],
-        levels={},
-        download=False,
-        augment=False)
+    ds, num_classes = build_dataset(ann_path=args.dataset[0], dataset_path=args.dataset[1], levels={}, augment=False)
     iter = ds.make_initializable_iterator()
     image, classifications_true, regressions_true = iter.get_next()
 
