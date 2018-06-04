@@ -134,12 +134,7 @@ def make_labels(image_size, class_ids, boxes, levels):
 
 
 def gen(coco):
-    tmp = coco.load_imgs(coco.get_img_ids())
-    # for _ in zip(range(11700), tmp):  # FIXME:
-    # for _ in zip(range(16800), tmp):  # FIXME:
-    #     pass
-
-    for img in tmp:
+    for img in coco.load_imgs(coco.get_img_ids()):
         image_file = os.path.join(coco.dataset_path, img.filename).encode('utf-8')
         anns = list(coco.load_anns(coco.get_ann_ids(img_ids=img.id)))
         class_ids = np.array([a.category_id for a in anns])
