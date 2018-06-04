@@ -42,8 +42,7 @@ class ClassificationSubnet(Network):
             ]))
 
         pi = 0.01
-        bias_prior_initializer = tf.constant_initializer(
-            -math.log((1 - pi) / pi))
+        bias_prior_initializer = tf.constant_initializer(-math.log((1 - pi) / pi))
 
         self.out_conv = self.track_layer(
             tf.layers.Conv2D(

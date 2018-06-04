@@ -26,6 +26,8 @@ class COCO(object):
 
             for a in annotations:
                 [left, top, width, height] = a['bbox']
+                if height <= 0 or width <= 0:
+                    continue  # FIXME:
                 assert height > 0, 'height {} <= 0'.format(height)  # FIXME:
                 assert width > 0, 'width {} <= 0'.format(width)  # FIXME:
                 boxes.append([top, left, top + height, left + width])

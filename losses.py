@@ -17,7 +17,7 @@ def focal_sigmoid_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
         return a_balance * modulating_factor * loss
 
 
-# TODO: check this is correct
+# TODO: check if this is correct
 def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.25, eps=1e-7,
                                             name='focal_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):

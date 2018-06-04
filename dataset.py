@@ -214,7 +214,7 @@ def build_dataset(ann_path, dataset_path, levels, augment, scale=None):
         output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.float32},
         output_shapes={'image_file': [], 'class_ids': [None], 'boxes': [None, 4]})
 
-    ds = ds.map(mapper, num_parallel_calls=min(os.cpu_count(), 8))
+    ds = ds.map(mapper, num_parallel_calls=min(os.cpu_count(), 4))
 
     return ds, dl.num_classes
 
