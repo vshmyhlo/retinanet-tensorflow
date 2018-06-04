@@ -82,6 +82,7 @@ def make_parser():
     parser.add_argument('--log-interval', type=int, default=1000)
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
+    parser.add_argument('--grad-clip-norm', type=float, default=1.)
     parser.add_argument(
         '--backbone',
         type=str,
@@ -104,20 +105,25 @@ def class_distribution(tensors):
     ])
 
 
-def make_train_step(loss, global_step, optimizer_type, learning_rate):
-    assert optimizer_type in ['momentum', 'adam', 'l4']
+def make_train_step(loss, global_step, config):
+    assert config.optimizer in ['momentum', 'adam', 'l4']
 
-    if optimizer_type == 'momentum':
-        optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
-    elif optimizer_type == 'adam':
-        optimizer = tf.train.AdamOptimizer(learning_rate)
-    elif optimizer_type == 'l4':
+    if config.optimizer == 'momentum':
+        optimizer = tf.train.MomentumOptimizer(config.learning_rate, 0.9)
+    elif config.optimizer == 'adam':
+        optimizer = tf.train.AdamOptimizer(config.learning_rate)
+    elif config.optimizer == 'l4':
         optimizer = L4.L4Adam(fraction=0.15)
 
-    # optimization
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
-        return optimizer.minimize(loss, global_step=global_step)
+        if config.grad_clip_norm is not None:
+            params = tf.trainable_variables()
+            gradients = tf.gradients(loss, params)
+            clipped_gradients, _ = tf.clip_by_global_norm(gradients, config.grad_clip_norm)
+            return optimizer.apply_gradients(zip(clipped_gradients, params))
+        else:
+            return optimizer.minimize(loss, global_step=global_step)
 
 
 def make_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, not_ignored_masks, levels,
@@ -219,11 +225,7 @@ def main():
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
-    train_step = make_train_step(
-        total_loss,
-        global_step=global_step,
-        optimizer_type=args.optimizer,
-        learning_rate=args.learning_rate)
+    train_step = make_train_step(total_loss, global_step=global_step, config=args)
 
     metrics, update_metrics, running_summary, image_summary = make_metrics(
         total_loss,
