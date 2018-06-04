@@ -244,7 +244,7 @@ def main():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess, tf.summary.FileWriter(
-            logdir=os.path.join(args.experiment, 'train'), graph=sess.graph) as train_writer:
+            logdir=os.path.join(args.experiment, 'train')) as train_writer:
         restore_path = tf.train.latest_checkpoint(args.experiment)
         if restore_path:
             saver.restore(sess, restore_path)
