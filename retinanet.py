@@ -303,8 +303,7 @@ class RetinaNet(Network):
 
         self.levels = levels
 
-        kernel_initializer = tf.random_normal_initializer(
-            mean=0.0, stddev=0.01)
+        kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
         kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)
 
         self.base = RetinaNetBase(

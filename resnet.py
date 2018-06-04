@@ -10,11 +10,7 @@ from network import Network, Sequential
 
 
 class ResNeXt_Bottleneck(Network):
-    def __init__(self,
-                 filters_base,
-                 project,
-                 cardinality=32,
-                 name='resnext_bottleneck'):
+    def __init__(self, filters_base, project, init_reg, cardinality=32, name='resnext_bottleneck'):
         assert filters_base % cardinality == 0
         assert project in [True, False, 'down']
         super().__init__(name=name)
@@ -23,13 +19,14 @@ class ResNeXt_Bottleneck(Network):
         if project == 'down':
             self.identity = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D(filters_base * 4, 2, 2, padding='same', use_bias=False),  # TODO: check this
+                    # TODO: check this
+                    tf.layers.Conv2D(filters_base * 4, 2, 2, padding='same', use_bias=False, **init_reg),
                     tf.layers.BatchNormalization()
                 ]))
         elif project:
             self.identity = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D(filters_base * 4, 1, use_bias=False),
+                    tf.layers.Conv2D(filters_base * 4, 1, use_bias=False, **init_reg),
                     tf.layers.BatchNormalization()
                 ]))
         else:
@@ -37,7 +34,7 @@ class ResNeXt_Bottleneck(Network):
 
         # conv1
         self.conv1 = self.track_layer(Sequential([
-            tf.layers.Conv2D(filters_base * 2, 1, use_bias=False),
+            tf.layers.Conv2D(filters_base * 2, 1, use_bias=False, **init_reg),
             tf.layers.BatchNormalization(),
             tf.nn.relu
         ]))
@@ -49,7 +46,8 @@ class ResNeXt_Bottleneck(Network):
 
             conv = self.track_layer(
                 Sequential([
-                    tf.layers.Conv2D((filters_base * 2) // cardinality, 3, strides, padding='same', use_bias=False),
+                    tf.layers.Conv2D(
+                        (filters_base * 2) // cardinality, 3, strides, padding='same', use_bias=False, **init_reg),
                     tf.layers.BatchNormalization(),
                     tf.nn.relu
                 ]))
@@ -58,7 +56,7 @@ class ResNeXt_Bottleneck(Network):
 
         # conv3
         self.conv3 = self.track_layer(Sequential([
-            tf.layers.Conv2D(filters_base * 4, 1, use_bias=False),
+            tf.layers.Conv2D(filters_base * 4, 1, use_bias=False, **init_reg),
             tf.layers.BatchNormalization()
         ]))
 
@@ -89,7 +87,7 @@ class ResNeXt_Bottleneck(Network):
 
 
 class ResNeXt_Block(Sequential):
-    def __init__(self, filters_base, depth, downsample, name='resnext_block'):
+    def __init__(self, filters_base, depth, downsample, init_reg, name='resnext_block'):
         layers = []
 
         for i in range(depth):
@@ -98,20 +96,18 @@ class ResNeXt_Block(Sequential):
             else:
                 project = False
 
-            layer = ResNeXt_Bottleneck(
-                filters_base, project=project, name='conv{}'.format(i + 1))
-
+            layer = ResNeXt_Bottleneck(filters_base, project=project, init_reg=init_reg, name='conv{}'.format(i + 1))
             layers.append(layer)
 
         super().__init__(layers, name=name)
 
 
 class ResNeXt_Conv1(Network):
-    def __init__(self, name='resnext_conv1'):
+    def __init__(self, init_reg, name='resnext_conv1'):
         super().__init__(name=name)
 
         self.conv = self.track_layer(
-            tf.layers.Conv2D(64, 7, 2, padding='same', use_bias=False, name='conv1'))
+            tf.layers.Conv2D(64, 7, 2, padding='same', use_bias=False, **init_reg, name='conv1'))
         self.bn = self.track_layer(tf.layers.BatchNormalization())
 
     def call(self, input, training):
@@ -123,12 +119,11 @@ class ResNeXt_Conv1(Network):
 
 
 class ResNeXt(Network):
-    def __init__(self, name='resnext'):
+    def __init__(self, init_reg, name='resnext'):
         super().__init__(name=name)
 
-        self.conv1 = self.track_layer(ResNeXt_Conv1(name='conv1'))
-        self.conv1_max_pool = self.track_layer(
-            tf.layers.MaxPooling2D(3, 2, padding='same'))
+        self.conv1 = self.track_layer(ResNeXt_Conv1(init_reg=init_reg, name='conv1'))
+        self.conv1_max_pool = self.track_layer(tf.layers.MaxPooling2D(3, 2, padding='same'))
 
     def call(self, input, training):
         input = self.conv1(input, training)
@@ -148,17 +143,23 @@ class ResNeXt(Network):
 
 class ResNeXt_50(ResNeXt):
     def __init__(self, name='resnext_v2_50'):
-        super().__init__(name=name)
+        init_reg = {
+            'kernel_initializer': tf.contrib.layers.variance_scaling_initializer(
+                factor=2.0, mode='FAN_IN', uniform=False),
+            'kernel_regularizer': tf.contrib.layers.l2_regularizer(scale=1e-4)
+        }
+
+        super().__init__(init_reg=init_reg, name=name)
 
         self.conv2 = self.track_layer(
             ResNeXt_Block(
-                filters_base=64, depth=3, downsample=False, name='conv2'))
+                filters_base=64, depth=3, downsample=False, init_reg=init_reg, name='conv2'))
         self.conv3 = self.track_layer(
             ResNeXt_Block(
-                filters_base=128, depth=4, downsample=True, name='conv3'))
+                filters_base=128, depth=4, downsample=True, init_reg=init_reg, name='conv3'))
         self.conv4 = self.track_layer(
             ResNeXt_Block(
-                filters_base=256, depth=6, downsample=True, name='conv4'))
+                filters_base=256, depth=6, downsample=True, init_reg=init_reg, name='conv4'))
         self.conv5 = self.track_layer(
             ResNeXt_Block(
-                filters_base=512, depth=3, downsample=True, name='conv5'))
+                filters_base=512, depth=3, downsample=True, init_reg=init_reg, name='conv5'))
