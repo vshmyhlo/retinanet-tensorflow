@@ -268,6 +268,7 @@ def main():
         restore_path = tf.train.latest_checkpoint(args.experiment)
         if restore_path:
             saver.restore(sess, restore_path)
+            print('state restored from {}'.format(restore_path))
         else:
             sess.run(globals_init)
 
