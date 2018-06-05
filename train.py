@@ -127,13 +127,6 @@ def build_parser():
 def build_train_step(loss, global_step, config):
     assert config.optimizer in ['momentum', 'adam', 'l4']
 
-    if config.optimizer == 'momentum':
-        optimizer = tf.train.MomentumOptimizer(config.learning_rate, 0.9)
-    elif config.optimizer == 'adam':
-        optimizer = tf.train.AdamOptimizer(config.learning_rate)
-    elif config.optimizer == 'l4':
-        optimizer = L4.L4Adam(fraction=0.15)
-
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
         params = tf.trainable_variables()
@@ -141,6 +134,15 @@ def build_train_step(loss, global_step, config):
 
         if config.grad_clip_norm is not None:
             gradients, _ = tf.clip_by_global_norm(gradients, config.grad_clip_norm)
+
+        if config.optimizer == 'momentum':
+            optimizer = tf.train.MomentumOptimizer(config.learning_rate, 0.9)
+        elif config.optimizer == 'adam':
+            optimizer = tf.train.AdamOptimizer(config.learning_rate)
+        elif config.optimizer == 'l4':
+            optimizer = L4.L4Adam(fraction=0.15)
+        else:
+            raise AssertionError('invalid optimizer type: {}'.format(config.optimizer))
 
         return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
 
