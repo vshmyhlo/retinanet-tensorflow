@@ -35,9 +35,10 @@ def print_summary(metrics, step):
 
 def classmap_to_image(image, classmap):
     image_size = tf.shape(image)[:2]
-    classmap = tf.reduce_max(classmap, -1)
+    classmap = utils.classmap_decode(classmap)
     classmap = tf.not_equal(classmap, -1)
     classmap = tf.to_float(classmap)
+    classmap = tf.reduce_sum(classmap, -1)
     classmap = tf.expand_dims(classmap, -1)
     classmap = tf.image.resize_images(
         classmap, image_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
@@ -194,7 +195,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
 
                 classmap_image = tf.zeros_like(image[i])
                 for pn in classifications:
-                    classmap_image += classmap_to_image(image[i], utils.classmap_decode(classifications[pn][i]))
+                    classmap_image += classmap_to_image(image[i], classifications[pn][i])
                 classmap_image = image[i] + classmap_image
                 image_summary.append(tf.summary.image('classification', tf.expand_dims(classmap_image, 0)))
 
