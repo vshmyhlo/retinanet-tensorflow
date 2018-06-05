@@ -52,10 +52,10 @@ def draw_bounding_boxes(image, regressions, classifications, max_output_size=100
     final_scores = []
 
     for regression, classification in zip(regressions, classifications):
-        mask = tf.not_equal(utils.classmap_decode(classification), -1)
-        boxes = tf.boolean_mask(regression, mask)
+        non_background_mask = tf.not_equal(utils.classmap_decode(classification), -1)
+        boxes = tf.boolean_mask(regression, non_background_mask)
         scores = tf.reduce_max(classification, -1)
-        scores = tf.boolean_mask(scores, mask)
+        scores = tf.boolean_mask(scores, non_background_mask)
 
         final_boxes.append(boxes)
         final_scores.append(scores)
@@ -268,7 +268,7 @@ def main():
         restore_path = tf.train.latest_checkpoint(args.experiment)
         if restore_path:
             saver.restore(sess, restore_path)
-            print('state restored from {}'.format(restore_path))
+            print('model restored from {}'.format(restore_path))
         else:
             sess.run(globals_init)
 
