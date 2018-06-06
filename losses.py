@@ -51,6 +51,7 @@ def classification_loss(labels, logits, non_background_mask, smooth=100):
     intersection = tf.reduce_sum(labels * logits, -1)
     union = tf.reduce_sum(labels + logits, -1)
     class_loss = (intersection + smooth) / (union - intersection + smooth)
+    class_loss = (1 - class_loss) * smooth
     class_loss = tf.reduce_mean(class_loss)
 
     return class_loss
