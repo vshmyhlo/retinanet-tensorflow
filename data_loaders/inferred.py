@@ -14,6 +14,10 @@ class Inferred(object):
         else:
             raise AssertionError('unknown dataset type: {}'.format(type))
 
+    @property
+    def num_classes(self):
+        return self._dl.num_classes
+
     def __iter__(self):
         for x in self._dl:
             assert x['boxes'].shape[0] == x['class_ids'].shape[0] != 0
