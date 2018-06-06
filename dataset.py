@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-import data_loaders.coco as coco
+from data_loaders.inferred import Inferred
 import utils
 import augmentation
 import argparse
@@ -148,7 +148,7 @@ def rescale_image(image, scale):
     return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR, align_corners=True)
 
 
-def build_dataset(ann_path, dataset_path, levels, augment, scale=None):
+def build_dataset(spec, levels, augment, scale=None):
     def load_image_with_labels(input):
         image = tf.read_file(input['image_file'])
         image = tf.image.decode_jpeg(image, channels=3)
@@ -208,7 +208,7 @@ def build_dataset(ann_path, dataset_path, levels, augment, scale=None):
 
         return input
 
-    dl = coco.COCO(ann_path, dataset_path)
+    dl = Inferred(spec[0], spec[1:])
     ds = tf.data.Dataset.from_generator(
         lambda: dl,
         output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.float32},

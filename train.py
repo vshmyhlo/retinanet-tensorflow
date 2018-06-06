@@ -76,7 +76,7 @@ def build_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--learning-rate', type=float, default=1e-2)
     parser.add_argument('--dropout', type=float, default=0.2)
-    parser.add_argument('--dataset', type=str, nargs=2, required=True)
+    parser.add_argument('--dataset', type=str, nargs='+', required=True)
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--log-interval', type=int, default=1000)
     parser.add_argument('--scale', type=int, default=600)
@@ -216,8 +216,7 @@ def main():
     global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
     ds, num_classes = dataset.build_dataset(
-        ann_path=args.dataset[0],
-        dataset_path=args.dataset[1],
+        spec=args.dataset,
         levels=levels,
         scale=args.scale,
         augment=True)

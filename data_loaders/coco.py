@@ -8,7 +8,10 @@ class COCO(object):
         self.coco = pycoco.COCO(ann_path)
         self.dataset_path = dataset_path
         self.category_ids = sorted(self.coco.getCatIds())
-        self.num_classes = len(self.category_ids)
+
+    @property
+    def num_classes(self):
+        return len(self.category_ids)
 
     def download(self):
         self.coco.download(tarDir=self.dataset_path)
@@ -36,8 +39,8 @@ class COCO(object):
                 boxes.append([top, left, top + height, left + width])
                 class_ids.append(self.category_ids.index(a['category_id']))
 
-            boxes = np.array(boxes)  # TODO: normalize boxes
-            class_ids = np.array(class_ids)
+            boxes = np.array(boxes).reshape((-1, 4))  # TODO: normalize boxes
+            class_ids = np.array(class_ids).reshape(-1)
 
             # ignore samples without boxes
             if len(annotations) > 0:
