@@ -117,7 +117,7 @@ def draw_bounding_boxes(input, boxes, class_ids, class_names, num_classes):
     colors = [(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)) for _ in range(num_classes)]
 
     input_size = input.shape[:2]
-    boxes_scale = np.array([*input_size, *input_size]) - 1
+    boxes_scale = np.array([*input_size, *input_size]) - 1  # TODO: -1 ?
     boxes = (boxes * boxes_scale).round().astype(np.int32)
     for box, class_id in zip(boxes, class_ids):
         input = cv2.rectangle(input, (box[1], box[0]), (box[3], box[2]), colors[class_id], 1)

@@ -18,7 +18,7 @@ class COCO(object):
         images = self.coco.loadImgs(ids=image_ids)
         for image in images:
             image_file = os.path.join(self.dataset_path, image['file_name']).encode('utf-8')
-            annotation_ids = self.coco.getAnnIds(imgIds=image['id'])
+            annotation_ids = self.coco.getAnnIds(imgIds=image['id'], iscrowd=False)
             annotations = self.coco.loadAnns(ids=annotation_ids)
 
             boxes = []
@@ -26,8 +26,11 @@ class COCO(object):
 
             for a in annotations:
                 [left, top, width, height] = a['bbox']
-                if height <= 0 or width <= 0:
-                    continue  # FIXME:
+
+                # some boxes have no width / height
+                if height < 1 or width < 1:
+                    continue
+
                 assert height > 0, 'height {} <= 0'.format(height)  # FIXME:
                 assert width > 0, 'width {} <= 0'.format(width)  # FIXME:
                 boxes.append([top, left, top + height, left + width])
@@ -36,7 +39,7 @@ class COCO(object):
             boxes = np.array(boxes)  # TODO: normalize boxes
             class_ids = np.array(class_ids)
 
-            # ignore samples without ground true boxes
+            # ignore samples without boxes
             if len(annotations) > 0:
                 yield {
                     'image_file': image_file,

@@ -124,6 +124,7 @@ def build_parser():
 #         else:
 #             return optimizer.minimize(loss, global_step=global_step)
 
+# TODO: refactor this
 def build_train_step(loss, global_step, config):
     assert config.optimizer in ['momentum', 'adam', 'l4']
 
