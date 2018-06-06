@@ -20,7 +20,7 @@ class COCO(object):
         image_ids = self.coco.getImgIds()
         images = self.coco.loadImgs(ids=image_ids)
         for image in images:
-            image_file = os.path.join(self.dataset_path, image['file_name']).encode('utf-8')
+            image_file = os.path.join(self.dataset_path, image['file_name'])
             annotation_ids = self.coco.getAnnIds(imgIds=image['id'], iscrowd=False)
             annotations = self.coco.loadAnns(ids=annotation_ids)
 
@@ -45,7 +45,7 @@ class COCO(object):
             # ignore samples without boxes
             if len(annotations) > 0:
                 yield {
-                    'image_file': image_file,
+                    'image_file': image_file.encode('utf-8'),
                     'class_ids': class_ids,
                     'boxes': boxes
                 }

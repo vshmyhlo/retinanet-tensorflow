@@ -40,7 +40,7 @@ class Pascal(object):
             class_ids = np.array(class_ids).reshape(-1)
 
             yield {
-                'image_file': image_file,
+                'image_file': image_file.encode('utf-8'),
                 'class_ids': class_ids,
                 'boxes': boxes
             }
