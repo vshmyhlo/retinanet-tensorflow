@@ -94,8 +94,7 @@ def iou(a, b):
 
 def scale_regression(regression, anchor_boxes):
     anchor_boxes = tf.tile(anchor_boxes, (1, 2))
-    anchor_boxes = tf.reshape(
-        anchor_boxes, (1, 1, 1, anchor_boxes.shape[0], anchor_boxes.shape[1]))
+    anchor_boxes = tf.reshape(anchor_boxes, (1, 1, 1, anchor_boxes.shape[0], anchor_boxes.shape[1]))
 
     return regression * anchor_boxes
 

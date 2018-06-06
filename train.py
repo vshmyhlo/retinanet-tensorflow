@@ -78,7 +78,7 @@ def build_parser():
     parser.add_argument('--dropout', type=float, default=0.2)
     parser.add_argument('--dataset', type=str, nargs='+', required=True)
     parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--log-interval', type=int, default=1000)
+    parser.add_argument('--log-interval', type=int)
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument('--grad-clip-norm', type=float)
@@ -280,7 +280,7 @@ def main():
                     _, step = sess.run(
                         [(train_step, update_metrics), global_step], {training: True})
 
-                    if step % args.log_interval == 0:
+                    if args.log_interval is not None and step % args.log_interval == 0:
                         m, run_summ, img_summ = sess.run(
                             [metrics, running_summary, image_summary], {training: True})
 
