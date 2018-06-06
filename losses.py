@@ -36,14 +36,22 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
         return loss
 
 
-def classification_loss(labels, logits, non_background_mask):
-    num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
-    class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-    class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
+# def classification_loss(labels, logits, non_background_mask):
+#     num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
+#     class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+#     class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
+#
+#     check = tf.Assert(tf.is_finite(class_loss), [tf.reduce_mean(class_loss)])
+#     with tf.control_dependencies([check]):
+#         class_loss = tf.identity(class_loss)
+#
+#     return class_loss
 
-    check = tf.Assert(tf.is_finite(class_loss), [tf.reduce_mean(class_loss)])
-    with tf.control_dependencies([check]):
-        class_loss = tf.identity(class_loss)
+def classification_loss(labels, logits, non_background_mask, smooth=100):
+    intersection = tf.reduce_sum(labels * logits, -1)
+    union = tf.reduce_sum(labels + logits, -1)
+    class_loss = (intersection + smooth) / (union - intersection + smooth)
+    class_loss = tf.reduce_mean(class_loss)
 
     return class_loss
 
