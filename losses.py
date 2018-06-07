@@ -42,8 +42,8 @@ def classification_loss(labels, logits, non_background_mask):
     class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
 
     [logits_grad] = tf.gradients(class_loss, [logits])
-    logits_grad_fg = tf.boolean_mask(logits_grad, non_background_mask)
-    logits_grad_bg = tf.boolean_mask(logits_grad, tf.logical_not(non_background_mask))
+    logits_grad_fg = tf.boolean_mask(tf.abs(logits_grad), non_background_mask)
+    logits_grad_bg = tf.boolean_mask(tf.abs(logits_grad), tf.logical_not(non_background_mask))
 
     tf.add_to_collection('logits_grad_fg', logits_grad_fg)
     tf.add_to_collection('logits_grad_bg', logits_grad_bg)
