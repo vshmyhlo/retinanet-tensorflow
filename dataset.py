@@ -40,6 +40,7 @@ def from_center_box(box):
     return tf.concat([pos - half_size, pos + half_size], -1)
 
 
+# TODO: check this
 def level_labels(image_size, class_id, true_box, level, factor, num_classes):
     num_objects = tf.shape(true_box)[0]
     num_anchors = level.anchor_sizes.shape[0]
