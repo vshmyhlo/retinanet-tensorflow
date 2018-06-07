@@ -48,13 +48,20 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
 #     return class_loss
 
 def classification_loss(labels, logits, non_background_mask, smooth=100):
-    logits = tf.nn.sigmoid(logits)
-   
-    intersection = tf.reduce_sum(labels * logits, -1)
-    union = tf.reduce_sum(labels + logits, -1)
+    prob = tf.nn.sigmoid(logits)
+
+    intersection = tf.reduce_sum(labels * prob, -1)
+    union = tf.reduce_sum(labels + prob, -1)
     class_loss = (intersection + smooth) / (union - intersection + smooth)
     class_loss = (1 - class_loss) * smooth
     class_loss = tf.reduce_mean(class_loss)
+
+    [logits_grad] = tf.gradients(class_loss, [logits])
+    logits_grad_fg = tf.boolean_mask(logits_grad, non_background_mask)
+    logits_grad_bg = tf.boolean_mask(logits_grad, tf.logical_not(non_background_mask))
+
+    tf.add_to_collection('logits_grad_fg', logits_grad_fg)
+    tf.add_to_collection('logits_grad_bg', logits_grad_bg)
 
     return class_loss
 
@@ -97,7 +104,7 @@ def loss(labels, logits, not_ignored_masks, name='loss'):
 
         class_loss = classification_loss(
             labels=class_labels,
-            logits=class_logits,
+            prob=class_logits,
             non_background_mask=non_background_mask)
         regr_loss = regression_loss(
             labels=regr_labels,
