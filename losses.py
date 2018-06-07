@@ -36,19 +36,19 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
         return loss
 
 
-def classification_loss(labels, logits, non_background_mask):
-    num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
-    class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, focus=5.0)  # FIXME:
-    class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
-
-    [logits_grad] = tf.gradients(class_loss, [logits])
-    logits_grad_fg = tf.boolean_mask(tf.abs(logits_grad), non_background_mask)
-    logits_grad_bg = tf.boolean_mask(tf.abs(logits_grad), tf.logical_not(non_background_mask))
-
-    tf.add_to_collection('logits_grad_fg', tf.reduce_sum(logits_grad_fg))
-    tf.add_to_collection('logits_grad_bg', tf.reduce_sum(logits_grad_bg))
-
-    return class_loss
+# def classification_loss(labels, logits, non_background_mask):
+#     num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
+#     class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, focus=5.0)  # FIXME:
+#     class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
+#
+#     [logits_grad] = tf.gradients(class_loss, [logits])
+#     logits_grad_fg = tf.boolean_mask(tf.abs(logits_grad), non_background_mask)
+#     logits_grad_bg = tf.boolean_mask(tf.abs(logits_grad), tf.logical_not(non_background_mask))
+#
+#     tf.add_to_collection('logits_grad_fg', tf.reduce_sum(logits_grad_fg))
+#     tf.add_to_collection('logits_grad_bg', tf.reduce_sum(logits_grad_bg))
+#
+#     return class_loss
 
 
 # def classification_loss(labels, logits, non_background_mask, smooth=100):
@@ -68,6 +68,23 @@ def classification_loss(labels, logits, non_background_mask):
 #     tf.add_to_collection('logits_grad_bg', logits_grad_bg)
 #
 #     return class_loss
+
+def classification_loss(labels, logits, non_background_mask, smooth=100):
+    prob = tf.nn.sigmoid(logits)
+
+    intersection = tf.reduce_sum(labels * prob)
+    union = tf.reduce_sum(labels + prob)
+    class_loss = (intersection + smooth) / (union - intersection + smooth)
+    class_loss = (1 - class_loss) * smooth
+
+    [logits_grad] = tf.gradients(class_loss, [logits])
+    logits_grad_fg = tf.boolean_mask(logits_grad, non_background_mask)
+    logits_grad_bg = tf.boolean_mask(logits_grad, tf.logical_not(non_background_mask))
+
+    tf.add_to_collection('logits_grad_fg', logits_grad_fg)
+    tf.add_to_collection('logits_grad_bg', logits_grad_bg)
+
+    return class_loss
 
 
 def regression_loss(labels, logits, non_background_mask):
