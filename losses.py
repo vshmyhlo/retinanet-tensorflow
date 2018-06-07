@@ -104,7 +104,7 @@ def loss(labels, logits, not_ignored_masks, name='loss'):
 
         class_loss = classification_loss(
             labels=class_labels,
-            prob=class_logits,
+            logits=class_logits,
             non_background_mask=non_background_mask)
         regr_loss = regression_loss(
             labels=regr_labels,
