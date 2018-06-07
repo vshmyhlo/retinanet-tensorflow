@@ -18,7 +18,7 @@ def focal_sigmoid_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
 
 
 # TODO: check if this is correct
-def focal_softmax_cross_entropy_with_logits(labels, logits, focus=5.0, alpha=0.25, eps=1e-7,
+def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.25, eps=1e-7,
                                             name='focal_softmax_cross_entropy_with_logits'):
     with tf.name_scope(name):
         alpha = tf.ones_like(labels) * alpha
@@ -38,7 +38,7 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=5.0, alpha=0.2
 
 def classification_loss(labels, logits, non_background_mask):
     num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
-    class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+    class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, focus=5.0)  # FIXME:
     class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
 
     [logits_grad] = tf.gradients(class_loss, [logits])
