@@ -83,7 +83,7 @@ def level_labels(image_size, class_id, true_box, level, factor, num_classes):
     bg_mask = iou_value < NEG_IOU_THRESHOLD
     # mask for ignoring unassigned anchors
     # [H, W, ANCHORS]
-    not_ignored_mask = tf.logical_or(bg_mask, iou_value >= POS_IOU_THRESHOLD)
+    trainable_mask = tf.logical_or(bg_mask, iou_value >= POS_IOU_THRESHOLD)
 
     # assign class labels to anchors
     # [H, W, ANCHORS]
@@ -118,7 +118,7 @@ def level_labels(image_size, class_id, true_box, level, factor, num_classes):
     # [H, W, ANCHORS, 4]
     regression = tf.reduce_sum(regression * iou_index_expanded, 0)  # TODO: should mask bg?
 
-    return classification, regression, not_ignored_mask
+    return classification, regression, trainable_mask
 
 
 def build_labels(image_size, class_ids, boxes, levels, num_classes):
@@ -135,9 +135,9 @@ def build_labels(image_size, class_ids, boxes, levels, num_classes):
 
     classifications = {pn: labels[pn][0] for pn in labels}
     regressions = {pn: labels[pn][1] for pn in labels}
-    not_ignored_masks = {pn: labels[pn][2] for pn in labels}
+    trainable_masks = {pn: labels[pn][2] for pn in labels}
 
-    return classifications, regressions, not_ignored_masks
+    return classifications, regressions, trainable_masks
 
 
 def rescale_image(image, scale):
@@ -161,14 +161,14 @@ def build_dataset(spec, levels, augment, scale=None):
             image = rescale_image(image, scale)
             image_size = tf.shape(image)[:2]
 
-        classifications, regressions, not_ignored_masks = build_labels(
+        classifications, regressions, trainable_masks = build_labels(
             image_size, input['class_ids'], boxes, levels=levels, num_classes=dl.num_classes)
 
         return {
             'image': image,
             'classifications': classifications,
             'regressions': regressions,
-            'not_ignored_masks': not_ignored_masks
+            'trainable_masks': trainable_masks
         }
 
     def preprocess(input):
@@ -181,15 +181,15 @@ def build_dataset(spec, levels, augment, scale=None):
         regressions = {
             pn: tf.stack([input['regressions'][pn], flipped['regressions'][pn]], 0)
             for pn in input['regressions']}
-        not_ignored_masks = {
-            pn: tf.stack([input['not_ignored_masks'][pn], flipped['not_ignored_masks'][pn]], 0)
-            for pn in input['not_ignored_masks']}
+        trainable_masks = {
+            pn: tf.stack([input['trainable_masks'][pn], flipped['trainable_masks'][pn]], 0)
+            for pn in input['trainable_masks']}
 
         return {
             'image': image,
             'classifications': classifications,
             'regressions': regressions,
-            'not_ignored_masks': not_ignored_masks
+            'trainable_masks': trainable_masks
         }
 
     def augment_sample(input):

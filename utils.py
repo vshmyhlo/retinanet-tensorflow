@@ -167,11 +167,11 @@ if __name__ == '__main__':
     plt.show()
 
 
-def merge_outputs(tensors, not_ignored_masks, name='merge_outputs'):
+def merge_outputs(tensors, trainable_masks, name='merge_outputs'):
     with tf.name_scope(name):
         res = []
         for pn in tensors:
-            mask = not_ignored_masks[pn]
+            mask = trainable_masks[pn]
             tensor = tensors[pn]
             tensor = tf.boolean_mask(tensor, mask)
             res.append(tensor)

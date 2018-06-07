@@ -101,10 +101,10 @@ def regression_loss(labels, logits, non_background_mask):
     return regr_loss
 
 
-def loss(labels, logits, not_ignored_masks, name='loss'):
+def loss(labels, logits, trainable_masks, name='loss'):
     with tf.name_scope(name):
-        labels = tuple(utils.merge_outputs(x, not_ignored_masks) for x in labels)
-        logits = tuple(utils.merge_outputs(x, not_ignored_masks) for x in logits)
+        labels = tuple(utils.merge_outputs(x, trainable_masks) for x in labels)
+        logits = tuple(utils.merge_outputs(x, trainable_masks) for x in logits)
 
         class_labels, regr_labels = labels
         class_logits, regr_logits = logits

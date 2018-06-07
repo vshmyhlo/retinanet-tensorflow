@@ -6,8 +6,8 @@ import losses
 class ObjectivesTest(tf.test.TestCase):
     def test_merge_outputs(self):
         outputs = {'a': [1, 2, 3], 'b': [4, 5, 6]}
-        not_ignored_mask = {'a': [False, True, True], 'b': [True, True, False]}
-        merged = losses.merge_outputs(outputs, not_ignored_mask)
+        trainable_mask = {'a': [False, True, True], 'b': [True, True, False]}
+        merged = losses.merge_outputs(outputs, trainable_mask)
 
         actual = self.evaluate(merged)
         expected = [2, 3, 4, 5]

@@ -19,7 +19,7 @@ import L4
 # TODO: add dataset downloading to densenet
 # TODO: exclude samples without prop IoU
 # TODO: set trainable parts
-# TODO: use not_ignored_mask for visualization
+# TODO: use trainable_mask for visualization
 # TODO: check if batch norm after dropout is ok
 # TODO: balances cross-entropy
 # TODO: why sometimes ground true boxes not drawn
@@ -149,12 +149,13 @@ def build_train_step(loss, global_step, config):
         return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
 
 
-def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, not_ignored_masks, levels,
+def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, trainable_masks, levels,
                   learning_rate):
+    # TODO: refactor
     def build_iou(labels, logits, classifications_true):  # TODO: trainable_mask
-        classifications_true = utils.merge_outputs(classifications_true, not_ignored_masks)
-        labels = utils.merge_outputs(labels, not_ignored_masks)
-        logits = utils.merge_outputs(logits, not_ignored_masks)
+        classifications_true = utils.merge_outputs(classifications_true, trainable_masks)
+        labels = utils.merge_outputs(labels, trainable_masks)
+        logits = utils.merge_outputs(logits, trainable_masks)
 
         non_background_mask = tf.not_equal(utils.classmap_decode(classifications_true), -1)
 
@@ -262,7 +263,7 @@ def main():
     class_loss, regr_loss = losses.loss(
         (input['classifications'], input['regressions']),
         (classifications_pred, regressions_pred),
-        not_ignored_masks=input['not_ignored_masks'])
+        trainable_masks=input['trainable_masks'])
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
@@ -276,7 +277,7 @@ def main():
         image=input['image'],
         true=(input['classifications'], input['regressions']),
         pred=(classifications_pred, regressions_pred),
-        not_ignored_masks=input['not_ignored_masks'],
+        trainable_masks=input['trainable_masks'],
         levels=levels,
         learning_rate=args.learning_rate)
 
