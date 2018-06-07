@@ -101,22 +101,10 @@ def regression_loss(labels, logits, non_background_mask):
     return regr_loss
 
 
-def merge_outputs(tensors, not_ignored_masks, name='merge_outputs'):
-    with tf.name_scope(name):
-        res = []
-        for pn in tensors:
-            mask = not_ignored_masks[pn]
-            tensor = tensors[pn]
-            tensor = tf.boolean_mask(tensor, mask)
-            res.append(tensor)
-
-        return tf.concat(res, 0)
-
-
 def loss(labels, logits, not_ignored_masks, name='loss'):
     with tf.name_scope(name):
-        labels = tuple(merge_outputs(x, not_ignored_masks) for x in labels)
-        logits = tuple(merge_outputs(x, not_ignored_masks) for x in logits)
+        labels = tuple(utils.merge_outputs(x, not_ignored_masks) for x in labels)
+        logits = tuple(utils.merge_outputs(x, not_ignored_masks) for x in logits)
 
         class_labels, regr_labels = labels
         class_logits, regr_logits = logits

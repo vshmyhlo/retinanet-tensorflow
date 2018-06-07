@@ -57,39 +57,43 @@ def anchor_boxmap(grid_size, anchor_boxes):
     return boxmap
 
 
-def iou(a, b):
-    # TODO: should be <
-    with tf.control_dependencies([tf.assert_less_equal(a[..., :2], a[..., 2:]),
-                                  tf.assert_less_equal(b[..., :2], b[..., 2:])]):
-        # determine the coordinates of the intersection rectangle
-        y_top = tf.maximum(a[..., 0], b[..., 0])
-        x_left = tf.maximum(a[..., 1], b[..., 1])
-        y_bottom = tf.minimum(a[..., 2], b[..., 2])
-        x_right = tf.minimum(a[..., 3], b[..., 3])
+# TODO: refactor
+def iou(a, b, name='iou'):
+    with tf.name_scope(name):
+        # TODO: should be <
+        with tf.control_dependencies([
+            tf.assert_less_equal(a[..., :2], a[..., 2:]),
+            tf.assert_less_equal(b[..., :2], b[..., 2:])
+        ]):
+            # determine the coordinates of the intersection rectangle
+            y_top = tf.maximum(a[..., 0], b[..., 0])
+            x_left = tf.maximum(a[..., 1], b[..., 1])
+            y_bottom = tf.minimum(a[..., 2], b[..., 2])
+            x_right = tf.minimum(a[..., 3], b[..., 3])
 
-    invalid_mask = tf.logical_or(y_bottom < y_top, x_right < x_left)
+        invalid_mask = tf.logical_or(y_bottom < y_top, x_right < x_left)
 
-    # The intersection of two axis-aligned bounding boxes is always an
-    # axis-aligned bounding box
-    intersection_area = (y_bottom - y_top) * (x_right - x_left)
+        # The intersection of two axis-aligned bounding boxes is always an
+        # axis-aligned bounding box
+        intersection_area = (y_bottom - y_top) * (x_right - x_left)
 
-    # compute the area of both AABBs
-    box_a_area = (a[..., 2] - a[..., 0]) * (
-            a[..., 3] - a[..., 1])
-    box_b_area = (b[..., 2] - b[..., 0]) * (
-            b[..., 3] - b[..., 1])
+        # compute the area of both AABBs
+        box_a_area = (a[..., 2] - a[..., 0]) * (
+                a[..., 3] - a[..., 1])
+        box_b_area = (b[..., 2] - b[..., 0]) * (
+                b[..., 3] - b[..., 1])
 
-    # compute the intersection over union by taking the intersection
-    # area and dividing it by the sum of prediction + ground-truth
-    # areas - the intersection area
-    iou = intersection_area / tf.to_float(
-        box_a_area + box_b_area - intersection_area)
-    iou = tf.where(invalid_mask, tf.zeros_like(iou), iou)
+        # compute the intersection over union by taking the intersection
+        # area and dividing it by the sum of prediction + ground-truth
+        # areas - the intersection area
+        iou = intersection_area / tf.to_float(
+            box_a_area + box_b_area - intersection_area)
+        iou = tf.where(invalid_mask, tf.zeros_like(iou), iou)
 
-    with tf.control_dependencies([tf.assert_greater_equal(iou, 0.0), tf.assert_less_equal(iou, 1.0)]):
-        iou = tf.identity(iou)
+        with tf.control_dependencies([tf.assert_greater_equal(iou, 0.0), tf.assert_less_equal(iou, 1.0)]):
+            iou = tf.identity(iou)
 
-    return iou
+        return iou
 
 
 def scale_regression(regression, anchor_boxes):
@@ -161,3 +165,15 @@ if __name__ == '__main__':
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     plt.imshow(image)
     plt.show()
+
+
+def merge_outputs(tensors, not_ignored_masks, name='merge_outputs'):
+    with tf.name_scope(name):
+        res = []
+        for pn in tensors:
+            mask = not_ignored_masks[pn]
+            tensor = tensors[pn]
+            tensor = tf.boolean_mask(tensor, mask)
+            res.append(tensor)
+
+        return tf.concat(res, 0)

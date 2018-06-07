@@ -149,7 +149,20 @@ def build_train_step(loss, global_step, config):
         return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
 
 
-def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, levels, learning_rate):
+def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, not_ignored_masks, levels,
+                  learning_rate):
+    def build_iou(labels, logits, classifications_true):  # TODO: trainable_mask
+        classifications_true = utils.merge_outputs(classifications_true, not_ignored_masks)
+        labels = utils.merge_outputs(labels, not_ignored_masks)
+        logits = utils.merge_outputs(logits, not_ignored_masks)
+
+        non_background_mask = tf.not_equal(utils.classmap_decode(classifications_true), -1)
+
+        labels = tf.boolean_mask(labels, non_background_mask)
+        logits = tf.boolean_mask(logits, non_background_mask)
+
+        return utils.iou(labels, logits)
+
     image_size = tf.shape(image)[1:3]
     image = image * dataset.STD + dataset.MEAN
     classifications_true, regressions_true = true
@@ -161,9 +174,12 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
         pn: utils.regression_postprocess(regressions_pred[pn], tf.to_float(levels[pn].anchor_sizes / image_size)) for
         pn in regressions_pred}
 
+    regr_iou = build_iou(regressions_true, regressions_pred, classifications_true)
+
     metrics = {}
     update_metrics = {}
 
+    metrics['regr_iou'], update_metrics['regr_iou'] = tf.metrics.mean(regr_iou)
     metrics['total_loss'], update_metrics['total_loss'] = tf.metrics.mean(total_loss)
     metrics['class_loss'], update_metrics['class_loss'] = tf.metrics.mean(class_loss)
     metrics['regr_loss'], update_metrics['regr_loss'] = tf.metrics.mean(regr_loss)
@@ -176,6 +192,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
     #     class_distribution(classifications_pred))
 
     running_summary = tf.summary.merge([
+        tf.summary.scalar('regr_iou', metrics['regr_iou']),
         tf.summary.scalar('total_loss', metrics['total_loss']),
         tf.summary.scalar('class_loss', metrics['class_loss']),
         tf.summary.scalar('regr_loss', metrics['regr_loss']),
@@ -259,6 +276,7 @@ def main():
         image=input['image'],
         true=(input['classifications'], input['regressions']),
         pred=(classifications_pred, regressions_pred),
+        not_ignored_masks=input['not_ignored_masks'],
         levels=levels,
         learning_rate=args.learning_rate)
 
