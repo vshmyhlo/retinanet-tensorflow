@@ -165,6 +165,8 @@ def build_dataset(spec, levels, augment, scale=None):
             image_size, input['class_ids'], boxes, levels=levels, num_classes=dl.num_classes)
 
         return {
+            **input,
+            'boxes': boxes,
             'image': image,
             'classifications': classifications,
             'regressions': regressions,
@@ -186,6 +188,7 @@ def build_dataset(spec, levels, augment, scale=None):
             for pn in input['trainable_masks']}
 
         return {
+            **input,
             'image': image,
             'classifications': classifications,
             'regressions': regressions,
@@ -217,7 +220,10 @@ def build_dataset(spec, levels, augment, scale=None):
 
     ds = ds.map(mapper, num_parallel_calls=min(os.cpu_count(), 4))
 
-    return ds, dl.num_classes
+    return {
+        'dataset': ds,
+        'num_classes': dl.num_classes
+    }
 
 
 def compute_mean_std():

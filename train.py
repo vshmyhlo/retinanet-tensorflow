@@ -34,28 +34,34 @@ def print_summary(metrics, step):
             step, metrics['total_loss'], metrics['class_loss'], metrics['regr_loss'], metrics['regularization_loss']))
 
 
-def classmap_to_image(image, classmap):
-    image_size = tf.shape(image)[:2]
-    classmap = utils.classmap_decode(classmap)
-    classmap = tf.not_equal(classmap, -1)
-    classmap = tf.to_float(classmap)
-    classmap = tf.reduce_sum(classmap, -1)
-    classmap = tf.expand_dims(classmap, -1)
-    classmap = tf.image.resize_images(
-        classmap, image_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
+def draw_classmap(image, classifications):
+    for pn in classifications:
+        classification = classifications[pn]
 
-    return classmap
+        image_size = tf.shape(image)[:2]
+        classification = utils.classmap_decode(classification)
+        classification = tf.not_equal(classification, -1)
+        classification = tf.to_float(classification)
+        classification = tf.reduce_sum(classification, -1)
+        classification = tf.expand_dims(classification, -1)
+        classification = tf.image.resize_images(
+            classification, image_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
+
+        image += classification
+
+    return image
 
 
-def draw_bounding_boxes(image, regressions, classifications, max_output_size=1000):
-    image = tf.expand_dims(image, 0)
+def draw_bounding_boxes(image, classifications, regressions, max_output_size=1000):
+    assert classifications.keys() == regressions.keys()
+
     final_boxes = []
     final_scores = []
 
-    for regression, classification in zip(regressions, classifications):
-        non_background_mask = tf.not_equal(utils.classmap_decode(classification), -1)
-        boxes = tf.boolean_mask(regression, non_background_mask)
-        scores = tf.reduce_max(classification, -1)
+    for pn in classifications:
+        non_background_mask = tf.not_equal(utils.classmap_decode(classifications[pn]), -1)
+        boxes = tf.boolean_mask(regressions[pn], non_background_mask)
+        scores = tf.reduce_max(classifications[pn], -1)
         scores = tf.boolean_mask(scores, non_background_mask)
 
         final_boxes.append(boxes)
@@ -67,6 +73,7 @@ def draw_bounding_boxes(image, regressions, classifications, max_output_size=100
     final_boxes = tf.gather(final_boxes, nms_indices)
     final_boxes = tf.expand_dims(final_boxes, 0)
 
+    image = tf.expand_dims(image, 0)
     image = tf.image.draw_bounding_boxes(image, final_boxes)
     image = tf.squeeze(image, 0)
 
@@ -215,15 +222,13 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
         for i in range(image.shape[0]):
             with tf.name_scope('{}/{}'.format(name, i)):
                 image_with_boxes = draw_bounding_boxes(
-                    image[i], [regressions[pn][i] for pn in regressions],
-                    [classifications[pn][i] for pn in classifications])
+                    image[i],
+                    {pn: classifications[pn][i] for pn in classifications},
+                    {pn: regressions[pn][i] for pn in regressions})
                 image_summary.append(tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0)))
 
-                classmap_image = tf.zeros_like(image[i])
-                for pn in classifications:
-                    classmap_image += classmap_to_image(image[i], classifications[pn][i])
-                classmap_image = image[i] + classmap_image
-                image_summary.append(tf.summary.image('classification', tf.expand_dims(classmap_image, 0)))
+                image_with_classmap = draw_classmap(image, {pn: classifications[pn][i] for pn in classifications})
+                image_summary.append(tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0)))
 
     image_summary = tf.summary.merge(image_summary)
 
@@ -238,13 +243,13 @@ def main():
     training = tf.placeholder(tf.bool, [], name='training')
     global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
-    ds, num_classes = dataset.build_dataset(
+    ds = dataset.build_dataset(
         spec=args.dataset,
         levels=levels,
         scale=args.scale,
         augment=True)
 
-    iter = ds.shuffle(32).prefetch(1).make_initializable_iterator()
+    iter = ds['dataset'].shuffle(32).prefetch(1).make_initializable_iterator()
     input = iter.get_next()
     input = {
         **input,
@@ -253,7 +258,7 @@ def main():
 
     net = retinanet.RetinaNet(
         levels=levels,
-        num_classes=num_classes,
+        num_classes=ds['num_classes'],
         dropout_rate=args.dropout,
         backbone=args.backbone)
     classifications_pred, regressions_pred = net(input['image'], training)
