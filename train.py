@@ -227,7 +227,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
                     {pn: regressions[pn][i] for pn in regressions})
                 image_summary.append(tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0)))
 
-                image_with_classmap = draw_classmap(image, {pn: classifications[pn][i] for pn in classifications})
+                image_with_classmap = draw_classmap(image[i], {pn: classifications[pn][i] for pn in classifications})
                 image_summary.append(tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0)))
 
     image_summary = tf.summary.merge(image_summary)
