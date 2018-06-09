@@ -23,6 +23,7 @@ import L4
 # TODO: check if batch norm after dropout is ok
 # TODO: balances cross-entropy
 # TODO: why sometimes ground true boxes not drawn
+# TODO: roc auc
 
 def preprocess_image(image):
     return (image - dataset.MEAN) / dataset.STD
@@ -192,8 +193,6 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
     metrics['class_loss'], update_metrics['class_loss'] = tf.metrics.mean(class_loss)
     metrics['regr_loss'], update_metrics['regr_loss'] = tf.metrics.mean(regr_loss)
     metrics['regularization_loss'], update_metrics['regularization_loss'] = tf.metrics.mean(regularization_loss)
-    metrics['logits_grad_fg'], update_metrics['logits_grad_fg'] = tf.metrics.mean(tf.get_collection('logits_grad_fg'))
-    metrics['logits_grad_bg'], update_metrics['logits_grad_bg'] = tf.metrics.mean(tf.get_collection('logits_grad_bg'))
     # running_true_class_dist, update_true_class_dist = tf.metrics.mean_tensor(
     #     class_distribution(classifications_true))
     # running_pred_class_dist, update_pred_class_dist = tf.metrics.mean_tensor(
@@ -206,8 +205,6 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
         tf.summary.scalar('regr_loss', metrics['regr_loss']),
         tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
         tf.summary.scalar('learning_rate', learning_rate),
-        tf.summary.scalar('logits_grad_fg', metrics['logits_grad_fg']),
-        tf.summary.scalar('logits_grad_bg', metrics['logits_grad_bg'])
         # tf.summary.histogram('classifications_true', running_true_class_dist),
         # tf.summary.histogram('classifications_pred', running_pred_class_dist)
     ])

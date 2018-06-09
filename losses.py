@@ -36,69 +36,65 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
         return loss
 
 
+# def classification_loss(labels, logits, non_background_mask):
+#     num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
+#     class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+#     class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
+#
+#     return class_loss
+
 def classification_loss(labels, logits, non_background_mask):
-    num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
-    class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)  # FIXME:
-    class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
+    # TODO: check bg mask usage and bg weighting calculation
+   
+    loss = sum([
+        tf.reduce_mean(balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)),
+        tf.reduce_mean(dice_loss(labels=labels, logits=logits)),
+    ])
 
-    [logits_grad] = tf.gradients(class_loss, [logits])
-    logits_grad_fg = tf.boolean_mask(tf.abs(logits_grad), non_background_mask)
-    logits_grad_bg = tf.boolean_mask(tf.abs(logits_grad), tf.logical_not(non_background_mask))
-
-    tf.add_to_collection('logits_grad_fg', tf.reduce_sum(logits_grad_fg))
-    tf.add_to_collection('logits_grad_bg', tf.reduce_sum(logits_grad_bg))
-
-    return class_loss
-
-
-# def classification_loss(labels, logits, non_background_mask, smooth=100):
-#     prob = tf.nn.sigmoid(logits)
-#
-#     intersection = tf.reduce_sum(labels * prob, -1)
-#     union = tf.reduce_sum(labels + prob, -1)
-#     class_loss = (intersection + smooth) / (union - intersection + smooth)
-#     class_loss = (1 - class_loss) * smooth
-#     class_loss = tf.reduce_mean(class_loss)
-#
-#     [logits_grad] = tf.gradients(class_loss, [logits])
-#     logits_grad_fg = tf.boolean_mask(logits_grad, non_background_mask)
-#     logits_grad_bg = tf.boolean_mask(logits_grad, tf.logical_not(non_background_mask))
-#
-#     tf.add_to_collection('logits_grad_fg', logits_grad_fg)
-#     tf.add_to_collection('logits_grad_bg', logits_grad_bg)
-#
-#     return class_loss
-
-# def classification_loss(labels, logits, non_background_mask, smooth=100):
-#     prob = tf.nn.sigmoid(logits)
-#
-#     intersection = tf.reduce_sum(labels * prob)
-#     union = tf.reduce_sum(labels + prob)
-#     class_loss = (intersection + smooth) / (union - intersection + smooth)
-#     class_loss = (1 - class_loss) * smooth
-#
-#     [logits_grad] = tf.gradients(class_loss, [logits])
-#     logits_grad_fg = tf.boolean_mask(logits_grad, non_background_mask)
-#     logits_grad_bg = tf.boolean_mask(logits_grad, tf.logical_not(non_background_mask))
-#
-#     tf.add_to_collection('logits_grad_fg', logits_grad_fg)
-#     tf.add_to_collection('logits_grad_bg', logits_grad_bg)
-#
-#     return class_loss
+    return loss
 
 
 def regression_loss(labels, logits, non_background_mask):
-    regr_loss = tf.losses.huber_loss(
+    loss = tf.losses.huber_loss(
         labels=labels,
         predictions=logits,
         weights=tf.expand_dims(non_background_mask, -1),
         reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
-    check = tf.Assert(tf.is_finite(regr_loss), [tf.reduce_mean(regr_loss)])
+    check = tf.Assert(tf.is_finite(loss), [tf.reduce_mean(loss)])
     with tf.control_dependencies([check]):
-        regr_loss = tf.identity(regr_loss)
+        loss = tf.identity(loss)
 
-    return regr_loss
+    return loss
+
+
+def dice_loss(labels, logits, smooth=1, name='dice_loss'):
+    with tf.name_scope(name):
+        probs = tf.nn.sigmoid(logits)
+
+        intersection = tf.reduce_sum(labels * probs, [1, 2, 3])
+        union = tf.reduce_sum(labels, [1, 2, 3]) + tf.reduce_sum(probs, [1, 2, 3])
+
+        coef = (2 * intersection + smooth) / (union + smooth)
+        loss = 1 - coef
+
+        return loss
+
+
+def balanced_sigmoid_cross_entropy_with_logits(labels, logits, name='balanced_sigmoid_cross_entropy_with_logits'):
+    with tf.name_scope(name):
+        num_positive = tf.reduce_sum(tf.to_float(tf.equal(labels, 1)))
+        num_negative = tf.reduce_sum(tf.to_float(tf.equal(labels, 0)))
+
+        weight_positive = num_negative / (num_positive + num_negative)
+        weight_negative = num_positive / (num_positive + num_negative)
+        ones = tf.ones_like(logits)
+        weight = tf.where(tf.equal(labels, 1), ones * weight_positive, ones * weight_negative)
+
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss = loss * weight
+
+        return loss
 
 
 def loss(labels, logits, trainable_masks, name='loss'):
