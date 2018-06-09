@@ -45,7 +45,7 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
 
 def classification_loss(labels, logits, non_background_mask):
     # TODO: check bg mask usage and bg weighting calculation
-   
+
     loss = sum([
         tf.reduce_mean(balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)),
         tf.reduce_mean(dice_loss(labels=labels, logits=logits)),
@@ -72,8 +72,8 @@ def dice_loss(labels, logits, smooth=1, name='dice_loss'):
     with tf.name_scope(name):
         probs = tf.nn.sigmoid(logits)
 
-        intersection = tf.reduce_sum(labels * probs, [1, 2, 3])
-        union = tf.reduce_sum(labels, [1, 2, 3]) + tf.reduce_sum(probs, [1, 2, 3])
+        intersection = tf.reduce_sum(labels * probs, -1)  # TODO: indices
+        union = tf.reduce_sum(labels, -1) + tf.reduce_sum(probs, -1)  # TODO: indices
 
         coef = (2 * intersection + smooth) / (union + smooth)
         loss = 1 - coef
