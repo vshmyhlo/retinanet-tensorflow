@@ -72,8 +72,8 @@ def dice_loss(labels, logits, smooth=1, name='dice_loss'):
     with tf.name_scope(name):
         probs = tf.nn.sigmoid(logits)
 
-        intersection = tf.reduce_sum(labels * probs, -1)  # TODO: indices
-        union = tf.reduce_sum(labels, -1) + tf.reduce_sum(probs, -1)  # TODO: indices
+        intersection = tf.reduce_sum(labels * probs)
+        union = tf.reduce_sum(labels, -1) + tf.reduce_sum(probs)
 
         coef = (2 * intersection + smooth) / (union + smooth)
         loss = 1 - coef

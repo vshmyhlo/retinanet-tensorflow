@@ -24,6 +24,8 @@ import L4
 # TODO: balances cross-entropy
 # TODO: why sometimes ground true boxes not drawn
 # TODO: roc auc
+# TODO: class iou
+# TODO: regr iou
 
 def preprocess_image(image):
     return (image - dataset.MEAN) / dataset.STD
