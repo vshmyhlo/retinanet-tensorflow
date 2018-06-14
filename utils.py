@@ -123,12 +123,77 @@ def draw_bounding_boxes(input, boxes, class_ids, class_names, num_classes):
     return input
 
 
-def classmap_decode(classmap):
-    prob = tf.reduce_max(classmap, -1)
-    non_bg = prob > 0.5
-    classmap = tf.where(non_bg, tf.argmax(classmap, -1), tf.fill(tf.shape(non_bg), tf.to_int64(-1)))
+def merge_outputs(dict, name='merge_outputs'):
+    with tf.name_scope(name):
+        return tf.concat(list(dict.values()), 0)
 
-    return classmap
+
+def all_same(items):
+    return all(x == items[0] for x in items)
+
+
+def dict_map(f, dict):
+    return {k: f(dict[k]) for k in dict}
+
+
+def dict_starmap(f, dicts):
+    assert all_same([d.keys() for d in dicts])
+    keys = dicts[0].keys()
+    return {k: f(*[d[k] for d in dicts]) for k in keys}
+
+
+# TODO: remove this or refactor
+def classmap_decode(classmap):
+    classmap_max = tf.reduce_max(classmap, -1)
+    non_bg_mask = classmap_max > 0.5
+
+    # scores = tf.boolean_mask(tf.reduce_max(classmap, ))
+    # classmap = tf.where(non_bg_mask, tf.argmax(classmap, -1), tf.fill(tf.shape(non_bg_mask), tf.to_int64(-1)))
+
+    return {
+        'non_bg_mask': non_bg_mask
+    }
+
+
+# TODO: use classmap_decode
+def boxes_decode(classifications, regressions):
+    classifications_max = tf.reduce_max(classifications, -1)
+    non_bg_mask = classifications_max > 0.5
+    boxes = tf.boolean_mask(regressions, non_bg_mask)
+    scores = tf.boolean_mask(classifications_max, non_bg_mask)
+
+    return {
+        'boxes': boxes,
+        'scores': scores
+    }
+
+
+def apply_trainable_masks(dict, trainable_masks, image_size, levels, name='apply_trainable_masks'):
+    with tf.name_scope(name):
+        regression_postprocessed = dict_starmap(
+            lambda r, l: regression_postprocess(r, tf.to_float(l.anchor_sizes / image_size)),
+            (dict['detection']['regressions'], levels))
+
+        detection = {
+            **dict['detection'],
+            'regressions_postprocessed': regression_postprocessed
+        }
+
+        detection_trainable = {
+            'classifications': merge_outputs(dict_starmap(
+                tf.boolean_mask, (dict['detection']['classifications'], trainable_masks))),
+            'regressions': merge_outputs(dict_starmap(
+                tf.boolean_mask, (dict['detection']['regressions'], trainable_masks))),
+            'regressions_postprocessed': merge_outputs(dict_starmap(
+                tf.boolean_mask, (regression_postprocessed, trainable_masks)
+            ))
+        }
+
+        return {
+            **dict,
+            'detection': detection,
+            'detection_trainable': detection_trainable
+        }
 
 
 if __name__ == '__main__':
@@ -153,15 +218,3 @@ if __name__ == '__main__':
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     plt.imshow(image)
     plt.show()
-
-
-def merge_outputs(tensors, trainable_masks, name='merge_outputs'):
-    with tf.name_scope(name):
-        res = []
-        for pn in tensors:
-            mask = trainable_masks[pn]
-            tensor = tensors[pn]
-            tensor = tf.boolean_mask(tensor, mask)
-            res.append(tensor)
-
-        return tf.concat(res, 0)

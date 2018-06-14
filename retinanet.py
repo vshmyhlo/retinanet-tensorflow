@@ -293,7 +293,10 @@ class RetinaNetBase(Network):
             for k in top_down
         }
 
-        return classifications, regressions
+        return {
+            'classifications': classifications,
+            'regressions': regressions
+        }
 
 
 class RetinaNet(Network):

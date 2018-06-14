@@ -11,6 +11,10 @@ from tqdm import tqdm
 import L4
 
 
+# TODO: check classmap decoded uses scaled logits (sigmoid)
+
+# TODO: dict map vs dict starmap
+
 # TODO: move label creation to graph
 # TODO: check focal-cross-entropy
 # TODO: try focal cross-entropy
@@ -38,37 +42,29 @@ def print_summary(metrics, step):
 
 
 def draw_classmap(image, classifications):
-    for pn in classifications:
-        classification = classifications[pn]
-
+    for k in classifications:
+        classification = classifications[k]
+        non_bg_mask = utils.classmap_decode(classification)['non_bg_mask']
+        non_bg_mask = tf.to_float(non_bg_mask)
+        non_bg_mask = tf.reduce_sum(non_bg_mask, -1)
+        non_bg_mask = tf.expand_dims(non_bg_mask, -1)
         image_size = tf.shape(image)[:2]
-        classification = utils.classmap_decode(classification)
-        classification = tf.not_equal(classification, -1)
-        classification = tf.to_float(classification)
-        classification = tf.reduce_sum(classification, -1)
-        classification = tf.expand_dims(classification, -1)
-        classification = tf.image.resize_images(
-            classification, image_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
+        non_bg_mask = tf.image.resize_images(
+            non_bg_mask, image_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
 
-        image += classification
+        image += non_bg_mask
 
     return image
 
 
 def draw_bounding_boxes(image, classifications, regressions, max_output_size=1000):
-    assert classifications.keys() == regressions.keys()
-
     final_boxes = []
     final_scores = []
 
-    for pn in classifications:
-        non_background_mask = tf.not_equal(utils.classmap_decode(classifications[pn]), -1)
-        boxes = tf.boolean_mask(regressions[pn], non_background_mask)
-        scores = tf.reduce_max(classifications[pn], -1)
-        scores = tf.boolean_mask(scores, non_background_mask)
-
-        final_boxes.append(boxes)
-        final_scores.append(scores)
+    for k in classifications:
+        decoded = utils.boxes_decode(classifications[k], regressions[k])
+        final_boxes.append(decoded['boxes'])
+        final_scores.append(decoded['scores'])
 
     final_boxes = tf.concat(final_boxes, 0)
     final_scores = tf.concat(final_scores, 0)
@@ -105,14 +101,6 @@ def build_parser():
         default='momentum')
 
     return parser
-
-
-# def class_distribution(tensors):
-#     # TODO: do not average over batch
-#     return tf.stack([
-#         tf.reduce_mean(tf.to_float(tf.argmax(tensors[k], -1)), [0, 1, 2])
-#         for k in tensors
-#     ])
 
 
 # def build_train_step(loss, global_step, config):
@@ -159,74 +147,60 @@ def build_train_step(loss, global_step, config):
         return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
 
 
-def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, true, pred, trainable_masks, levels,
-                  learning_rate):
-    # TODO: refactor
-    def build_iou(labels, logits, classifications_true):  # TODO: trainable_mask
-        classifications_true = utils.merge_outputs(classifications_true, trainable_masks)
-        labels = utils.merge_outputs(labels, trainable_masks)
-        logits = utils.merge_outputs(logits, trainable_masks)
+def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, labels, logits, learning_rate):
+    def build_iou(labels, logits, name='build_iou'):
+        with tf.name_scope(name):
+            # decode both using ground true classification
+            labels_decoded = utils.boxes_decode(labels['classifications'], labels['regressions_postprocessed'])
+            logits_decoded = utils.boxes_decode(labels['classifications'], logits['regressions_postprocessed'])
+            return utils.iou(labels_decoded['boxes'], logits_decoded['boxes'])
 
-        non_background_mask = tf.not_equal(utils.classmap_decode(classifications_true), -1)
-
-        labels = tf.boolean_mask(labels, non_background_mask)
-        logits = tf.boolean_mask(logits, non_background_mask)
-
-        return utils.iou(labels, logits)
-
-    image_size = tf.shape(image)[1:3]
     image = image * dataset.STD + dataset.MEAN
-    classifications_true, regressions_true = true
-    classifications_pred, regressions_pred = pred
-    regressions_true = {
-        pn: utils.regression_postprocess(regressions_true[pn], tf.to_float(levels[pn].anchor_sizes / image_size)) for
-        pn in regressions_true}
-    regressions_pred = {
-        pn: utils.regression_postprocess(regressions_pred[pn], tf.to_float(levels[pn].anchor_sizes / image_size)) for
-        pn in regressions_pred}
-
-    regr_iou = build_iou(regressions_true, regressions_pred, classifications_true)
-
     metrics = {}
     update_metrics = {}
 
-    metrics['regr_iou'], update_metrics['regr_iou'] = tf.metrics.mean(regr_iou)
+    metrics['class_pr_auc'], update_metrics['class_pr_auc'] = tf.metrics.auc(
+        labels=labels['detection_trainable']['classifications'],
+        predictions=tf.nn.sigmoid(logits['detection_trainable']['classifications']),
+        num_thresholds=10,
+        curve='PR')
+    metrics['regr_iou'], update_metrics['regr_iou'] = tf.metrics.mean(
+        build_iou(labels['detection_trainable'], logits['detection_trainable']))
     metrics['total_loss'], update_metrics['total_loss'] = tf.metrics.mean(total_loss)
     metrics['class_loss'], update_metrics['class_loss'] = tf.metrics.mean(class_loss)
     metrics['regr_loss'], update_metrics['regr_loss'] = tf.metrics.mean(regr_loss)
     metrics['regularization_loss'], update_metrics['regularization_loss'] = tf.metrics.mean(regularization_loss)
-    # running_true_class_dist, update_true_class_dist = tf.metrics.mean_tensor(
-    #     class_distribution(classifications_true))
-    # running_pred_class_dist, update_pred_class_dist = tf.metrics.mean_tensor(
-    #     class_distribution(classifications_pred))
 
     running_summary = tf.summary.merge([
+        tf.summary.scalar('class_pr_auc', metrics['class_pr_auc']),
         tf.summary.scalar('regr_iou', metrics['regr_iou']),
         tf.summary.scalar('total_loss', metrics['total_loss']),
         tf.summary.scalar('class_loss', metrics['class_loss']),
         tf.summary.scalar('regr_loss', metrics['regr_loss']),
         tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
         tf.summary.scalar('learning_rate', learning_rate),
-        # tf.summary.histogram('classifications_true', running_true_class_dist),
-        # tf.summary.histogram('classifications_pred', running_pred_class_dist)
     ])
 
     image_summary = []
-
     # TODO: better scope names
-    for name, classifications, regressions in (
-            ('true', classifications_true, regressions_true),
-            ('pred', classifications_pred, regressions_pred),
+    for scope, classifications, regressions in (
+            ('true',
+             labels['detection']['classifications'],
+             labels['detection']['regressions_postprocessed']),
+            ('pred',
+             utils.dict_map(tf.nn.sigmoid, logits['detection']['classifications']),
+             logits['detection']['regressions_postprocessed'])
     ):
         for i in range(image.shape[0]):
-            with tf.name_scope('{}/{}'.format(name, i)):
+            with tf.name_scope('{}/{}'.format(scope, i)):
                 image_with_boxes = draw_bounding_boxes(
                     image[i],
-                    {pn: classifications[pn][i] for pn in classifications},
-                    {pn: regressions[pn][i] for pn in regressions})
+                    utils.dict_map(lambda x: x[i], classifications),
+                    utils.dict_map(lambda x: x[i], regressions))
                 image_summary.append(tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0)))
 
-                image_with_classmap = draw_classmap(image[i], {pn: classifications[pn][i] for pn in classifications})
+                image_with_classmap = draw_classmap(
+                    image[i], utils.dict_map(lambda x: x[i], classifications))
                 image_summary.append(tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0)))
 
     image_summary = tf.summary.merge(image_summary)
@@ -248,7 +222,7 @@ def main():
         scale=args.scale,
         augment=True)
 
-    iter = ds['dataset'].shuffle(32).prefetch(1).make_initializable_iterator()
+    iter = ds['dataset'].shuffle(256).prefetch(1).make_initializable_iterator()
     input = iter.get_next()
     input = {
         **input,
@@ -260,14 +234,12 @@ def main():
         num_classes=ds['num_classes'],
         dropout_rate=args.dropout,
         backbone=args.backbone)
-    classifications_pred, regressions_pred = net(input['image'], training)
-    assert input['classifications'].keys() == input['regressions'].keys() == levels.keys()
-    assert classifications_pred.keys() == regressions_pred.keys() == levels.keys()
+    logits = {'detection': net(input['image'], training)}
+    image_size = tf.shape(input['image'])[1:3]
+    input = utils.apply_trainable_masks(input, input['trainable_masks'], image_size=image_size, levels=levels)
+    logits = utils.apply_trainable_masks(logits, input['trainable_masks'], image_size=image_size, levels=levels)
 
-    class_loss, regr_loss = losses.loss(
-        (input['classifications'], input['regressions']),
-        (classifications_pred, regressions_pred),
-        trainable_masks=input['trainable_masks'])
+    class_loss, regr_loss = losses.loss(labels=input['detection_trainable'], logits=logits['detection_trainable'])
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
@@ -279,10 +251,8 @@ def main():
         regr_loss,
         regularization_loss,
         image=input['image'],
-        true=(input['classifications'], input['regressions']),
-        pred=(classifications_pred, regressions_pred),
-        trainable_masks=input['trainable_masks'],
-        levels=levels,
+        labels=input,
+        logits=logits,
         learning_rate=args.learning_rate)
 
     globals_init = tf.global_variables_initializer()

@@ -19,7 +19,7 @@ class ObjectivesTest(tf.test.TestCase):
         labels = [[3], [4], [6]]
         non_background_mask = [True, False, True]
 
-        loss = losses.regression_loss(labels=labels, logits=logits, non_background_mask=non_background_mask)
+        loss = losses.regression_loss(labels=labels, logits=logits, non_bg_mask=non_background_mask)
 
         actual = self.evaluate(loss)
         expected = 2.0

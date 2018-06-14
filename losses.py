@@ -2,8 +2,8 @@ import tensorflow as tf
 import utils
 
 
-def focal_sigmoid_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.25,
-                                            name='focal_sigmoid_cross_entropy_with_logits'):
+def focal_sigmoid_cross_entropy_with_logits(
+        labels, logits, focus=2.0, alpha=0.25, name='focal_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
         alpha = tf.ones_like(labels) * alpha
         labels_eq_1 = tf.equal(labels, 1)
@@ -18,8 +18,8 @@ def focal_sigmoid_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
 
 
 # TODO: check if this is correct
-def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.25, eps=1e-7,
-                                            name='focal_softmax_cross_entropy_with_logits'):
+def focal_softmax_cross_entropy_with_logits(
+        labels, logits, focus=2.0, alpha=0.25, eps=1e-7, name='focal_softmax_cross_entropy_with_logits'):
     with tf.name_scope(name):
         alpha = tf.ones_like(labels) * alpha
 
@@ -43,7 +43,7 @@ def focal_softmax_cross_entropy_with_logits(labels, logits, focus=2.0, alpha=0.2
 #
 #     return class_loss
 
-def classification_loss(labels, logits, non_background_mask):
+def classification_loss(labels, logits, non_bg_mask):
     # TODO: check bg mask usage and bg weighting calculation
 
     loss = sum([
@@ -54,11 +54,11 @@ def classification_loss(labels, logits, non_background_mask):
     return loss
 
 
-def regression_loss(labels, logits, non_background_mask):
+def regression_loss(labels, logits, non_bg_mask):
     loss = tf.losses.huber_loss(
         labels=labels,
         predictions=logits,
-        weights=tf.expand_dims(non_background_mask, -1),
+        weights=tf.expand_dims(non_bg_mask, -1),
         reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
     check = tf.Assert(tf.is_finite(loss), [tf.reduce_mean(loss)])
@@ -97,23 +97,17 @@ def balanced_sigmoid_cross_entropy_with_logits(labels, logits, name='balanced_si
         return loss
 
 
-def loss(labels, logits, trainable_masks, name='loss'):
+def loss(labels, logits, name='loss'):
     with tf.name_scope(name):
-        labels = tuple(utils.merge_outputs(x, trainable_masks) for x in labels)
-        logits = tuple(utils.merge_outputs(x, trainable_masks) for x in logits)
-
-        class_labels, regr_labels = labels
-        class_logits, regr_logits = logits
-
-        non_background_mask = tf.not_equal(utils.classmap_decode(class_labels), -1)
+        non_bg_mask = utils.classmap_decode(labels['classifications'])['non_bg_mask']
 
         class_loss = classification_loss(
-            labels=class_labels,
-            logits=class_logits,
-            non_background_mask=non_background_mask)
+            labels=labels['classifications'],
+            logits=logits['classifications'],
+            non_bg_mask=non_bg_mask)
         regr_loss = regression_loss(
-            labels=regr_labels,
-            logits=regr_logits,
-            non_background_mask=non_background_mask)
+            labels=labels['regressions'],
+            logits=logits['regressions'],
+            non_bg_mask=non_bg_mask)
 
         return class_loss, regr_loss

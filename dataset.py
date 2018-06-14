@@ -95,7 +95,8 @@ def level_labels(image_size, class_id, true_box, level, factor, num_classes):
     bg_mask_expanded = tf.tile(tf.expand_dims(bg_mask, -1), (1, 1, 1, num_classes))
     # TODO: check if this is correct
     # [H, W, ANCHORS, CLASSES]
-    classification = tf.where(bg_mask_expanded, tf.zeros_like(classification), classification)
+    classification = tf.where(bg_mask_expanded, tf.zeros_like(classification),
+                              classification)  # TODO: masks only bg, but not ignored area
 
     # regression
 
@@ -168,30 +169,52 @@ def build_dataset(spec, levels, augment, scale=None):
             **input,
             'boxes': boxes,
             'image': image,
-            'classifications': classifications,
-            'regressions': regressions,
+            'detection': {
+                'classifications': classifications,
+                'regressions': regressions,
+            },
             'trainable_masks': trainable_masks
         }
 
-    def preprocess(input):
-        flipped = augmentation.flip(input)
+    # def preprocess(input):
+    #     flipped = augmentation.flip(input)
+    #
+    #     image = tf.stack([input['image'], flipped['image']], 0)
+    #     classifications = {
+    #         pn: tf.stack([input['classifications'][pn], flipped['classifications'][pn]], 0)
+    #         for pn in input['classifications']}
+    #     regressions = {
+    #         pn: tf.stack([input['regressions'][pn], flipped['regressions'][pn]], 0)
+    #         for pn in input['regressions']}
+    #     trainable_masks = {
+    #         pn: tf.stack([input['trainable_masks'][pn], flipped['trainable_masks'][pn]], 0)
+    #         for pn in input['trainable_masks']}
+    #
+    #     return {
+    #         **input,
+    #         'image': image,
+    #         'detection': {
+    #             'classifications': classifications,
+    #             'regressions': regressions,
+    #         },
+    #         'trainable_masks': trainable_masks
+    #     }
 
-        image = tf.stack([input['image'], flipped['image']], 0)
-        classifications = {
-            pn: tf.stack([input['classifications'][pn], flipped['classifications'][pn]], 0)
-            for pn in input['classifications']}
-        regressions = {
-            pn: tf.stack([input['regressions'][pn], flipped['regressions'][pn]], 0)
-            for pn in input['regressions']}
-        trainable_masks = {
-            pn: tf.stack([input['trainable_masks'][pn], flipped['trainable_masks'][pn]], 0)
-            for pn in input['trainable_masks']}
+    def preprocess(input):
+        image = tf.expand_dims(input['image'], 0)
+        classifications = {pn: tf.expand_dims(input['detection']['classifications'][pn], 0) for pn in
+                           input['detection']['classifications']}
+        regressions = {pn: tf.expand_dims(input['detection']['regressions'][pn], 0) for pn in
+                       input['detection']['regressions']}
+        trainable_masks = {pn: tf.expand_dims(input['trainable_masks'][pn], 0) for pn in input['trainable_masks']}
 
         return {
             **input,
             'image': image,
-            'classifications': classifications,
-            'regressions': regressions,
+            'detection': {
+                'classifications': classifications,
+                'regressions': regressions,
+            },
             'trainable_masks': trainable_masks
         }
 
