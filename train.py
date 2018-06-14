@@ -27,7 +27,6 @@ import L4
 # TODO: check if batch norm after dropout is ok
 # TODO: balances cross-entropy
 # TODO: why sometimes ground true boxes not drawn
-# TODO: roc auc
 # TODO: class iou
 # TODO: regr iou
 
@@ -159,6 +158,10 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
     metrics = {}
     update_metrics = {}
 
+    metrics['class_iou'], update_metrics['class_iou'] = tf.metrics.mean_iou(
+        labels=labels['detection_trainable']['classifications'],
+        predictions=tf.to_int32(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5),
+        num_classes=2)
     metrics['class_pr_auc'], update_metrics['class_pr_auc'] = tf.metrics.auc(
         labels=labels['detection_trainable']['classifications'],
         predictions=tf.nn.sigmoid(logits['detection_trainable']['classifications']),
@@ -172,6 +175,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
     metrics['regularization_loss'], update_metrics['regularization_loss'] = tf.metrics.mean(regularization_loss)
 
     running_summary = tf.summary.merge([
+        tf.summary.scalar('class_iou', metrics['class_iou']),
         tf.summary.scalar('class_pr_auc', metrics['class_pr_auc']),
         tf.summary.scalar('regr_iou', metrics['regr_iou']),
         tf.summary.scalar('total_loss', metrics['total_loss']),
