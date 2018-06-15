@@ -150,7 +150,7 @@ def rescale_image(image, scale):
     return tf.image.resize_images(image, new_size, method=tf.image.ResizeMethod.BILINEAR, align_corners=True)
 
 
-def build_dataset(spec, levels, augment, scale=None):
+def build_dataset(spec, levels, scale=None, shuffle=None, augment=False):
     def load_image_with_labels(input):
         image = tf.read_file(input['image_file'])
         image = tf.image.decode_jpeg(image, channels=3)
@@ -240,6 +240,9 @@ def build_dataset(spec, levels, augment, scale=None):
         lambda: dl,
         output_types={'image_file': tf.string, 'class_ids': tf.int32, 'boxes': tf.float32},
         output_shapes={'image_file': [], 'class_ids': [None], 'boxes': [None, 4]})
+
+    if shuffle is not None:
+        ds = ds.shuffle(shuffle)
 
     ds = ds.map(mapper, num_parallel_calls=min(os.cpu_count(), 4))
 

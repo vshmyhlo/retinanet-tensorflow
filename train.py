@@ -225,9 +225,10 @@ def main():
         spec=args.dataset,
         levels=levels,
         scale=args.scale,
+        shuffle=1024,
         augment=True)
 
-    iter = ds['dataset'].shuffle(256).prefetch(1).make_initializable_iterator()
+    iter = ds['dataset'].prefetch(1).make_initializable_iterator()
     input = iter.get_next()
     input = {
         **input,
