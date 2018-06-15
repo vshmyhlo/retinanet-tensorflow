@@ -158,6 +158,10 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
     metrics = {}
     update_metrics = {}
 
+    image = tf.Print(image, [
+        tf.reduce_sum(tf.to_float(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5))])
+
+    # TODO: refactor
     metrics['class_iou'], update_metrics['class_iou'] = tf.metrics.mean_iou(
         labels=labels['detection_trainable']['classifications'],
         predictions=tf.to_int32(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5),
