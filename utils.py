@@ -32,17 +32,18 @@ def boxmap_center_relative_to_corner_relative(regression):
     return tf.concat([pos - half_size, pos + half_size], -1)
 
 
-def anchor_boxmap(grid_size, anchor_boxes):
-    num_boxes = tf.shape(anchor_boxes)[0]
-    positions = tf.zeros_like(anchor_boxes)
-    anchor_boxes = tf.concat([positions, anchor_boxes], -1)
-    anchor_boxes = tf.reshape(anchor_boxes, (1, 1, 1, num_boxes, 4))
-    anchor_boxes = tf.tile(anchor_boxes, (1, grid_size[0], grid_size[1], 1, 1))
+def anchor_boxmap(grid_size, anchor_boxes, name='anchor_boxmap'):
+    with tf.name_scope(name):
+        num_boxes = tf.shape(anchor_boxes)[0]
+        positions = tf.zeros_like(anchor_boxes)
+        anchor_boxes = tf.concat([positions, anchor_boxes], -1)
+        anchor_boxes = tf.reshape(anchor_boxes, (1, 1, 1, num_boxes, 4))
+        anchor_boxes = tf.tile(anchor_boxes, (1, grid_size[0], grid_size[1], 1, 1))
 
-    boxmap = boxmap_anchor_relative_to_image_relative(anchor_boxes)
-    boxmap = boxmap_center_relative_to_corner_relative(boxmap)
+        boxmap = boxmap_anchor_relative_to_image_relative(anchor_boxes)
+        boxmap = boxmap_center_relative_to_corner_relative(boxmap)
 
-    return boxmap
+        return boxmap
 
 
 # TODO: refactor
