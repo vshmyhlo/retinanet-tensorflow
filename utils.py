@@ -117,10 +117,11 @@ def draw_bounding_boxes(input, boxes, class_ids, class_names, font_scale=0.6):
 
         text_size, baseline = cv2.getTextSize(class_names[class_id], cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
         input = cv2.rectangle(
-            input, (box[1], box[0] - text_size[1] - baseline), (box[1] + text_size[0], box[0]), colors[class_id], -1)
+            input, (box[1], box[0]), (box[1] + text_size[0], box[0] + text_size[1] + baseline), colors[class_id], -1)
         text_color = (0, 0, 0) if np.mean(colors[class_id]) > 255 / 2 else (255, 255, 255)
         input = cv2.putText(
-            input, class_names[class_id], (box[1], box[0] - baseline), cv2.FONT_HERSHEY_SIMPLEX, font_scale,
+            input, class_names[class_id], (box[1], box[0] + text_size[1]), cv2.FONT_HERSHEY_SIMPLEX,
+            font_scale,
             text_color, lineType=cv2.LINE_AA)
 
     return input
