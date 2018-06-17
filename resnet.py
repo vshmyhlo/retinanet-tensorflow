@@ -17,7 +17,7 @@ class ResNeXt_Bottleneck(Network):
         super().__init__(name=name)
 
         # identity
-        if project == 'down':
+        if project == 'down':  # TODO: refactor to enum
             self.identity = self.track_layer(
                 Sequential([
                     # TODO: check this

@@ -104,7 +104,7 @@ def regression_postprocess(regression, anchor_boxes, name='regression_postproces
         return regression
 
 
-def draw_bounding_boxes(input, boxes, class_ids, class_names, font_scale=0.75):
+def draw_bounding_boxes(input, boxes, class_ids, class_names, font_scale=0.6):
     # print(input.shape, boxes.shape, class_ids.shape, len(class_names))
     # print(class_names)
     # print(class_names[0])
