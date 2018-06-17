@@ -15,6 +15,10 @@ class Inferred(object):
             raise AssertionError('unknown dataset type: {}'.format(type))
 
     @property
+    def class_names(self):
+        return self._dl.class_names
+
+    @property
     def num_classes(self):
         return self._dl.num_classes
 

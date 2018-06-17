@@ -248,6 +248,7 @@ def build_dataset(spec, levels, scale=None, shuffle=None, augment=False):
 
     return {
         'dataset': ds,
+        'class_names': dl.class_names,
         'num_classes': dl.num_classes
     }
 

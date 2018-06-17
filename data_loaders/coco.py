@@ -7,11 +7,15 @@ class COCO(object):
     def __init__(self, ann_path, dataset_path):
         self.coco = pycoco.COCO(ann_path)
         self.dataset_path = dataset_path
-        self.category_ids = sorted(self.coco.getCatIds())
+        self._class_names = sorted(self.coco.getCatIds())
+
+    @property
+    def class_names(self):
+        return self._class_names
 
     @property
     def num_classes(self):
-        return len(self.category_ids)
+        return len(self._class_names)
 
     def download(self):
         self.coco.download(tarDir=self.dataset_path)
@@ -37,7 +41,7 @@ class COCO(object):
                 assert height > 0, 'height {} <= 0'.format(height)  # FIXME:
                 assert width > 0, 'width {} <= 0'.format(width)  # FIXME:
                 boxes.append([top, left, top + height, left + width])
-                class_ids.append(self.category_ids.index(a['category_id']))
+                class_ids.append(self._class_names.index(a['category_id']))
 
             boxes = np.array(boxes).reshape((-1, 4))  # TODO: normalize boxes
             class_ids = np.array(class_ids).reshape(-1)

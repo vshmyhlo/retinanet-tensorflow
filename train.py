@@ -56,14 +56,16 @@ def draw_classmap(image, classifications):
     return image
 
 
-def draw_bounding_boxes(image, classifications, regressions, max_output_size=1000):
+def draw_bounding_boxes(image, classifications, regressions, class_names, max_output_size=1000):
     final_boxes = []
     final_scores = []
+    final_class_ids = []
 
     for k in classifications:
         decoded = utils.boxes_decode(classifications[k], regressions[k])
         final_boxes.append(decoded['boxes'])
         final_scores.append(decoded['scores'])
+        final_class_ids.append(decoded['class_ids'])
 
     final_boxes = tf.concat(final_boxes, 0)
     final_scores = tf.concat(final_scores, 0)
@@ -71,9 +73,14 @@ def draw_bounding_boxes(image, classifications, regressions, max_output_size=100
     final_boxes = tf.gather(final_boxes, nms_indices)
     final_boxes = tf.expand_dims(final_boxes, 0)
 
-    image = tf.expand_dims(image, 0)
-    image = tf.image.draw_bounding_boxes(image, final_boxes)
-    image = tf.squeeze(image, 0)
+    # image = tf.expand_dims(image, 0)
+    # image = tf.image.draw_bounding_boxes(image, final_boxes)
+    # image = tf.squeeze(image, 0)
+
+    image = tf.image.convert_image_dtype(image, tf.uint8)
+    image = tf.py_func(
+        utils.draw_bounding_boxes, [image, final_boxes, final_class_ids, class_names], tf.float32)
+    image = tf.image.convert_image_dtype(image, tf.float32)
 
     return image
 
@@ -146,7 +153,8 @@ def build_train_step(loss, global_step, config):
         return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
 
 
-def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image, labels, logits, learning_rate):
+def build_metrics(
+        total_loss, class_loss, regr_loss, regularization_loss, image, labels, logits, learning_rate, class_names):
     def build_iou(labels, logits, name='build_iou'):
         with tf.name_scope(name):
             # decode both using ground true classification
@@ -154,7 +162,6 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
             logits_decoded = utils.boxes_decode(labels['classifications'], logits['regressions_postprocessed'])
             return utils.iou(labels_decoded['boxes'], logits_decoded['boxes'])
 
-    image = image * dataset.STD + dataset.MEAN
     metrics = {}
     update_metrics = {}
 
@@ -186,6 +193,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
         tf.summary.scalar('learning_rate', learning_rate),
     ])
 
+    image = image * dataset.STD + dataset.MEAN
     image_summary = []
     # TODO: better scope names
     for scope, classifications, regressions in (
@@ -201,7 +209,8 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, image,
                 image_with_boxes = draw_bounding_boxes(
                     image[i],
                     utils.dict_map(lambda x: x[i], classifications),
-                    utils.dict_map(lambda x: x[i], regressions))
+                    utils.dict_map(lambda x: x[i], regressions),
+                    class_names=class_names)
                 image_summary.append(tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0)))
 
                 image_with_classmap = draw_classmap(
@@ -259,7 +268,8 @@ def main():
         image=input['image'],
         labels=input,
         logits=logits,
-        learning_rate=args.learning_rate)
+        learning_rate=args.learning_rate,
+        class_names=ds['class_names'])
 
     globals_init = tf.global_variables_initializer()
     locals_init = tf.local_variables_initializer()

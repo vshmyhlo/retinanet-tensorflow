@@ -103,9 +103,9 @@ def regression_postprocess(regression, anchor_boxes, name='regression_postproces
         return regression
 
 
-def draw_bounding_boxes(input, boxes, class_ids, class_names, num_classes):
+def draw_bounding_boxes(input, boxes, class_ids, class_names):
     rng = np.random.RandomState(42)
-    colors = [(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)) for _ in range(num_classes)]
+    colors = [(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)) for _ in range(len(class_names))]
 
     input_size = input.shape[:2]
     boxes_scale = np.array([*input_size, *input_size]) - 1  # TODO: -1 ?
@@ -158,13 +158,16 @@ def classmap_decode(classmap):
 # TODO: use classmap_decode
 def boxes_decode(classifications, regressions):
     classifications_max = tf.reduce_max(classifications, -1)
+    class_ids = tf.argmax(classifications, -1)
     non_bg_mask = classifications_max > 0.5
     boxes = tf.boolean_mask(regressions, non_bg_mask)
     scores = tf.boolean_mask(classifications_max, non_bg_mask)
+    class_ids = tf.boolean_mask(class_ids, non_bg_mask)
 
     return {
         'boxes': boxes,
-        'scores': scores
+        'scores': scores,
+        'class_ids': class_ids
     }
 
 

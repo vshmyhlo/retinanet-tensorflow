@@ -7,14 +7,18 @@ class Pascal(object):
     def __init__(self, path, subset):  # FIXME:
         self._path = path
         self._subset = subset
-        self._category_ids = [
+        self._class_names = [
             'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
             'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
         ]
 
     @property
+    def class_names(self):
+        return self._class_names
+
+    @property
     def num_classes(self):
-        return len(self._category_ids)
+        return len(self._class_names)
 
     def __iter__(self):
         with open(os.path.join(self._path, 'ImageSets', 'Main', self._subset + '.txt')) as f:
@@ -34,7 +38,7 @@ class Pascal(object):
                 r = float(obj.find('bndbox/xmax').text)
 
                 boxes.append([t, l, b, r])
-                class_ids.append(self._category_ids.index(obj.find('name').text))
+                class_ids.append(self._class_names.index(obj.find('name').text))
 
             boxes = np.array(boxes).reshape((-1, 4))
             class_ids = np.array(class_ids).reshape(-1)
