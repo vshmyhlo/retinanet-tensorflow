@@ -5,10 +5,10 @@ import densenet
 from network import Network, Sequential
 
 
-def build_backbone(backbone, dropout_rate):
+def build_backbone(backbone, activation, dropout_rate):
     assert backbone in ['resnet', 'densenet']
     if backbone == 'resnet':
-        return resnet.ResNeXt_50()
+        return resnet.ResNeXt_50(activation=activation)
     elif backbone == 'densenet':
         return densenet.DenseNetBC_169(dropout_rate=dropout_rate)
 
@@ -17,6 +17,7 @@ class ClassificationSubnet(Network):
     def __init__(self,
                  num_anchors,
                  num_classes,
+                 activation,
                  kernel_initializer,
                  kernel_regularizer,
                  name='classification_subnet'):
@@ -37,7 +38,7 @@ class ClassificationSubnet(Network):
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization(),
-                    tf.nn.relu,
+                    activation,
                 ]) for _ in range(4)
             ]))
 
@@ -67,6 +68,7 @@ class ClassificationSubnet(Network):
 class RegressionSubnet(Network):
     def __init__(self,
                  num_anchors,
+                 activation,
                  kernel_initializer,
                  kernel_regularizer,
                  name='classification_subnet'):
@@ -86,7 +88,7 @@ class RegressionSubnet(Network):
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization(),
-                    tf.nn.relu,
+                    activation,
                 ]) for _ in range(4)
             ]))
 
@@ -154,6 +156,7 @@ class FeaturePyramidNetwork(Network):
             return merged
 
     def __init__(self,
+                 activation,
                  kernel_initializer,
                  kernel_regularizer,
                  name='feature_pyramid_network'):
@@ -174,7 +177,7 @@ class FeaturePyramidNetwork(Network):
 
         self.p7_from_p6 = self.track_layer(
             Sequential([
-                tf.nn.relu,
+                activation,
                 tf.layers.Conv2D(
                     256,
                     3,
@@ -224,6 +227,7 @@ class RetinaNetBase(Network):
                  backbone,
                  levels,
                  num_classes,
+                 activation,
                  dropout_rate,
                  kernel_initializer,
                  kernel_regularizer,
@@ -231,7 +235,7 @@ class RetinaNetBase(Network):
         super().__init__(name=name)
 
         self.backbone = self.track_layer(
-            build_backbone(backbone, dropout_rate=dropout_rate))
+            build_backbone(backbone, activation=activation, dropout_rate=dropout_rate))
 
         if backbone == 'densenet':
             # DenseNet has preactivation architecture,
@@ -240,7 +244,7 @@ class RetinaNetBase(Network):
                 cn: self.track_layer(
                     Sequential([
                         tf.layers.BatchNormalization(),
-                        tf.nn.relu,
+                        activation,
                     ]))
                 for cn in ['C3', 'C4', 'C5']
             }
@@ -249,6 +253,7 @@ class RetinaNetBase(Network):
 
         self.fpn = self.track_layer(
             FeaturePyramidNetwork(
+                activation=activation,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer))
 
@@ -261,6 +266,7 @@ class RetinaNetBase(Network):
             ClassificationSubnet(
                 num_anchors=num_anchors,  # TODO: level anchor boxes
                 num_classes=num_classes,
+                activation=activation,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
                 name='classification_subnet'))
@@ -268,6 +274,7 @@ class RetinaNetBase(Network):
         self.regression_subnet = self.track_layer(
             RegressionSubnet(
                 num_anchors=num_anchors,  # TODO: level anchor boxes
+                activation=activation,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
                 name='regression_subnet'))
@@ -300,7 +307,7 @@ class RetinaNetBase(Network):
 
 
 class RetinaNet(Network):
-    def __init__(self, backbone, levels, num_classes, dropout_rate, name='retinanet'):
+    def __init__(self, backbone, levels, num_classes, activation, dropout_rate, name='retinanet'):
         super().__init__(name=name)
 
         self.levels = levels
@@ -312,6 +319,7 @@ class RetinaNet(Network):
             backbone=backbone,
             levels=levels,
             num_classes=num_classes,
+            activation=activation,
             dropout_rate=dropout_rate,
             kernel_initializer=kernel_initializer,
             kernel_regularizer=kernel_regularizer)

@@ -253,6 +253,7 @@ def main():
     net = retinanet.RetinaNet(
         levels=levels,
         num_classes=ds['num_classes'],
+        activation=tf.nn.selu,
         dropout_rate=args.dropout,
         backbone=args.backbone)
     logits = {'detection': net(input['image'], training)}
