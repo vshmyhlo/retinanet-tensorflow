@@ -251,9 +251,6 @@ def main():
     total_loss = class_loss + regr_loss + regularization_loss
     train_step = build_train_step(total_loss, global_step=global_step, config=args)
 
-    total_loss = tf.Print(
-        total_loss, [tf.reduce_sum(tf.to_float(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5))])
-
     metrics, update_metrics, running_summary, image_summary = build_metrics(
         total_loss,
         class_loss,
