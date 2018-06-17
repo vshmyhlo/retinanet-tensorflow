@@ -108,6 +108,7 @@ def draw_bounding_boxes(input, boxes, class_ids, class_names, font_scale=0.6):
     rng = np.random.RandomState(42)
     colors = [(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)) for _ in range(len(class_names))]
 
+    input = np.copy(input)
     input_size = input.shape[:2]
     boxes_scale = np.array([*input_size, *input_size]) - 1  # TODO: -1 ?
     boxes = (boxes * boxes_scale).round().astype(np.int32)
