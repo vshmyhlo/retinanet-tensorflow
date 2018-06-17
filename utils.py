@@ -104,6 +104,7 @@ def regression_postprocess(regression, anchor_boxes, name='regression_postproces
 
 
 def draw_bounding_boxes(input, boxes, class_ids, class_names):
+    print(input.shape, boxes.shape, class_ids.shape, len(class_names))
     rng = np.random.RandomState(42)
     colors = [(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)) for _ in range(len(class_names))]
 
@@ -216,7 +217,7 @@ if __name__ == '__main__':
 
     class_names = list('abcdefghjk')
 
-    image = draw_bounding_boxes(image, boxes, class_ids, class_names, 10)
+    image = draw_bounding_boxes(image, boxes, class_ids, class_names)
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     plt.imshow(image)
