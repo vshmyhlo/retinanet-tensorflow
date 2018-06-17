@@ -157,19 +157,20 @@ def classmap_decode(classmap):
 
 
 # TODO: use classmap_decode
-def boxes_decode(classifications, regressions):
-    classifications_max = tf.reduce_max(classifications, -1)
-    class_ids = tf.argmax(classifications, -1)
-    non_bg_mask = classifications_max > 0.5
-    boxes = tf.boolean_mask(regressions, non_bg_mask)
-    scores = tf.boolean_mask(classifications_max, non_bg_mask)
-    class_ids = tf.boolean_mask(class_ids, non_bg_mask)
+def boxes_decode(classifications, regressions, name='boxes_decode'):
+    with tf.name_scope(name):
+        classifications_max = tf.reduce_max(classifications, -1)
+        class_ids = tf.argmax(classifications, -1)
+        non_bg_mask = classifications_max > 0.5
+        boxes = tf.boolean_mask(regressions, non_bg_mask)
+        scores = tf.boolean_mask(classifications_max, non_bg_mask)
+        class_ids = tf.boolean_mask(class_ids, non_bg_mask)
 
-    return {
-        'boxes': boxes,
-        'scores': scores,
-        'class_ids': class_ids
-    }
+        return {
+            'boxes': boxes,
+            'scores': scores,
+            'class_ids': class_ids
+        }
 
 
 def apply_trainable_masks(dict, trainable_masks, image_size, levels, name='apply_trainable_masks'):
