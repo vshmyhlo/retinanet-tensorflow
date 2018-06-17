@@ -22,7 +22,7 @@ class ResNeXt_Bottleneck(Network):
                 Sequential([
                     # TODO: check this
                     tf.layers.Conv2D(
-                        filters_base * 4, 2, 2, padding='same', use_bias=False, kernel_initializer=kernel_initializer,
+                        filters_base * 4, 3, 2, padding='same', use_bias=False, kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
                     tf.layers.BatchNormalization()
                 ]))
