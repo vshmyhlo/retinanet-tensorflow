@@ -104,7 +104,7 @@ def regression_postprocess(regression, anchor_boxes, name='regression_postproces
         return regression
 
 
-def draw_bounding_boxes(input, boxes, class_ids, class_names):
+def draw_bounding_boxes(input, boxes, class_ids, class_names, font_scale=0.75):
     print(input.shape, boxes.shape, class_ids.shape, len(class_names))
     rng = np.random.RandomState(42)
     colors = [(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)) for _ in range(len(class_names))]
@@ -115,12 +115,12 @@ def draw_bounding_boxes(input, boxes, class_ids, class_names):
     for box, class_id in zip(boxes, class_ids):
         input = cv2.rectangle(input, (box[1], box[0]), (box[3], box[2]), colors[class_id], 1)
 
-        text_size, baseline = cv2.getTextSize(class_names[class_id], cv2.FONT_HERSHEY_SIMPLEX, 0.8, 1)
+        text_size, baseline = cv2.getTextSize(class_names[class_id], cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
         input = cv2.rectangle(
             input, (box[1], box[0] - text_size[1] - baseline), (box[1] + text_size[0], box[0]), colors[class_id], -1)
         input = cv2.putText(
-            input, class_names[class_id], (box[1], box[0] - baseline), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255),
-            lineType=cv2.LINE_AA)
+            input, class_names[class_id], (box[1], box[0] - baseline), cv2.FONT_HERSHEY_SIMPLEX, font_scale,
+            (255, 255, 255), lineType=cv2.LINE_AA)
 
     return input
 
