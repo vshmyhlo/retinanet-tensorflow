@@ -77,6 +77,7 @@ def draw_bounding_boxes(image, classifications, regressions, class_names, max_ou
     # image = tf.image.draw_bounding_boxes(image, final_boxes)
     # image = tf.squeeze(image, 0)
 
+    image = tf.Print(image, [tf.shape(image), tf.shape(final_boxes), tf.shape(final_class_ids), tf.shape(class_names)])
     image = tf.image.convert_image_dtype(image, tf.uint8)
     image = tf.py_func(
         utils.draw_bounding_boxes, [image, final_boxes, final_class_ids, class_names], tf.float32, stateful=False)
