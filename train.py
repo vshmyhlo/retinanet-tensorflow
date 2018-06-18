@@ -151,12 +151,11 @@ def build_train_step(loss, global_step, config):
 
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
-        tf.summary.histogram('gradients', tf.concat([tf.reshape(x, [-1]) for x in gradients]))  # TODO: remove this
+        tf.summary.histogram('gradients', tf.concat([tf.reshape(x, [-1]) for x in gradients], 0))  # TODO: remove this
         return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
 
 
-def build_metrics(
-        total_loss, class_loss, regr_loss, regularization_loss, image, labels, logits, learning_rate, class_names):
+def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels, logits):
     def build_iou(labels, logits, name='build_iou'):
         with tf.name_scope(name):
             # decode both using ground true classification
@@ -184,6 +183,10 @@ def build_metrics(
     metrics['regr_loss'], update_metrics['regr_loss'] = tf.metrics.mean(regr_loss)
     metrics['regularization_loss'], update_metrics['regularization_loss'] = tf.metrics.mean(regularization_loss)
 
+    return metrics, update_metrics
+
+
+def build_summary(metrics, image, labels, logits, learning_rate, class_names):
     running_summary = tf.summary.merge([
         tf.summary.scalar('class_iou', metrics['class_iou']),
         tf.summary.scalar('class_pr_auc', metrics['class_pr_auc']),
@@ -225,7 +228,7 @@ def build_metrics(
 
     image_summary = tf.summary.merge(image_summary)
 
-    return metrics, update_metrics, running_summary, image_summary
+    return running_summary, image_summary
 
 
 def main():
@@ -267,11 +270,16 @@ def main():
     total_loss = class_loss + regr_loss + regularization_loss
     train_step = build_train_step(total_loss, global_step=global_step, config=args)
 
-    metrics, update_metrics, running_summary, image_summary = build_metrics(
+    metrics, update_metrics = build_metrics(
         total_loss,
         class_loss,
         regr_loss,
         regularization_loss,
+        labels=input,
+        logits=logits)
+
+    running_summary, image_summary = build_summary(
+        metrics,
         image=input['image'],
         labels=input,
         logits=logits,
