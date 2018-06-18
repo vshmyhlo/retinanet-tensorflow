@@ -151,6 +151,7 @@ def build_train_step(loss, global_step, config):
 
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
+        tf.summary.histogram('gradients', gradients)  # TODO: remove this
         return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
 
 
@@ -193,6 +194,7 @@ def build_metrics(
         tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
         tf.summary.scalar('learning_rate', learning_rate),
     ])
+    running_summary = tf.summary.merge_all()  # TODO: remove this
 
     logits['detection']['classifications'] = utils.dict_map(
         lambda x: tf.Print(x, [tf.reduce_min(x), tf.reduce_max(x)]), logits['detection']['classifications'])
