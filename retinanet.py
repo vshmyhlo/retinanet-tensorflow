@@ -148,7 +148,7 @@ class FeaturePyramidNetwork(Network):
             lateral = self.conv_lateral(lateral, training)
             lateral_size = tf.shape(lateral)[1:3]
             downsampled = tf.image.resize_images(
-                downsampled, lateral_size, method=tf.image.ResizeMethod.BILINEAR, align_corners=True)
+                downsampled, lateral_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
 
             merged = lateral + downsampled
             merged = self.conv_merge(merged, training)
