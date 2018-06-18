@@ -75,11 +75,6 @@ def draw_bounding_boxes(image, classifications, regressions, class_names, max_ou
     final_boxes = tf.gather(final_boxes, nms_indices)
     final_class_ids = tf.gather(final_class_ids, nms_indices)
 
-    # final_boxes = tf.expand_dims(final_boxes, 0)
-    # image = tf.expand_dims(image, 0)
-    # image = tf.image.draw_bounding_boxes(image, final_boxes)
-    # image = tf.squeeze(image, 0)
-
     image = tf.image.convert_image_dtype(image, tf.uint8)
     image = tf.py_func(
         lambda a, b, c, d: utils.draw_bounding_boxes(a, b, c, [x.decode() for x in d]),
@@ -198,6 +193,9 @@ def build_metrics(
         tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
         tf.summary.scalar('learning_rate', learning_rate),
     ])
+
+    logits['detection']['classifications'] = utils.dict_map(
+        lambda x: tf.Print(x, [tf.reduce_min(x), tf.reduce_max(x)]), logits['detection']['classifications'])
 
     image = image * dataset.STD + dataset.MEAN
     image_summary = []
