@@ -151,7 +151,7 @@ def build_train_step(loss, global_step, config):
 
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
-        tf.summary.histogram('gradients', gradients)  # TODO: remove this
+        tf.summary.histogram('gradients', tf.concat([tf.reshape(x, [-1]) for x in gradients]))  # TODO: remove this
         return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
 
 
