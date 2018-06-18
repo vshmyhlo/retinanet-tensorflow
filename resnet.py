@@ -165,7 +165,8 @@ class ResNeXt(Network):
 class ResNeXt_50(ResNeXt):
     def __init__(self, activation, name='resnext_v2_50'):
         kernel_initializer = tf.contrib.layers.variance_scaling_initializer(factor=2.0, mode='FAN_IN', uniform=False)
-        kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)
+        # kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)
+        kernel_regularizer = None  # TODO: remove this
 
         super().__init__(activation=activation, kernel_initializer=kernel_initializer,
                          kernel_regularizer=kernel_regularizer, name=name)
