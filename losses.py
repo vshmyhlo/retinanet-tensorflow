@@ -43,18 +43,27 @@ def focal_softmax_cross_entropy_with_logits(
 #
 #     return class_loss
 
-def classification_loss(labels, logits, non_bg_mask):
+def classification_loss(labels, logits, non_bg_mask, top_k):
     # TODO: check bg mask usage and bg weighting calculation
 
+    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+    dice = dice_loss(labels=labels, logits=logits)
+
+    if top_k is not None:
+        bce, _ = tf.nn.top_k(bce, top_k)
+        dice, _ = tf.nn.top_k(dice, top_k)
+
     loss = sum([
-        tf.reduce_mean(balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)),
-        tf.reduce_mean(dice_loss(labels=labels, logits=logits)),
+        tf.reduce_mean(bce),
+        tf.reduce_mean(dice),
     ])
 
     return loss
 
 
-def regression_loss(labels, logits, non_bg_mask):
+def regression_loss(labels, logits, non_bg_mask, top_k):
+    # TODO: use top_k
+   
     loss = tf.losses.huber_loss(
         labels=labels,
         predictions=logits,
@@ -97,17 +106,19 @@ def balanced_sigmoid_cross_entropy_with_logits(labels, logits, name='balanced_si
         return loss
 
 
-def loss(labels, logits, name='loss'):
+def loss(labels, logits, top_k, name='loss'):
     with tf.name_scope(name):
         non_bg_mask = utils.classmap_decode(labels['classifications'])['non_bg_mask']
 
         class_loss = classification_loss(
             labels=labels['classifications'],
             logits=logits['classifications'],
-            non_bg_mask=non_bg_mask)
+            non_bg_mask=non_bg_mask,
+            top_k=top_k)
         regr_loss = regression_loss(
             labels=labels['regressions'],
             logits=logits['regressions'],
-            non_bg_mask=non_bg_mask)
+            non_bg_mask=non_bg_mask,
+            top_k=top_k)
 
         return class_loss, regr_loss
