@@ -104,7 +104,7 @@ def regression_postprocess(regression, anchor_boxes, name='regression_postproces
         return regression
 
 
-def draw_bounding_boxes(input, boxes, class_ids, class_names, font_scale=0.6):
+def draw_bounding_boxes(input, boxes, class_ids, class_names, font_scale=0.5):
     rng = np.random.RandomState(42)
     colors = [(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)) for _ in range(len(class_names))]
 
