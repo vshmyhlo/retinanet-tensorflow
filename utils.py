@@ -10,26 +10,29 @@ def log_args(args):
         print(termcolor.colored('\t{}:'.format(key), 'yellow'), value)
 
 
-def boxmap_anchor_relative_to_image_relative(regression):
-    grid_size = tf.shape(regression)[1:3]
-    cell_size = tf.to_float(1 / grid_size)
+def boxmap_anchor_relative_to_image_relative(regression, name='boxmap_anchor_relative_to_image_relative'):
+    with tf.name_scope(name):
+        grid_size = tf.shape(regression)[1:3]
+        cell_size = tf.to_float(1 / grid_size)
 
-    grid_y_pos = tf.linspace(cell_size[0] / 2, 1 - cell_size[0] / 2, grid_size[0])
-    grid_x_pos = tf.linspace(cell_size[1] / 2, 1 - cell_size[1] / 2, grid_size[1])
+        grid_y_pos = tf.linspace(cell_size[0] / 2, 1 - cell_size[0] / 2, grid_size[0])
+        grid_x_pos = tf.linspace(cell_size[1] / 2, 1 - cell_size[1] / 2, grid_size[1])
 
-    grid_x_pos, grid_y_pos = tf.meshgrid(grid_x_pos, grid_y_pos)
-    grid_pos = tf.stack([grid_y_pos, grid_x_pos], -1)
-    grid_pos = tf.expand_dims(grid_pos, -2)
+        grid_x_pos, grid_y_pos = tf.meshgrid(grid_x_pos, grid_y_pos)
+        grid_pos = tf.stack([grid_y_pos, grid_x_pos], -1)
+        grid_pos = tf.expand_dims(grid_pos, -2)
 
-    pos, size = tf.split(regression, 2, -1)
+        pos, size = tf.split(regression, 2, -1)
 
-    return tf.concat([pos + grid_pos, size], -1)
+        return tf.concat([pos + grid_pos, size], -1)
 
 
-def boxmap_center_relative_to_corner_relative(regression):
-    pos = regression[..., :2]
-    half_size = regression[..., 2:] / 2
-    return tf.concat([pos - half_size, pos + half_size], -1)
+def boxmap_center_relative_to_corner_relative(regression, name='boxmap_center_relative_to_corner_relative'):
+    with tf.name_scope(name):
+        pos = regression[..., :2]
+        half_size = regression[..., 2:] / 2
+
+        return tf.concat([pos - half_size, pos + half_size], -1)
 
 
 def anchor_boxmap(grid_size, anchor_boxes, name='anchor_boxmap'):
@@ -85,11 +88,12 @@ def iou(a, b, name='iou'):
         return iou
 
 
-def scale_regression(regression, anchor_boxes):
-    anchor_boxes = tf.tile(anchor_boxes, (1, 2))
-    anchor_boxes = tf.reshape(anchor_boxes, (1, 1, 1, anchor_boxes.shape[0], anchor_boxes.shape[1]))
+def scale_regression(regression, anchor_boxes, name='scale_regression'):
+    with tf.name_scope(name):
+        anchor_boxes = tf.tile(anchor_boxes, (1, 2))
+        anchor_boxes = tf.reshape(anchor_boxes, (1, 1, 1, anchor_boxes.shape[0], anchor_boxes.shape[1]))
 
-    return regression * anchor_boxes
+        return regression * anchor_boxes
 
 
 def regression_postprocess(regression, anchor_boxes, name='regression_postprocess'):
@@ -155,16 +159,17 @@ def dict_starmap(f, dicts):
 
 
 # TODO: remove this or refactor
-def classmap_decode(classmap):
-    classmap_max = tf.reduce_max(classmap, -1)
-    non_bg_mask = classmap_max > 0.5
+def classmap_decode(classmap, name='classmap_decoder'):
+    with tf.name_scope(name):
+        classmap_max = tf.reduce_max(classmap, -1)
+        non_bg_mask = classmap_max > 0.5
 
-    # scores = tf.boolean_mask(tf.reduce_max(classmap, ))
-    # classmap = tf.where(non_bg_mask, tf.argmax(classmap, -1), tf.fill(tf.shape(non_bg_mask), tf.to_int64(-1)))
+        # scores = tf.boolean_mask(tf.reduce_max(classmap, ))
+        # classmap = tf.where(non_bg_mask, tf.argmax(classmap, -1), tf.fill(tf.shape(non_bg_mask), tf.to_int64(-1)))
 
-    return {
-        'non_bg_mask': non_bg_mask
-    }
+        return {
+            'non_bg_mask': non_bg_mask
+        }
 
 
 # TODO: use classmap_decode
