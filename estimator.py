@@ -53,14 +53,11 @@ def train_input_fn(spec, levels, scale):
         shuffle=1024,
         augment=True)
 
-    return ds['dataset'].map(split).prefetch(1)
+    # return ds['dataset'].map(split).prefetch(1) # FIXME: not for tf 1.4
+    return ds['dataset'].map(split).prefetch(1).make_one_shot_iterator().get_next()
 
 
-def model_fn(
-        features,  # This is batch_features from input_fn
-        labels,  # This is batch_labels from input_fn
-        mode,  # An instance of tf.estimator.ModeKeys
-        params):
+def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         training = True
         global_step = tf.train.get_global_step()
