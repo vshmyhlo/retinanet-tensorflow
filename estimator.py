@@ -110,7 +110,8 @@ def model_fn(features, labels, mode, params):
 
         print('!!!!!!!!!!!!!!!!!!!!')
 
-        return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_step, eval_metric_ops=metrics)
+        return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_step,
+                                          eval_metric_ops=(metrics, update_metrics))
 
 
 if __name__ == '__main__':
