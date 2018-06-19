@@ -1,6 +1,7 @@
 import os
 import xml.etree.ElementTree as ET
 import numpy as np
+from tqdm import tqdm
 
 
 class Pascal(object):
@@ -52,6 +53,8 @@ class Pascal(object):
 
 if __name__ == '__main__':
     dl = Pascal(os.path.expanduser('~/Datasets/pascal/VOCdevkit/VOC2012'), 'trainval')
-    for x in dl:
-        print(x)
-        break
+
+    for x in tqdm(dl):
+        pass
+
+    print(x)

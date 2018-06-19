@@ -1,6 +1,7 @@
 import numpy as np
 import pycocotools.coco as pycoco
 import os
+from tqdm import tqdm
 
 
 class COCO(object):
@@ -55,16 +56,12 @@ class COCO(object):
                 }
 
 
-# class Image(object):
-#     def __init__(self, img):
-#         self.id = img['id']
-#         self.filename = img['file_name']
-#         self.size = np.array([img['height'], img['width']])
-
-
 if __name__ == '__main__':
-    for x in COCO(
-            os.path.expanduser('~/Datasets/coco/instances_train2017.json'),
-            os.path.expanduser('~/Datasets/coco/images')):
-        print(x)
-        break
+    dl = COCO(
+        os.path.expanduser('~/Datasets/coco/instances_train2017.json'),
+        os.path.expanduser('~/Datasets/coco/images'))
+
+    for x in tqdm(dl):
+        pass
+
+    print(x)
