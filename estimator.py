@@ -66,6 +66,7 @@ def model_fn(features, labels, mode, params):
             **features,
             'image': preprocess_image(features['image'])
         }
+        print('!!!!!!!!!!!!!!!!!!!!')
 
         net = retinanet.RetinaNet(
             levels=levels,
@@ -106,6 +107,8 @@ def model_fn(features, labels, mode, params):
                 'dog',
                 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
             ])  # FIXME:
+
+        print('!!!!!!!!!!!!!!!!!!!!')
 
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_step, eval_metric_ops=metrics)
 

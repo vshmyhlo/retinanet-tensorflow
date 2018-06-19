@@ -54,6 +54,8 @@ class Pascal(object):
 if __name__ == '__main__':
     dl = Pascal(os.path.expanduser('~/Datasets/pascal/VOCdevkit/VOC2012'), 'trainval')
 
+    print(dl.class_names)
+
     for x in tqdm(dl):
         pass
 

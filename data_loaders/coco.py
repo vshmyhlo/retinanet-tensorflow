@@ -61,6 +61,8 @@ if __name__ == '__main__':
         os.path.expanduser('~/Datasets/coco/instances_train2017.json'),
         os.path.expanduser('~/Datasets/coco/images'))
 
+    print(dl.class_names)
+
     for x in tqdm(dl):
         pass
 

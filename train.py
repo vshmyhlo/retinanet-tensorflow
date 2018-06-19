@@ -238,7 +238,7 @@ def main():
 
     levels = build_levels()
     training = tf.placeholder(tf.bool, [], name='training')
-    global_step = tf.get_variable('global_step', initializer=0, trainable=False)
+    global_step = tf.train.get_global_step()
 
     ds = dataset.build_dataset(
         spec=args.dataset,
