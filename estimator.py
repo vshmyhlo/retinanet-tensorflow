@@ -4,7 +4,7 @@ import dataset
 import utils
 from level import build_levels
 import losses
-from train import build_train_step, preprocess_image
+from train import build_train_step, preprocess_image, build_metrics, build_summary
 import retinanet
 
 
@@ -13,7 +13,7 @@ def build_parser():
     parser.add_argument('--learning-rate', type=float, default=1e-2)
     parser.add_argument('--dropout', type=float, default=0.2)
     parser.add_argument('--dataset', type=str, nargs='+', required=True)
-    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--log-interval', type=int)
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
@@ -85,9 +85,29 @@ def model_fn(features, labels, mode, params):
         regularization_loss = tf.losses.get_regularization_loss()
 
         loss = class_loss + regr_loss + regularization_loss
-        train_op = build_train_step(loss, global_step=global_step, config=params)
+        train_step = build_train_step(loss, global_step=global_step, config=params)
 
-        return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
+        metrics, update_metrics = build_metrics(
+            loss,
+            class_loss,
+            regr_loss,
+            regularization_loss,
+            labels=labels,
+            logits=logits)
+
+        running_summary, image_summary = build_summary(
+            metrics,
+            image=features['image'],
+            labels=labels,
+            logits=logits,
+            learning_rate=config.learning_rate,
+            class_names=[
+                'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable',
+                'dog',
+                'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
+            ])  # FIXME:
+
+        return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_step, eval_metric_ops=metrics)
 
 
 if __name__ == '__main__':
@@ -100,7 +120,8 @@ if __name__ == '__main__':
         params=config,
         model_dir=config.experiment)
 
-    classifier.train(lambda: train_input_fn(config.dataset, levels, config.scale))
+    for _ in range(config.epochs):
+        classifier.train(lambda: train_input_fn(config.dataset, levels, config.scale))
 
 # def train_input_fn(features, labels, batch_size):
 #     """An input function for training"""
