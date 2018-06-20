@@ -235,7 +235,7 @@ def main():
 
     levels = build_levels()
     training = tf.placeholder(tf.bool, [], name='training')
-    global_step = tf.train.get_or_create_global_step()
+    global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
     data_loader = Inferred(args.dataset[0], args.dataset[1:])
     ds = dataset.build_dataset(
