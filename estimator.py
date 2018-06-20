@@ -66,7 +66,6 @@ def model_fn(features, labels, mode, params):
             **features,
             'image': preprocess_image(features['image'])
         }
-        print('!!!!!!!!!!!!!!!!!!!!')
 
         net = retinanet.RetinaNet(
             levels=levels,
@@ -108,8 +107,6 @@ def model_fn(features, labels, mode, params):
                 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
             ])  # FIXME:
 
-        print('!!!!!!!!!!!!!!!!!!!!')
-
         def merge_metrics(metrics, update_metrics):
             if isinstance(metrics, dict):
                 return {k: merge_metrics(metrics[k], update_metrics[k]) for k in metrics}
@@ -136,36 +133,3 @@ if __name__ == '__main__':
 
     for _ in range(params.epochs):
         classifier.train(lambda: train_input_fn(params.dataset, levels, params.scale))
-
-# def train_input_fn(features, labels, batch_size):
-#     """An input function for training"""
-#     # Convert the inputs to a Dataset.
-#     dataset = tf.data.Dataset.from_tensor_slices((dict(features), labels))
-#
-#     # Shuffle, repeat, and batch the examples.
-#     return dataset.shuffle(1000).repeat().batch(batch_size)
-#
-#
-# # # Feature columns describe how to use the input.
-# # my_feature_columns = []
-# # for key in train_x.keys():
-# #     my_feature_columns.append(tf.feature_column.numeric_column(key=key))
-#
-#
-# my_feature_columns = []
-# # for key in train_x.keys():
-# #     my_feature_columns.append(tf.feature_column.numeric_column(key=key))
-#
-# my_feature_columns.append(tf.feature_column.numeric_column(key='price'))
-#
-# print(my_feature_columns)
-#
-# # Build a DNN with 2 hidden layers and 10 nodes in each hidden layer.
-# classifier = tf.estimator.DNNClassifier(
-#     feature_columns=my_feature_columns,
-#     # Two hidden layers of 10 nodes each.
-#     hidden_units=[10, 10],
-#     # The model must choose between 3 classes.
-#     n_classes=3)
-#
-# print(classifier)
