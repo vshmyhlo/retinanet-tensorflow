@@ -110,8 +110,14 @@ def model_fn(features, labels, mode, params):
 
         print('!!!!!!!!!!!!!!!!!!!!')
 
-        return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_step,
-                                          eval_metric_ops=(metrics, update_metrics))
+        def merge_metrics(metrics, update_metrics):
+            if isinstance(metrics, dict):
+                return {k: merge_metrics(metrics[k], update_metrics[k]) for k in metrics}
+            else:
+                return (metrics, update_metrics)
+
+        return tf.estimator.EstimatorSpec(
+            mode, loss=loss, train_op=train_step, eval_metric_ops=merge_metrics(metrics, update_metrics))
 
 
 if __name__ == '__main__':
