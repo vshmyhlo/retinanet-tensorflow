@@ -198,7 +198,7 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
         tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
         tf.summary.scalar('learning_rate', learning_rate),
     ])
-    running_summary = tf.summary.merge_all()  # TODO: remove this
+    # running_summary = tf.summary.merge_all()  # TODO: remove this
 
     image = image * dataset.STD + dataset.MEAN
     image_summary = []

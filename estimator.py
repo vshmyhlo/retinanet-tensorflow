@@ -124,14 +124,14 @@ if __name__ == '__main__':
     levels = build_levels()
 
     config = tf.estimator.RunConfig(
+        model_dir=params.experiment,
         save_checkpoints_steps=params.log_interval,
         save_summary_steps=params.log_interval)
 
     classifier = tf.estimator.Estimator(
         model_fn=model_fn,
         params=params,
-        config=config,
-        model_dir=params.experiment)
+        config=config)
 
     for _ in range(params.epochs):
         classifier.train(lambda: train_input_fn(params.dataset, levels, params.scale))
