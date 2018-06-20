@@ -118,6 +118,7 @@ def model_fn(features, labels, mode, params):
 
 
 if __name__ == '__main__':
+    tf.logging.set_verbosity(tf.logging.INFO)
     params = build_parser().parse_args()
     utils.log_args(params)
     levels = build_levels()

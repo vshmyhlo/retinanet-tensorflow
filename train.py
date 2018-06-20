@@ -235,7 +235,6 @@ def main():
 
     levels = build_levels()
     training = tf.placeholder(tf.bool, [], name='training')
-    global_step = tf.train.get_global_step()
 
     ds = dataset.build_dataset(
         spec=args.dataset,
@@ -267,7 +266,7 @@ def main():
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
-    train_step = build_train_step(total_loss, global_step=global_step, config=args)
+    train_step = build_train_step(total_loss, global_step=tf.train.get_global_step(), config=args)
 
     metrics, update_metrics = build_metrics(
         total_loss,
