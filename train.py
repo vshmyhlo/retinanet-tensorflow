@@ -189,7 +189,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
 
 
 def build_summary(metrics, image, labels, logits, learning_rate, class_names):
-    running_summary = tf.summary.merge([
+    summary = [
         tf.summary.scalar('class_iou', metrics['class_iou']),
         tf.summary.scalar('class_pr_auc', metrics['class_pr_auc']),
         tf.summary.scalar('regr_iou', metrics['regr_iou']),
@@ -198,11 +198,9 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
         tf.summary.scalar('regr_loss', metrics['regr_loss']),
         tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
         tf.summary.scalar('learning_rate', learning_rate),
-    ])
-    running_summary = tf.summary.merge_all()  # TODO: remove this
+    ]
 
     image = image * dataset.STD + dataset.MEAN
-    image_summary = []
     # TODO: better scope names
     for scope, classifications, regressions in (
             ('true',
@@ -219,15 +217,16 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
                     utils.dict_map(lambda x: x[i], classifications),
                     utils.dict_map(lambda x: x[i], regressions),
                     class_names=class_names)
-                image_summary.append(tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0)))
+                summary.append(tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0)))
 
                 image_with_classmap = draw_classmap(
                     image[i], utils.dict_map(lambda x: x[i], classifications))
-                image_summary.append(tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0)))
+                summary.append(tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0)))
 
-    image_summary = tf.summary.merge(image_summary)
+    summary = tf.summary.merge(summary)
+    # summary = tf.summary.merge_all()  # TODO: remove this
 
-    return running_summary, image_summary
+    return summary
 
 
 def main():
@@ -279,7 +278,7 @@ def main():
         labels=input,
         logits=logits)
 
-    running_summary, image_summary = build_summary(
+    summary = build_summary(
         metrics,
         image=input['image'],
         labels=input,
@@ -311,13 +310,12 @@ def main():
                         [(train_step, update_metrics), global_step], {training: True})
 
                     if args.log_interval is not None and step % args.log_interval == 0:
-                        m, run_summ, img_summ = sess.run(
-                            [metrics, running_summary, image_summary], {training: True})
+                        m, s = sess.run(
+                            [metrics, summary], {training: True})
 
                         print()
                         print_summary(m, step)
-                        train_writer.add_summary(run_summ, step)
-                        train_writer.add_summary(img_summ, step)
+                        train_writer.add_summary(s, step)
                         saver.save(sess, os.path.join(args.experiment, 'model.ckpt'), write_meta_graph=False)
                         sess.run(locals_init)
                 except tf.errors.OutOfRangeError:
