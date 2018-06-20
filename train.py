@@ -9,6 +9,7 @@ import losses
 import dataset
 from tqdm import tqdm
 import L4
+from data_loaders.inferred import Inferred
 
 
 # TODO: check classmap decoded uses scaled logits (sigmoid)
@@ -198,7 +199,7 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
         tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
         tf.summary.scalar('learning_rate', learning_rate),
     ])
-    # running_summary = tf.summary.merge_all()  # TODO: remove this
+    running_summary = tf.summary.merge_all()  # TODO: remove this
 
     image = image * dataset.STD + dataset.MEAN
     image_summary = []
@@ -235,15 +236,17 @@ def main():
 
     levels = build_levels()
     training = tf.placeholder(tf.bool, [], name='training')
+    global_step = tf.train.get_global_step()
 
+    data_loader = Inferred(args.dataset[0], args.dataset[1:])
     ds = dataset.build_dataset(
-        spec=args.dataset,
+        data_loader,
         levels=levels,
         scale=args.scale,
         shuffle=1024,
         augment=True)
 
-    iter = ds['dataset'].prefetch(1).make_initializable_iterator()
+    iter = ds.prefetch(1).make_initializable_iterator()
     input = iter.get_next()
     input = {
         **input,
@@ -252,7 +255,7 @@ def main():
 
     net = retinanet.RetinaNet(
         levels=levels,
-        num_classes=ds['num_classes'],
+        num_classes=data_loader.num_classes,
         activation=tf.nn.elu,
         dropout_rate=args.dropout,
         backbone=args.backbone)
@@ -266,7 +269,7 @@ def main():
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
-    train_step = build_train_step(total_loss, global_step=tf.train.get_global_step(), config=args)
+    train_step = build_train_step(total_loss, global_step=global_step, config=args)
 
     metrics, update_metrics = build_metrics(
         total_loss,
@@ -282,7 +285,7 @@ def main():
         labels=input,
         logits=logits,
         learning_rate=args.learning_rate,
-        class_names=ds['class_names'])
+        class_names=data_loader.class_names)
 
     globals_init = tf.global_variables_initializer()
     locals_init = tf.local_variables_initializer()
