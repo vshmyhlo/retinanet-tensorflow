@@ -124,6 +124,7 @@ if __name__ == '__main__':
     levels = build_levels()
 
     config = tf.estimator.RunConfig(
+        save_checkpoints_steps=params.log_interval,
         save_summary_steps=params.log_interval)
 
     classifier = tf.estimator.Estimator(
