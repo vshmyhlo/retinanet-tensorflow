@@ -26,7 +26,7 @@ class Pascal(object):
             lines = f.readlines()
             image_names = [line.strip().split()[0] for line in lines]
 
-        for image_name in image_names:
+        for image_name in image_names[:100]:
             image_file = os.path.join(self._path, 'JPEGImages', image_name + '.jpg')
             tree = ET.parse(os.path.join(self._path, 'Annotations', image_name + '.xml'))
 
