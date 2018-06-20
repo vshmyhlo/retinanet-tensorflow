@@ -200,9 +200,6 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
     ])
     running_summary = tf.summary.merge_all()  # TODO: remove this
 
-    logits['detection']['classifications'] = utils.dict_map(
-        lambda x: tf.Print(x, [tf.reduce_min(x), tf.reduce_max(x)]), logits['detection']['classifications'])
-
     image = image * dataset.STD + dataset.MEAN
     image_summary = []
     # TODO: better scope names

@@ -101,7 +101,7 @@ def model_fn(features, labels, mode, params):
             image=features['image'],
             labels=labels,
             logits=logits,
-            learning_rate=config.learning_rate,
+            learning_rate=params.learning_rate,
             class_names=[
                 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable',
                 'dog',
@@ -121,17 +121,21 @@ def model_fn(features, labels, mode, params):
 
 
 if __name__ == '__main__':
-    config = build_parser().parse_args()
-    utils.log_args(config)
+    params = build_parser().parse_args()
+    utils.log_args(params)
     levels = build_levels()
+
+    config = tf.estimator.RunConfig(
+        save_summary_steps=params.log_interval)
 
     classifier = tf.estimator.Estimator(
         model_fn=model_fn,
-        params=config,
-        model_dir=config.experiment)
+        params=params,
+        config=config,
+        model_dir=params.experiment)
 
-    for _ in range(config.epochs):
-        classifier.train(lambda: train_input_fn(config.dataset, levels, config.scale))
+    for _ in range(params.epochs):
+        classifier.train(lambda: train_input_fn(params.dataset, levels, params.scale))
 
 # def train_input_fn(features, labels, batch_size):
 #     """An input function for training"""
