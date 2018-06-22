@@ -10,7 +10,7 @@ def build_backbone(backbone, activation, dropout_rate):
     if backbone == 'resnet':
         return resnet.ResNeXt_50(activation=activation)
     elif backbone == 'densenet':
-        return densenet.DenseNetBC_169(dropout_rate=dropout_rate)
+        return densenet.DenseNetBC_169(activation=activation, dropout_rate=dropout_rate)
 
 
 class ClassificationSubnet(Network):
@@ -238,6 +238,7 @@ class RetinaNetBase(Network):
             build_backbone(backbone, activation=activation, dropout_rate=dropout_rate))
 
         if backbone == 'densenet':
+            # TODO: check if this is necessary
             # DenseNet has preactivation architecture,
             # so we need to apply activation before passing features to FPN
             self.postprocess_bottom_up = {

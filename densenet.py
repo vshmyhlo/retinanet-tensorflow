@@ -7,13 +7,14 @@ from network import Network, Sequential
 class CompositeFunction(Sequential):
     def __init__(self,
                  filters,
+                 activation,
                  dropout_rate,
                  kernel_initializer,
                  kernel_regularizer,
                  name='composite_function'):
         layers = [
             tf.layers.BatchNormalization(),
-            tf.nn.relu,
+            activation,
             tf.layers.Conv2D(
                 filters,
                 3,
@@ -30,13 +31,14 @@ class CompositeFunction(Sequential):
 class BottleneckCompositeFunction(Sequential):
     def __init__(self,
                  filters,
+                 activation,
                  dropout_rate,
                  kernel_initializer,
                  kernel_regularizer,
                  name='bottleneck_composite_function'):
         layers = [
             tf.layers.BatchNormalization(),
-            tf.nn.relu,
+            activation,
             tf.layers.Conv2D(
                 filters * 4,
                 1,
@@ -45,7 +47,7 @@ class BottleneckCompositeFunction(Sequential):
                 kernel_regularizer=kernel_regularizer),
             tf.layers.Dropout(dropout_rate),
             tf.layers.BatchNormalization(),
-            tf.nn.relu,
+            activation,
             tf.layers.Conv2D(
                 filters,
                 3,
@@ -64,6 +66,7 @@ class DenseNet_Block(Network):
                  growth_rate,
                  depth,
                  bottleneck,
+                 activation,
                  dropout_rate,
                  kernel_initializer,
                  kernel_regularizer,
@@ -77,6 +80,7 @@ class DenseNet_Block(Network):
                     self.track_layer(
                         BottleneckCompositeFunction(
                             growth_rate,
+                            activation=activation,
                             dropout_rate=dropout_rate,
                             kernel_initializer=kernel_initializer,
                             kernel_regularizer=kernel_regularizer,
@@ -86,6 +90,7 @@ class DenseNet_Block(Network):
                     self.track_layer(
                         CompositeFunction(
                             growth_rate,
+                            activation=activation,
                             dropout_rate=dropout_rate,
                             kernel_initializer=kernel_initializer,
                             kernel_regularizer=kernel_regularizer,
@@ -132,6 +137,7 @@ class TransitionLayer(Sequential):
 class DenseNetBC_ImageNet(Network):
     def __init__(self,
                  growth_rate,
+                 activation,
                  kernel_initializer,
                  kernel_regularizer,
                  name='densenet_bc_imagenet'):
@@ -149,7 +155,7 @@ class DenseNetBC_ImageNet(Network):
                     kernel_regularizer=kernel_regularizer,
                     name='conv1'),
                 tf.layers.BatchNormalization(),
-                tf.nn.relu,
+                activation,
             ]))
         self.conv1_max_pool = self.track_layer(
             tf.layers.MaxPooling2D(3, 2, padding='same'))
@@ -175,6 +181,7 @@ class DenseNetBC_ImageNet(Network):
 
 class DenseNetBC_169(DenseNetBC_ImageNet):
     def __init__(self,
+                 activation,
                  dropout_rate,
                  growth_rate=32,
                  compression_factor=0.5,
@@ -186,6 +193,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
 
         super().__init__(
             growth_rate,
+            activation=activation,
             kernel_initializer=kernel_initializer,
             kernel_regularizer=kernel_regularizer,
             name=name)
@@ -197,6 +205,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
                 growth_rate,
                 depth=blocks[1],
                 bottleneck=bottleneck,
+                activation=activation,
                 dropout_rate=dropout_rate,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
@@ -216,6 +225,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
                 growth_rate,
                 depth=blocks[2],
                 bottleneck=bottleneck,
+                activation=activation,
                 dropout_rate=dropout_rate,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
@@ -223,8 +233,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
 
         self.transition_layer_2 = self.track_layer(
             TransitionLayer(
-                input_filters=blocks[2] * growth_rate +
-                              self.transition_layer_1.layers[1].filters,
+                input_filters=blocks[2] * growth_rate + self.transition_layer_1.layers[1].filters,  # FIXME:
                 compression_factor=compression_factor,
                 dropout_rate=dropout_rate,
                 kernel_initializer=kernel_initializer,
@@ -236,6 +245,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
                 growth_rate,
                 depth=blocks[3],
                 bottleneck=bottleneck,
+                activation=activation,
                 dropout_rate=dropout_rate,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
@@ -243,8 +253,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
 
         self.transition_layer_3 = self.track_layer(
             TransitionLayer(
-                input_filters=blocks[3] * growth_rate +
-                              self.transition_layer_2.layers[1].filters,
+                input_filters=blocks[3] * growth_rate + self.transition_layer_2.layers[1].filters,  # FIXME:
                 compression_factor=compression_factor,
                 dropout_rate=dropout_rate,
                 kernel_initializer=kernel_initializer,
@@ -256,6 +265,7 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
                 growth_rate,
                 depth=blocks[4],
                 bottleneck=bottleneck,
+                activation=activation,
                 dropout_rate=dropout_rate,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
