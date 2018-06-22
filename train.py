@@ -145,15 +145,15 @@ def build_train_step(loss, global_step, config):
     else:
         raise AssertionError('invalid optimizer type: {}'.format(config.optimizer))
 
-    params = tf.trainable_variables()
-    gradients = optimizer.compute_gradients(loss, params)
-    if config.grad_clip_norm is not None:
-        gradients, _ = tf.clip_by_global_norm(gradients, config.grad_clip_norm)
+    # params = tf.trainable_variables()
+    # gradients = optimizer.compute_gradients(loss, params)
+    #
+    # if config.grad_clip_norm is not None:
+    #     gradients, _ = tf.clip_by_global_norm(gradients, config.grad_clip_norm)
 
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
-        tf.summary.histogram('gradients', tf.concat([tf.reshape(x, [-1]) for x in gradients], 0))  # TODO: remove this
-        return optimizer.apply_gradients(zip(gradients, params), global_step=global_step)
+        return optimizer.minimize(loss, global_step=global_step)
 
 
 def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels, logits):
