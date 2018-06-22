@@ -6,7 +6,7 @@ from network import Network, Sequential
 
 
 def build_backbone(backbone, activation, dropout_rate):
-    assert backbone in ['resnet', 'densenet']
+    assert backbone in ['resnet', 'densenet_121', 'densenet_169']
     if backbone == 'resnet':
         return resnet.ResNeXt_50(activation=activation)
     elif backbone == 'densenet_121':
