@@ -9,7 +9,9 @@ def build_backbone(backbone, activation, dropout_rate):
     assert backbone in ['resnet', 'densenet']
     if backbone == 'resnet':
         return resnet.ResNeXt_50(activation=activation)
-    elif backbone == 'densenet':
+    elif backbone == 'densenet_121':
+        return densenet.DenseNetBC_121(activation=activation, dropout_rate=dropout_rate)
+    elif backbone == 'densenet_169':
         return densenet.DenseNetBC_169(activation=activation, dropout_rate=dropout_rate)
 
 

@@ -136,8 +136,12 @@ class TransitionLayer(Sequential):
 
 class DenseNetBC_ImageNet(Network):
     def __init__(self,
+                 blocks,
                  growth_rate,
+                 compression_factor,
+                 bottleneck,
                  activation,
+                 dropout_rate,
                  kernel_initializer,
                  kernel_regularizer,
                  name='densenet_bc_imagenet'):
@@ -159,46 +163,6 @@ class DenseNetBC_ImageNet(Network):
             ]))
         self.conv1_max_pool = self.track_layer(
             tf.layers.MaxPooling2D(3, 2, padding='same'))
-
-    def call(self, input, training):
-        input = self.conv1(input, training)
-        C1 = input
-        input = self.conv1_max_pool(input)
-        input = self.dense_block_1(input, training)
-        C2 = input
-        input = self.transition_layer_1(input, training)
-        input = self.dense_block_2(input, training)
-        C3 = input
-        input = self.transition_layer_2(input, training)
-        input = self.dense_block_3(input, training)
-        C4 = input
-        input = self.transition_layer_3(input, training)
-        input = self.dense_block_4(input, training)
-        C5 = input
-
-        return {'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4, 'C5': C5}
-
-
-class DenseNetBC_169(DenseNetBC_ImageNet):
-    def __init__(self,
-                 activation,
-                 dropout_rate,
-                 growth_rate=32,
-                 compression_factor=0.5,
-                 bottleneck=True,
-                 name='densenet_bc_169'):
-        kernel_initializer = tf.contrib.layers.variance_scaling_initializer(
-            factor=2.0, mode='FAN_IN', uniform=False)
-        kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)
-
-        super().__init__(
-            growth_rate,
-            activation=activation,
-            kernel_initializer=kernel_initializer,
-            kernel_regularizer=kernel_regularizer,
-            name=name)
-
-        blocks = [None, 6, 12, 32, 32]
 
         self.dense_block_1 = self.track_layer(
             DenseNet_Block(
@@ -270,3 +234,69 @@ class DenseNetBC_169(DenseNetBC_ImageNet):
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
                 name='dense_block4'))
+
+    def call(self, input, training):
+        input = self.conv1(input, training)
+        C1 = input
+        input = self.conv1_max_pool(input)
+        input = self.dense_block_1(input, training)
+        C2 = input
+        input = self.transition_layer_1(input, training)
+        input = self.dense_block_2(input, training)
+        C3 = input
+        input = self.transition_layer_2(input, training)
+        input = self.dense_block_3(input, training)
+        C4 = input
+        input = self.transition_layer_3(input, training)
+        input = self.dense_block_4(input, training)
+        C5 = input
+
+        return {'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4, 'C5': C5}
+
+
+class DenseNetBC_121(DenseNetBC_ImageNet):
+    def __init__(self,
+                 activation,
+                 dropout_rate,
+                 growth_rate=32,
+                 compression_factor=0.5,
+                 bottleneck=True,
+                 name='densenet_bc_121'):
+        kernel_initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0, mode='FAN_IN', uniform=False)
+        kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)
+
+        super().__init__(
+            blocks=[None, 6, 12, 24, 16],
+            growth_rate=growth_rate,
+            compression_factor=compression_factor,
+            bottleneck=bottleneck,
+            activation=activation,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name=name)
+
+
+class DenseNetBC_169(DenseNetBC_ImageNet):
+    def __init__(self,
+                 activation,
+                 dropout_rate,
+                 growth_rate=32,
+                 compression_factor=0.5,
+                 bottleneck=True,
+                 name='densenet_bc_169'):
+        kernel_initializer = tf.contrib.layers.variance_scaling_initializer(
+            factor=2.0, mode='FAN_IN', uniform=False)
+        kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)
+
+        super().__init__(
+            blocks=[None, 6, 12, 32, 32],
+            growth_rate=growth_rate,
+            compression_factor=compression_factor,
+            bottleneck=bottleneck,
+            activation=activation,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name=name)
