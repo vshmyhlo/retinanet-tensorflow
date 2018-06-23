@@ -12,6 +12,9 @@ import L4
 from data_loaders.inferred import Inferred
 
 
+# TODO: optimize data loading
+# TODO: add correct dropout everywhere
+# TODO: dropout noise shape
 # TODO: check classmap decoded uses scaled logits (sigmoid)
 
 # TODO: dict map vs dict starmap
@@ -145,15 +148,14 @@ def build_train_step(loss, global_step, config):
     else:
         raise AssertionError('invalid optimizer type: {}'.format(config.optimizer))
 
-    # params = tf.trainable_variables()
-    # gradients = optimizer.compute_gradients(loss, params)
-    #
-    # if config.grad_clip_norm is not None:
-    #     gradients, _ = tf.clip_by_global_norm(gradients, config.grad_clip_norm)
-
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
-        return optimizer.minimize(loss, global_step=global_step)
+        if config.grad_clip_norm is not None:
+            gradients = optimizer.compute_gradients(loss)  # FIXME:
+            gradients, _ = tf.clip_by_global_norm(gradients, config.grad_clip_norm)
+            return optimizer.apply_gradients(gradients, global_step=global_step)
+        else:
+            return optimizer.minimize(loss, global_step=global_step)
 
 
 def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels, logits):

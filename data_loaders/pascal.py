@@ -2,9 +2,10 @@ import os
 import xml.etree.ElementTree as ET
 import numpy as np
 from tqdm import tqdm
+from data_loaders.base import Base
 
 
-class Pascal(object):
+class Pascal(Base):
     def __init__(self, path, subset):  # FIXME:
         self._path = path
         self._subset = subset

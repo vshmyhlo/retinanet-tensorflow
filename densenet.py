@@ -2,7 +2,23 @@ import tensorflow as tf
 from network import Network, Sequential
 
 
-# TODO: dropout noise shape
+class Dropout(Network):
+    def __init__(self, dropout_rate, name='dropout'):
+        super().__init__(name=name)
+
+        self.dropout_rate = dropout_rate
+
+    def build(self, input_shape):
+        self.dropout = tf.layers.Dropout(self.dropout_rate)
+
+        super().build(input_shape)
+
+    def call(self, input, training):
+        shape = tf.shape(input)
+        input = self.dropout(input, noise_shape=(shape[0], 1, 1, shape[3]), training=training)
+
+        return input
+
 
 class CompositeFunction(Sequential):
     def __init__(self,
@@ -22,7 +38,7 @@ class CompositeFunction(Sequential):
                 use_bias=False,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
-            tf.layers.Dropout(dropout_rate),
+            Dropout(dropout_rate),
         ]
 
         super().__init__(layers, name=name)
@@ -45,7 +61,7 @@ class BottleneckCompositeFunction(Sequential):
                 use_bias=False,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
-            tf.layers.Dropout(dropout_rate),
+            Dropout(dropout_rate),
             tf.layers.BatchNormalization(),
             activation,
             tf.layers.Conv2D(
@@ -55,7 +71,7 @@ class BottleneckCompositeFunction(Sequential):
                 use_bias=False,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
-            tf.layers.Dropout(dropout_rate),
+            Dropout(dropout_rate),
         ]
 
         super().__init__(layers, name=name)
@@ -123,7 +139,7 @@ class TransitionLayer(Sequential):
                 use_bias=False,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
-            tf.layers.Dropout(dropout_rate),
+            Dropout(dropout_rate),
             tf.layers.AveragePooling2D(2, 2, padding='same')
         ]
 
