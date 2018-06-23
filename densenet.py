@@ -1,23 +1,25 @@
 import tensorflow as tf
 from network import Network, Sequential
 
+# TODO: fixme
+# class Dropout(Network):
+#     def __init__(self, dropout_rate, name='dropout'):
+#         super().__init__(name=name)
+#
+#         self.dropout_rate = dropout_rate
+#
+#     def build(self, input_shape):
+#         self.dropout = tf.layers.Dropout(self.dropout_rate)
+#
+#         super().build(input_shape)
+#
+#     def call(self, input, training):
+#         shape = tf.shape(input)
+#         input = self.dropout(input, noise_shape=(shape[0], 1, 1, shape[3]), training=training)
+#
+#         return input
 
-class Dropout(Network):
-    def __init__(self, dropout_rate, name='dropout'):
-        super().__init__(name=name)
-
-        self.dropout_rate = dropout_rate
-
-    def build(self, input_shape):
-        self.dropout = tf.layers.Dropout(self.dropout_rate)
-
-        super().build(input_shape)
-
-    def call(self, input, training):
-        shape = tf.shape(input)
-        input = self.dropout(input, noise_shape=(shape[0], 1, 1, shape[3]), training=training)
-
-        return input
+Dropout = tf.layers.Dropout
 
 
 class CompositeFunction(Sequential):
