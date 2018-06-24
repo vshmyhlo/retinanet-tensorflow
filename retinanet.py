@@ -2,17 +2,21 @@ import tensorflow as tf
 import math
 import resnet
 import densenet
+import mobilenet_v2
 from network import Network, Sequential
 
 
 def build_backbone(backbone, activation, dropout_rate):
-    assert backbone in ['resnet', 'densenet_121', 'densenet_169']
+    assert backbone in ['resnet', 'densenet_121', 'densenet_169', 'mobilenet_v2']
     if backbone == 'resnet':
         return resnet.ResNeXt_50(activation=activation)
     elif backbone == 'densenet_121':
         return densenet.DenseNetBC_121(activation=activation, dropout_rate=dropout_rate)
     elif backbone == 'densenet_169':
         return densenet.DenseNetBC_169(activation=activation, dropout_rate=dropout_rate)
+    elif backbone == 'mobilenet_v2':
+        # return mobilenet_v2.MobileNetV2(activation=activation, dropout_rate=dropout_rate)
+        return mobilenet_v2.MobileNetV2()
 
 
 class ClassificationSubnet(Network):

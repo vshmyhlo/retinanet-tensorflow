@@ -12,6 +12,7 @@ import L4
 from data_loaders.inferred import Inferred
 
 
+# TODO: check preprocessing
 # TODO: optimize data loading
 # TODO: add correct dropout everywhere
 # TODO: dropout noise shape
@@ -104,7 +105,7 @@ def build_parser():
     parser.add_argument(
         '--backbone',
         type=str,
-        choices=['resnet', 'densenet_121', 'densenet_169'],
+        choices=['resnet', 'densenet_121', 'densenet_169', 'mobilenet_v2'],
         default='resnet')
     parser.add_argument(
         '--optimizer',
