@@ -129,7 +129,8 @@ class DepthwiseConv2D(Network):
         self._use_bias = use_bias
 
     def build(self, input_shape):
-        self._kernel = self.add_variable('kernel', (self._kernel_size, self._kernel_size, input_shape[3], 1))
+        self._kernel = self.add_variable('kernel', (self._kernel_size, self._kernel_size, input_shape[3], 1),
+                                         initializer=tf.random_normal_initializer)
 
         super().build(input_shape)
 
