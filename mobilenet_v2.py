@@ -148,12 +148,16 @@ class DepthwiseConv2D(Network):
 
 
 class Bottleneck(Network):
-    def __init__(self, filters, strides, expansion_factor, kernel_initializer, kernel_regularizer, name='bottleneck'):
+    def __init__(self, filters, strides, expansion_factor, activation, dropout_rate, kernel_initializer,
+                 kernel_regularizer,
+                 name='bottleneck'):
         super().__init__(name=name)
 
         self._filters = filters
         self._strides = strides
         self._expansion_factor = expansion_factor
+        self._activation = activation
+        self._dropout_rate = dropout_rate
         self._kernel_initializer = kernel_initializer
         self._kernel_regularizer = kernel_regularizer
 
@@ -163,7 +167,8 @@ class Bottleneck(Network):
                 input_shape[3] * self._expansion_factor, 1, use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
             tf.layers.BatchNormalization(),
-            tf.nn.relu6
+            self._activation,
+            tf.layers.Dropout(self._dropout_rate)
         ])
 
         self.depthwise_conv = Sequential([
@@ -171,14 +176,16 @@ class Bottleneck(Network):
                 3, strides=self._strides, padding='same', use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
             tf.layers.BatchNormalization(),
-            tf.nn.relu6
+            self._activation,
+            tf.layers.Dropout(self._dropout_rate)
         ])
 
         self.linear_conv = Sequential([
             tf.layers.Conv2D(
                 self._filters, 1, use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
-            tf.layers.BatchNormalization()
+            tf.layers.BatchNormalization(),
+            tf.layers.Dropout(self._dropout_rate)
         ])
 
         super().build(input_shape)
@@ -200,6 +207,11 @@ class MobileNetV2(Network):
     def __init__(self, activation, dropout_rate, name='mobilenet_v2'):
         super().__init__(name=name)
 
+        if activation is None:
+            self._activation = tf.nn.relu6
+        else:
+            self._activation = activation
+        self._dropout_rate = dropout_rate
         self._kernel_initializer = tf.contrib.layers.variance_scaling_initializer(
             factor=2.0, mode='FAN_IN', uniform=False)
         self._kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=4e-5)
@@ -210,73 +222,75 @@ class MobileNetV2(Network):
                 32, 3, strides=2, padding='same', use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
             tf.layers.BatchNormalization(),
-            tf.nn.relu6
+            self._activation,
+            tf.layers.Dropout(self._dropout_rate)
         ])
 
         self.bottleneck_1_1 = Bottleneck(
-            16, expansion_factor=1, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            16, expansion_factor=1, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
 
         self.bottleneck_2_1 = Bottleneck(
-            24, expansion_factor=6, strides=2, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            24, expansion_factor=6, strides=2, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_2_2 = Bottleneck(
-            24, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            24, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
 
         self.bottleneck_3_1 = Bottleneck(
-            32, expansion_factor=6, strides=2, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            32, expansion_factor=6, strides=2, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_3_2 = Bottleneck(
-            32, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            32, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_3_3 = Bottleneck(
-            32, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            32, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
 
         self.bottleneck_4_1 = Bottleneck(
-            64, expansion_factor=6, strides=2, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            64, expansion_factor=6, strides=2, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_4_2 = Bottleneck(
-            64, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            64, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_4_3 = Bottleneck(
-            64, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            64, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_4_4 = Bottleneck(
-            64, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            64, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
 
         self.bottleneck_5_1 = Bottleneck(
-            96, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            96, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_5_2 = Bottleneck(
-            96, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            96, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_5_3 = Bottleneck(
-            96, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            96, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
 
         self.bottleneck_6_1 = Bottleneck(
-            160, expansion_factor=6, strides=2, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            160, expansion_factor=6, strides=2, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_6_2 = Bottleneck(
-            160, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            160, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
         self.bottleneck_6_3 = Bottleneck(
-            160, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            160, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
 
         self.bottleneck_7_1 = Bottleneck(
-            320, expansion_factor=6, strides=1, kernel_initializer=self._kernel_initializer,
-            kernel_regularizer=self._kernel_regularizer)
+            320, expansion_factor=6, strides=1, activation=self._activation, dropout_rate=self._dropout_rate,
+            kernel_initializer=self._kernel_initializer, kernel_regularizer=self._kernel_regularizer)
 
         self.output_conv = Sequential([
             tf.layers.Conv2D(
                 32, 1, use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
             tf.layers.BatchNormalization(),
-            tf.nn.relu6
+            self._activation,
+            tf.layers.Dropout(self._dropout_rate)
         ])
 
         super().build(input_shape)
@@ -320,7 +334,7 @@ class MobileNetV2(Network):
 
 if __name__ == '__main__':
     input = tf.zeros((1, 224, 224, 3))
-    net = MobileNetV2()
+    net = MobileNetV2(activation=tf.nn.elu, dropout_rate=0.2)
     output = net(input, training=True)
 
     for k in output:
