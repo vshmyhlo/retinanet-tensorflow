@@ -15,8 +15,7 @@ def build_backbone(backbone, activation, dropout_rate):
     elif backbone == 'densenet_169':
         return densenet.DenseNetBC_169(activation=activation, dropout_rate=dropout_rate)
     elif backbone == 'mobilenet_v2':
-        # return mobilenet_v2.MobileNetV2(activation=activation, dropout_rate=dropout_rate)
-        return mobilenet_v2.MobileNetV2()
+        return mobilenet_v2.MobileNetV2(activation=activation, dropout_rate=dropout_rate)
 
 
 class ClassificationSubnet(Network):
