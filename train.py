@@ -178,7 +178,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
     metrics['class_pr_auc'], update_metrics['class_pr_auc'] = tf.metrics.auc(
         labels=labels['detection_trainable']['classifications'],
         predictions=tf.nn.sigmoid(logits['detection_trainable']['classifications']),
-        num_thresholds=10,
+        num_thresholds=5,
         curve='PR')
     metrics['regr_iou'], update_metrics['regr_iou'] = tf.metrics.mean(
         build_iou(labels['detection_trainable'], logits['detection_trainable']))

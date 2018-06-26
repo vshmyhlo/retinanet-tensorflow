@@ -1,6 +1,5 @@
 import tensorflow as tf
 import tensorflow.contrib.eager as tfe
-from tensorflow.python.eager import context
 from tensorflow.python.estimator import util as estimator_util
 
 tfe_avaiable = hasattr(tfe, 'Network')
