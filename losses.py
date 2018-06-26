@@ -48,7 +48,7 @@ def classification_loss(labels, logits, non_bg_mask):
 
     # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
     bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-    dice = dice_loss(labels=labels, logits=logits)
+    dice = dice_loss(labels=labels, logits=logits, axis=0)
 
     loss = sum([
         tf.reduce_mean(bce),
@@ -72,12 +72,12 @@ def regression_loss(labels, logits, non_bg_mask):
     return loss
 
 
-def dice_loss(labels, logits, smooth=1, name='dice_loss'):
+def dice_loss(labels, logits, smooth=1, axis=None, name='dice_loss'):
     with tf.name_scope(name):
         probs = tf.nn.sigmoid(logits)
 
-        intersection = tf.reduce_sum(labels * probs)
-        union = tf.reduce_sum(labels) + tf.reduce_sum(probs)
+        intersection = tf.reduce_sum(labels * probs, axis=axis)
+        union = tf.reduce_sum(labels, axis=axis) + tf.reduce_sum(probs, axis=axis)
 
         coef = (2 * intersection + smooth) / (union + smooth)
         loss = 1 - coef
@@ -101,6 +101,7 @@ def balanced_sigmoid_cross_entropy_with_logits(labels, logits, name='balanced_si
         return loss
 
 
+# TODO: remove top_k
 def loss(labels, logits, top_k, name='loss'):
     with tf.name_scope(name):
         non_bg_mask = utils.classmap_decode(labels['classifications'])['non_bg_mask']
