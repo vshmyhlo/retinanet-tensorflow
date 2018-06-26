@@ -46,8 +46,8 @@ def focal_softmax_cross_entropy_with_logits(
 def classification_loss(labels, logits, non_bg_mask):
     # TODO: check bg mask usage and bg weighting calculation
 
-    # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-    bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
+    # bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
     dice = dice_loss(labels=labels, logits=logits, axis=0)
 
     loss = sum([
@@ -85,10 +85,11 @@ def dice_loss(labels, logits, smooth=1, axis=None, name='dice_loss'):
         return loss
 
 
-def balanced_sigmoid_cross_entropy_with_logits(labels, logits, name='balanced_sigmoid_cross_entropy_with_logits'):
+def balanced_sigmoid_cross_entropy_with_logits(
+        labels, logits, axis=None, name='balanced_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
-        num_positive = tf.reduce_sum(tf.to_float(tf.equal(labels, 1)))
-        num_negative = tf.reduce_sum(tf.to_float(tf.equal(labels, 0)))
+        num_positive = tf.reduce_sum(tf.to_float(tf.equal(labels, 1)), axis=axis)
+        num_negative = tf.reduce_sum(tf.to_float(tf.equal(labels, 0)), axis=axis)
 
         weight_positive = num_negative / (num_positive + num_negative)
         weight_negative = num_positive / (num_positive + num_negative)
