@@ -101,8 +101,7 @@ def balanced_sigmoid_cross_entropy_with_logits(
         return loss
 
 
-# TODO: remove top_k
-def loss(labels, logits, top_k, name='loss'):
+def loss(labels, logits, name='loss'):
     with tf.name_scope(name):
         non_bg_mask = utils.classmap_decode(labels['classifications'])['non_bg_mask']
 

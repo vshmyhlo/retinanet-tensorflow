@@ -101,7 +101,6 @@ def build_parser():
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument('--grad-clip-norm', type=float)
-    parser.add_argument('--ohem', type=int)
     parser.add_argument(
         '--backbone',
         type=str,
@@ -171,15 +170,11 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
     update_metrics = {}
 
     # TODO: refactor
+    # TODO: fix iou to use class ids
     metrics['class_iou'], update_metrics['class_iou'] = tf.metrics.mean_iou(
         labels=labels['detection_trainable']['classifications'],
         predictions=tf.to_int32(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5),
         num_classes=2)
-    metrics['class_pr_auc'], update_metrics['class_pr_auc'] = tf.metrics.auc(
-        labels=labels['detection_trainable']['classifications'],
-        predictions=tf.nn.sigmoid(logits['detection_trainable']['classifications']),
-        num_thresholds=5,
-        curve='PR')
     metrics['regr_iou'], update_metrics['regr_iou'] = tf.metrics.mean(
         build_iou(labels['detection_trainable'], logits['detection_trainable']))
     metrics['total_loss'], update_metrics['total_loss'] = tf.metrics.mean(total_loss)
@@ -193,7 +188,6 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
 def build_summary(metrics, image, labels, logits, learning_rate, class_names):
     summary = [
         tf.summary.scalar('class_iou', metrics['class_iou']),
-        tf.summary.scalar('class_pr_auc', metrics['class_pr_auc']),
         tf.summary.scalar('regr_iou', metrics['regr_iou']),
         tf.summary.scalar('total_loss', metrics['total_loss']),
         tf.summary.scalar('class_loss', metrics['class_loss']),
@@ -266,7 +260,7 @@ def main():
     logits = utils.apply_trainable_masks(logits, input['trainable_masks'], image_size=image_size, levels=levels)
 
     class_loss, regr_loss = losses.loss(
-        labels=input['detection_trainable'], logits=logits['detection_trainable'], top_k=args.ohem)
+        labels=input['detection_trainable'], logits=logits['detection_trainable'])
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
