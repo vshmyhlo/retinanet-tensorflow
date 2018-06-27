@@ -46,7 +46,7 @@ def focal_softmax_cross_entropy_with_logits(
 def classification_loss(labels, logits, non_bg_mask):
     # TODO: check bg mask usage and bg weighting calculation
 
-    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
+    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
     dice = dice_loss(labels=labels, logits=logits, axis=0)
 
     loss = sum([
