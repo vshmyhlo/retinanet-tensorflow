@@ -238,7 +238,7 @@ def main():
         data_loader,
         levels=levels,
         scale=args.scale,
-        shuffle=1024,
+        shuffle=4096,
         augment=True)
 
     iter = ds.prefetch(1).make_initializable_iterator()
