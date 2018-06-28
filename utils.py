@@ -203,7 +203,7 @@ def nms_classwise(decoded: BoxesDecoded, num_classes, name='nms_classwise'):
                 boxes=tf.boolean_mask(decoded.boxes, mask),
                 scores=tf.boolean_mask(decoded.scores, mask),
                 class_ids=tf.boolean_mask(decoded.class_ids, mask))
-
+            suppressed = nms(suppressed)
             decoded_classwise.append(suppressed)
 
         return merge_boxes_decoded(decoded_classwise)
