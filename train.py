@@ -194,7 +194,6 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
                 summary.append(tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0)))
 
     summary = tf.summary.merge(summary)
-    # summary = tf.summary.merge_all()  # TODO: remove this
 
     return summary
 
