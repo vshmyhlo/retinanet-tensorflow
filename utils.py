@@ -193,21 +193,34 @@ def boxes_decode(classifications, regressions, name='boxes_decode'):
             class_ids=class_ids)
 
 
-# TODO: channelwise nms
-def nms(decoded: BoxesDecoded, max_output_size=NMS_MAX_OUTPUT_SIZE):
-    nms_indices = tf.image.non_max_suppression(decoded.boxes, decoded.scores, max_output_size, iou_threshold=0.5)
+def nms_classwise(decoded: BoxesDecoded, num_classes, name='nms_classwise'):
+    with tf.name_scope(name):
+        decoded_classwise = []
+        for c in range(num_classes):
+            mask = tf.equal(decoded.class_ids, c)
+            decoded_classwise.append(BoxesDecoded(
+                boxes=tf.boolean_mask(decoded.boxes, mask),
+                scores=tf.boolean_mask(decoded.scores, mask),
+                class_ids=tf.boolean_mask(decoded.class_ids, mask)))
 
-    return BoxesDecoded(
-        boxes=tf.gather(decoded.boxes, nms_indices),
-        scores=tf.gather(decoded.scores, nms_indices),
-        class_ids=tf.gather(decoded.class_ids, nms_indices))
+        return merge_boxes_decoded(decoded_classwise)
+
+
+def nms(decoded: BoxesDecoded, max_output_size=NMS_MAX_OUTPUT_SIZE, name='nms'):
+    with tf.name_scope(name):
+        nms_indices = tf.image.non_max_suppression(decoded.boxes, decoded.scores, max_output_size, iou_threshold=0.5)
+
+        return BoxesDecoded(
+            boxes=tf.gather(decoded.boxes, nms_indices),
+            scores=tf.gather(decoded.scores, nms_indices),
+            class_ids=tf.gather(decoded.class_ids, nms_indices))
 
 
 def merge_boxes_decoded(decoded: List[BoxesDecoded]):
     return BoxesDecoded(
         boxes=tf.concat([d.boxes for d in decoded], 0),
-        scores=tf.concat([d.boxes for d in decoded], 0),
-        class_ids=tf.concat([d.boxes for d in decoded], 0))
+        scores=tf.concat([d.scores for d in decoded], 0),
+        class_ids=tf.concat([d.class_ids for d in decoded], 0))
 
 
 def apply_trainable_masks(dict, trainable_masks, image_size, levels, name='apply_trainable_masks'):

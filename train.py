@@ -73,7 +73,7 @@ def draw_bounding_boxes(image, classifications, regressions, class_names):
         decoded.append(utils.boxes_decode(classifications[k], regressions[k]))
 
     decoded = utils.merge_boxes_decoded(decoded)
-    decoded = utils.nms(decoded)
+    decoded = utils.nms_classwise(decoded, num_classes=len(class_names))
 
     image = tf.image.convert_image_dtype(image, tf.uint8)
     image = tf.py_func(
