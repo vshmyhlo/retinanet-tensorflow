@@ -35,13 +35,22 @@ import utils
 #         # return tf.reduce_sum(losses * weights)
 
 
+# def focal_sigmoid_cross_entropy_with_logits(
+#         labels, logits, focus=2.0, alpha=0.25, eps=1e-7, name='focal_sigmoid_cross_entropy_with_logits'):
+#     with tf.name_scope(name):
+#         alpha = tf.fill(tf.shape(labels), alpha)
+#         prob = tf.nn.sigmoid(logits)
+#         prob_true = tf.where(tf.equal(labels, 1), prob, (1 - prob))
+#         loss = -alpha * (1 - prob_true)**focus * tf.log(prob_true + eps)
+#
+#         return loss
+
 def focal_sigmoid_cross_entropy_with_logits(
         labels, logits, focus=2.0, alpha=0.25, eps=1e-7, name='focal_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
-        alpha = tf.fill(tf.shape(labels), alpha)
         prob = tf.nn.sigmoid(logits)
         prob_true = tf.where(tf.equal(labels, 1), prob, (1 - prob))
-        loss = -alpha * (1 - prob_true)**focus * tf.log(prob_true + eps)
+        loss = -1 * (1 - prob_true)**focus * tf.log(prob_true + eps)
 
         return loss
 
