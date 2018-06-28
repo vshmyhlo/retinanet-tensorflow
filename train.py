@@ -145,10 +145,10 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
 
     # TODO: refactor
     # TODO: fix iou to use class ids
-    metrics['class_iou'], update_metrics['class_iou'] = tf.metrics.mean_iou(
-        labels=labels['detection_trainable']['classifications'],
-        predictions=tf.to_int32(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5),
-        num_classes=2)
+    # metrics['class_iou'], update_metrics['class_iou'] = tf.metrics.mean_iou(
+    #     labels=labels['detection_trainable']['classifications'],
+    #     predictions=tf.to_int32(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5),
+    #     num_classes=2)
     metrics['regr_iou'], update_metrics['regr_iou'] = tf.metrics.mean(
         build_iou(labels['detection_trainable'], logits['detection_trainable']))
     metrics['total_loss'], update_metrics['total_loss'] = tf.metrics.mean(total_loss)
@@ -161,7 +161,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
 
 def build_summary(metrics, image, labels, logits, learning_rate, class_names):
     summary = [
-        tf.summary.scalar('class_iou', metrics['class_iou']),
+        # tf.summary.scalar('class_iou', metrics['class_iou']),
         tf.summary.scalar('regr_iou', metrics['regr_iou']),
         tf.summary.scalar('total_loss', metrics['total_loss']),
         tf.summary.scalar('class_loss', metrics['class_loss']),
