@@ -36,25 +36,26 @@ def focal_softmax_cross_entropy_with_logits(
         return loss
 
 
-# def classification_loss(labels, logits, non_background_mask):
-#     num_non_background = tf.reduce_sum(tf.to_float(non_background_mask))
-#     class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-#     class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_background, 1.0)
-#
-#     return class_loss
-
 def classification_loss(labels, logits, non_bg_mask):
-    # TODO: check bg mask usage and bg weighting calculation
+    class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+    num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
+    class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_bg, 1.0)
 
-    # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-    dice = dice_loss(labels=labels, logits=logits, axis=0)
+    return class_loss
 
-    loss = sum([
-        # tf.reduce_mean(bce),
-        tf.reduce_mean(dice),
-    ])
 
-    return loss
+# def classification_loss(labels, logits, non_bg_mask):
+#     # TODO: check bg mask usage and bg weighting calculation
+#
+#     bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+#     dice = dice_loss(labels=labels, logits=logits, axis=0)
+#
+#     loss = sum([
+#         tf.reduce_mean(bce),
+#         tf.reduce_mean(dice),
+#     ])
+#
+#     return loss
 
 
 def regression_loss(labels, logits, non_bg_mask):

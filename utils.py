@@ -2,6 +2,11 @@ import termcolor
 import tensorflow as tf
 import cv2
 import numpy as np
+from collections import namedtuple
+from typing import List
+
+NMS_MAX_OUTPUT_SIZE = 1000
+BoxesDecoded = namedtuple('BoxesDecoded', ['boxes', 'scores', 'class_ids'])
 
 
 def log_args(args):
@@ -182,11 +187,27 @@ def boxes_decode(classifications, regressions, name='boxes_decode'):
         scores = tf.boolean_mask(classifications_max, non_bg_mask)
         class_ids = tf.boolean_mask(class_ids, non_bg_mask)
 
-        return {
-            'boxes': boxes,
-            'scores': scores,
-            'class_ids': class_ids
-        }
+        return BoxesDecoded(
+            boxes=boxes,
+            scores=scores,
+            class_ids=class_ids)
+
+
+# TODO: channelwise nms
+def nms(decoded: BoxesDecoded, max_output_size=NMS_MAX_OUTPUT_SIZE):
+    nms_indices = tf.image.non_max_suppression(decoded.boxes, decoded.scores, max_output_size, iou_threshold=0.5)
+
+    return BoxesDecoded(
+        boxes=tf.gather(decoded.boxes, nms_indices),
+        scores=tf.gather(decoded.scores, nms_indices),
+        class_ids=tf.gather(decoded.class_ids, nms_indices))
+
+
+def merge_boxes_decoded(decoded: List[BoxesDecoded]):
+    return BoxesDecoded(
+        boxes=tf.concat([d.boxes for d in decoded], 0),
+        scores=tf.concat([d.boxes for d in decoded], 0),
+        class_ids=tf.concat([d.boxes for d in decoded], 0))
 
 
 def apply_trainable_masks(dict, trainable_masks, image_size, levels, name='apply_trainable_masks'):

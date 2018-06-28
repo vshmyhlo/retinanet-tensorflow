@@ -12,6 +12,11 @@ import L4
 from data_loaders.inferred import Inferred
 
 
+# TODO: typing
+# TODO: check retinanet encodes background as 0 everywhere
+# TODO: compute only loss on train
+# TODO: estimator
+# TODO: classwise nms
 # TODO: check preprocessing
 # TODO: optimize data loading
 # TODO: add correct dropout everywhere
@@ -61,29 +66,19 @@ def draw_classmap(image, classifications):
     return image
 
 
-def draw_bounding_boxes(image, classifications, regressions, class_names, max_output_size=1000):
-    final_boxes = []
-    final_scores = []
-    final_class_ids = []
+def draw_bounding_boxes(image, classifications, regressions, class_names):
+    decoded = []
 
     for k in classifications:
-        decoded = utils.boxes_decode(classifications[k], regressions[k])
-        final_boxes.append(decoded['boxes'])
-        final_scores.append(decoded['scores'])
-        final_class_ids.append(decoded['class_ids'])
+        decoded.append(utils.boxes_decode(classifications[k], regressions[k]))
 
-    final_boxes = tf.concat(final_boxes, 0)
-    final_scores = tf.concat(final_scores, 0)
-    final_class_ids = tf.concat(final_class_ids, 0)
-
-    nms_indices = tf.image.non_max_suppression(final_boxes, final_scores, max_output_size, iou_threshold=0.5)
-    final_boxes = tf.gather(final_boxes, nms_indices)
-    final_class_ids = tf.gather(final_class_ids, nms_indices)
+    decoded = utils.merge_boxes_decoded(decoded)
+    decoded = utils.nms(decoded)
 
     image = tf.image.convert_image_dtype(image, tf.uint8)
     image = tf.py_func(
         lambda a, b, c, d: utils.draw_bounding_boxes(a, b, c, [x.decode() for x in d]),
-        [image, final_boxes, final_class_ids, class_names],
+        [image, decoded.boxes, decoded.class_ids, class_names],
         tf.uint8,
         stateful=False)
     image = tf.image.convert_image_dtype(image, tf.float32)
@@ -164,7 +159,7 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
             # decode both using ground true classification
             labels_decoded = utils.boxes_decode(labels['classifications'], labels['regressions_postprocessed'])
             logits_decoded = utils.boxes_decode(labels['classifications'], logits['regressions_postprocessed'])
-            return utils.iou(labels_decoded['boxes'], logits_decoded['boxes'])
+            return utils.iou(labels_decoded.boxes, logits_decoded.boxes)
 
     metrics = {}
     update_metrics = {}
