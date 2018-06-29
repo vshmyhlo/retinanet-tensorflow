@@ -96,6 +96,7 @@ def build_parser():
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument('--grad-clip-norm', type=float)
+    parser.add_argument('--focal-loss-alpha', type=float, default=0.25)
     parser.add_argument(
         '--backbone',
         type=str,
@@ -233,7 +234,9 @@ def main():
     logits = utils.apply_trainable_masks(logits, input['trainable_masks'], image_size=image_size, levels=levels)
 
     class_loss, regr_loss = losses.loss(
-        labels=input['detection_trainable'], logits=logits['detection_trainable'])
+        labels=input['detection_trainable'],
+        logits=logits['detection_trainable'],
+        class_loss_kwargs={'alpha': args.focal_loss_alpha})
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss

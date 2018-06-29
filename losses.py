@@ -33,8 +33,8 @@ def focal_softmax_cross_entropy_with_logits(
         return loss
 
 
-def classification_loss(labels, logits, non_bg_mask):
-    class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
+    class_loss = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
     num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
     class_loss = tf.reduce_sum(class_loss) / tf.maximum(num_non_bg, 1.0)
 
@@ -99,14 +99,16 @@ def balanced_sigmoid_cross_entropy_with_logits(
         return loss
 
 
-def loss(labels, logits, name='loss'):
+def loss(labels, logits, class_loss_kwargs, name='loss'):
     with tf.name_scope(name):
         non_bg_mask = utils.classmap_decode(labels['classifications'])['non_bg_mask']
 
         class_loss = classification_loss(
             labels=labels['classifications'],
             logits=logits['classifications'],
-            non_bg_mask=non_bg_mask)
+            non_bg_mask=non_bg_mask,
+            class_loss_kwargs=class_loss_kwargs)
+
         regr_loss = regression_loss(
             labels=labels['regressions'],
             logits=logits['regressions'],
