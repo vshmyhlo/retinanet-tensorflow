@@ -126,9 +126,11 @@ def build_train_step(loss, global_step, config):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
         if config.grad_clip_norm is not None:
-            gradients = optimizer.compute_gradients(loss)
-            gradients, _ = tf.clip_by_global_norm(gradients, config.grad_clip_norm)
-            return optimizer.apply_gradients(gradients, global_step=global_step)
+            grads_and_vars = optimizer.compute_gradients(loss)
+            grads = [x[0] for x in grads_and_vars]
+            vars = [x[1] for x in grads_and_vars]
+            grads, _ = tf.clip_by_global_norm(grads, config.grad_clip_norm)
+            return optimizer.apply_gradients(zip(grads, vars), global_step=global_step)
         else:
             return optimizer.minimize(loss, global_step=global_step)
 
