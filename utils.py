@@ -7,7 +7,7 @@ from typing import List
 
 NMS_MAX_OUTPUT_SIZE = 1000
 BoxesDecoded = namedtuple('BoxesDecoded', ['boxes', 'scores', 'class_ids'])
-Detection = namedtuple('Detection', ['classification', 'regression'])
+Classification = namedtuple('Classification', ['unscaled', 'prob'])
 
 
 def log_args(args):
@@ -226,29 +226,59 @@ def merge_boxes_decoded(decoded: List[BoxesDecoded]):
         class_ids=tf.concat([d.class_ids for d in decoded], 0))
 
 
-def apply_trainable_masks(dict, trainable_masks, image_size, levels, name='apply_trainable_masks'):
-    with tf.name_scope(name):
-        regression_postprocessed = dict_starmap(
-            lambda r, l: regression_postprocess(r, tf.to_float(l.anchor_sizes / image_size)),
-            (dict['detection']['regressions'], levels))
+def dict_update(dict, keys, f):
+    if len(keys) == 0:
+        return f(dict)
 
+    return {
+        **dict,
+        keys[0]: dict_update(dict[keys[0]], keys[1:], f)
+    }
+
+
+def process_labels_and_logits(labels, logits, levels, name='process_labels_and_logits'):
+    with tf.name_scope(name):
+        labels = dict_update(
+            labels,
+            ['detection', 'classifications'],
+            lambda c: Classification(unscaled=None, prob=c))
+        logits = dict_update(
+            logits,
+            ['detection', 'classifications'],
+            lambda c: Classification(unscaled=c, prob=dict_map(tf.nn.sigmoid, c)))
+
+        image_size = tf.shape(labels['image'])[1:3]
+        labels = postprocess_and_mask(labels, labels['trainable_masks'], image_size=image_size, levels=levels)
+        logits = postprocess_and_mask(logits, labels['trainable_masks'], image_size=image_size, levels=levels)
+
+        return labels, logits
+
+
+def postprocess_and_mask(input, trainable_masks, image_size, levels, name='postprocess_and_mask'):
+    with tf.name_scope(name):
         detection = {
-            **dict['detection'],
-            'regressions_postprocessed': regression_postprocessed
+            **input['detection'],
+            'regressions_postprocessed': dict_starmap(
+                lambda r, l: regression_postprocess(r, tf.to_float(l.anchor_sizes / image_size)),
+                (input['detection']['regressions'], levels))
         }
 
+        unscaled = detection['classifications'].unscaled
+        prob = detection['classifications'].prob
+        detection_trainable_classifications = Classification(
+            unscaled=merge_outputs(dict_starmap(tf.boolean_mask, (unscaled, trainable_masks))) if unscaled else None,
+            prob=merge_outputs(dict_starmap(tf.boolean_mask, (prob, trainable_masks))) if prob else None)
+
         detection_trainable = {
-            'classifications': merge_outputs(dict_starmap(
-                tf.boolean_mask, (dict['detection']['classifications'], trainable_masks))),
+            'classifications': detection_trainable_classifications,
             'regressions': merge_outputs(dict_starmap(
-                tf.boolean_mask, (dict['detection']['regressions'], trainable_masks))),
+                tf.boolean_mask, (detection['regressions'], trainable_masks))),
             'regressions_postprocessed': merge_outputs(dict_starmap(
-                tf.boolean_mask, (regression_postprocessed, trainable_masks)
-            ))
+                tf.boolean_mask, (detection['regressions_postprocessed'], trainable_masks)))
         }
 
         return {
-            **dict,
+            **input,
             'detection': detection,
             'detection_trainable': detection_trainable
         }

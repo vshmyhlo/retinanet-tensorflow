@@ -136,12 +136,12 @@ def build_train_step(loss, global_step, config):
 
 
 def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels, logits):
-    def build_iou(labels, logits, name='build_iou'):
-        with tf.name_scope(name):
-            # decode both using ground true classification
-            labels_decoded = utils.boxes_decode(labels['classifications'], labels['regressions_postprocessed'])
-            logits_decoded = utils.boxes_decode(labels['classifications'], logits['regressions_postprocessed'])
-            return utils.iou(labels_decoded.boxes, logits_decoded.boxes)
+    # def build_iou(labels, logits, name='build_iou'):
+    #     with tf.name_scope(name):
+    #         # decode both using ground true classification
+    #         labels_decoded = utils.boxes_decode(labels['classifications'], labels['regressions_postprocessed'])
+    #         logits_decoded = utils.boxes_decode(labels['classifications'], logits['regressions_postprocessed'])
+    #         return utils.iou(labels_decoded.boxes, logits_decoded.boxes)
 
     metrics = {}
     update_metrics = {}
@@ -177,10 +177,10 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
     # TODO: better scope names
     for scope, classifications, regressions in (
             ('true',
-             labels['detection']['classifications'],
+             labels['detection']['classifications'].prob,
              labels['detection']['regressions_postprocessed']),
             ('pred',
-             utils.dict_map(tf.nn.sigmoid, logits['detection']['classifications']),
+             logits['detection']['classifications'].prob,
              logits['detection']['regressions_postprocessed'])
     ):
         for i in range(image.shape[0]):
@@ -219,10 +219,7 @@ def main():
 
     iter = ds.prefetch(1).make_initializable_iterator()
     input = iter.get_next()
-    input = {
-        **input,
-        'image': preprocess_image(input['image'])
-    }
+    input = {**input, 'image': preprocess_image(input['image'])}
 
     net = retinanet.RetinaNet(
         levels=levels,
@@ -231,9 +228,7 @@ def main():
         dropout_rate=args.dropout,
         backbone=args.backbone)
     logits = {'detection': net(input['image'], training)}
-    image_size = tf.shape(input['image'])[1:3]
-    input = utils.apply_trainable_masks(input, input['trainable_masks'], image_size=image_size, levels=levels)
-    logits = utils.apply_trainable_masks(logits, input['trainable_masks'], image_size=image_size, levels=levels)
+    input, logits = utils.process_labels_and_logits(labels=input, logits=logits, levels=levels)
 
     class_loss, regr_loss = losses.loss(
         labels=input['detection_trainable'],
