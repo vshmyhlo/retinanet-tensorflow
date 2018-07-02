@@ -4,10 +4,6 @@ from data_loaders.coco import COCO
 from data_loaders.pascal import Pascal
 from data_loaders.shapes import Shapes
 from tqdm import tqdm
-import utils
-import cv2
-
-import matplotlib.pyplot as plt
 
 
 class Inferred(object):
@@ -39,21 +35,17 @@ class Inferred(object):
 
 
 if __name__ == '__main__':
-    # dl1 = Inferred('pascal', [os.path.expanduser('~/Datasets/pascal/VOCdevkit/VOC2012'), 'trainval'])
-    # dl2 = Inferred('coco', [os.path.expanduser('~/Datasets/coco/instances_train2017.json'),
-    #                         os.path.expanduser('~/Datasets/coco/images')])
 
-    # for _ in tqdm(dl1):
-    #     pass
+    dl = Inferred('pascal', [os.path.expanduser('~/Datasets/pascal/VOCdevkit/VOC2012'), 'trainval'])
+    for _ in tqdm(dl):
+        pass
 
-    # for _ in tqdm(dl2):
-    #     pass
+    dl = Inferred(
+        'coco',
+        [os.path.expanduser('~/Datasets/coco/instances_train2017.json'), os.path.expanduser('~/Datasets/coco/images')])
+    for _ in tqdm(dl):
+        pass
 
-    dl3 = Inferred('shapes', ['./tmp', 10, 600])
-    for x in tqdm(dl3):
-        image = cv2.imread(x['image_file'].decode('utf-8'))
-        image = utils.draw_bounding_boxes(image, x['boxes'], x['class_ids'], dl3.class_names)
-        plt.imshow(image)
-        plt.show()
-
-        break
+    dl = Inferred('shapes', ['./tmp', 10, 600])
+    for x in tqdm(dl):
+        pass
