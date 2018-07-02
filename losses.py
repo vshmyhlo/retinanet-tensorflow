@@ -41,7 +41,8 @@ def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
 
     bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
 
-    dice = dice_loss(labels=labels, logits=logits, axis=0)
+    # dice = dice_loss(labels=labels, logits=logits, axis=0)
+    dice = dice_loss(labels=labels, logits=logits)
 
     loss = sum([
         tf.reduce_mean(focal),
