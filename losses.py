@@ -38,16 +38,16 @@ def focal_softmax_cross_entropy_with_logits(
 def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
     losses = []
 
-    # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
-    # num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
-    # focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
-    # losses.append(focal)
+    focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
+    num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
+    focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
+    losses.append(focal)
 
-    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
-    losses.append(bce)
+    # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
+    # losses.append(bce)
 
-    dice = dice_loss(labels=labels, logits=logits, axis=0)
-    losses.append(dice)
+    # dice = dice_loss(labels=labels, logits=logits, axis=0)
+    # losses.append(dice)
 
     loss = sum(tf.reduce_mean(l) for l in losses)
 
@@ -81,6 +81,7 @@ def dice_loss(labels, logits, smooth=1, axis=None, name='dice_loss'):
         return loss
 
 
+# TODO: balance over bg
 def balanced_sigmoid_cross_entropy_with_logits(
         labels, logits, axis=None, name='balanced_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
