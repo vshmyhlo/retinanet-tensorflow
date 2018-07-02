@@ -7,6 +7,7 @@ from typing import List
 
 NMS_MAX_OUTPUT_SIZE = 1000
 BoxesDecoded = namedtuple('BoxesDecoded', ['boxes', 'scores', 'class_ids'])
+Detection = namedtuple('Detection', ['classification', 'regression', 'regression_postprocessed'])
 Classification = namedtuple('Classification', ['unscaled', 'prob'])
 
 
@@ -256,26 +257,25 @@ def process_labels_and_logits(labels, logits, levels, name='process_labels_and_l
 
 def postprocess_and_mask(input, trainable_masks, image_size, levels, name='postprocess_and_mask'):
     with tf.name_scope(name):
-        detection = {
-            **input['detection'],
-            'regressions_postprocessed': dict_starmap(
+        detection = Detection(
+            classification=input['detection']['classifications'],
+            regression=input['detection']['regressions'],
+            regression_postprocessed=dict_starmap(
                 lambda r, l: regression_postprocess(r, tf.to_float(l.anchor_sizes / image_size)),
-                (input['detection']['regressions'], levels))
-        }
+                (input['detection']['regressions'], levels)))
 
-        unscaled = detection['classifications'].unscaled
-        prob = detection['classifications'].prob
+        unscaled = detection.classification.unscaled
+        prob = detection.classification.prob
         detection_trainable_classifications = Classification(
             unscaled=merge_outputs(dict_starmap(tf.boolean_mask, (unscaled, trainable_masks))) if unscaled else None,
             prob=merge_outputs(dict_starmap(tf.boolean_mask, (prob, trainable_masks))) if prob else None)
 
-        detection_trainable = {
-            'classifications': detection_trainable_classifications,
-            'regressions': merge_outputs(dict_starmap(
-                tf.boolean_mask, (detection['regressions'], trainable_masks))),
-            'regressions_postprocessed': merge_outputs(dict_starmap(
-                tf.boolean_mask, (detection['regressions_postprocessed'], trainable_masks)))
-        }
+        detection_trainable = Detection(
+            classification=detection_trainable_classifications,
+            regression=merge_outputs(dict_starmap(
+                tf.boolean_mask, (detection.regression, trainable_masks))),
+            regression_postprocessed=merge_outputs(dict_starmap(
+                tf.boolean_mask, (detection.regression_postprocessed, trainable_masks))))
 
         return {
             **input,

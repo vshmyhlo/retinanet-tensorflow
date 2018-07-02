@@ -1,5 +1,6 @@
 import tensorflow as tf
 import utils
+from utils import Detection
 
 
 def focal_sigmoid_cross_entropy_with_logits(
@@ -42,11 +43,10 @@ def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
     # focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
     # losses.append(focal)
 
-    # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-    # losses.append(bce)
+    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
+    losses.append(bce)
 
-    # dice = dice_loss(labels=labels, logits=logits, axis=0)
-    dice = dice_loss(labels=labels, logits=logits)
+    dice = dice_loss(labels=labels, logits=logits, axis=0)
     losses.append(dice)
 
     loss = sum(tf.reduce_mean(l) for l in losses)
@@ -98,19 +98,19 @@ def balanced_sigmoid_cross_entropy_with_logits(
         return loss
 
 
-def loss(labels, logits, class_loss_kwargs, name='loss'):
+def loss(labels: Detection, logits: Detection, class_loss_kwargs, name='loss'):
     with tf.name_scope(name):
-        non_bg_mask = utils.classmap_decode(labels['classifications'].prob)['non_bg_mask']
+        non_bg_mask = utils.classmap_decode(labels.classification.prob)['non_bg_mask']
 
         class_loss = classification_loss(
-            labels=labels['classifications'].prob,
-            logits=logits['classifications'].unscaled,
+            labels=labels.classification.prob,
+            logits=logits.classification.unscaled,
             non_bg_mask=non_bg_mask,
             class_loss_kwargs=class_loss_kwargs)
 
         regr_loss = regression_loss(
-            labels=labels['regressions'],
-            logits=logits['regressions'],
+            labels=labels.regression,
+            logits=logits.regression,
             non_bg_mask=non_bg_mask)
 
         return class_loss, regr_loss

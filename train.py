@@ -177,11 +177,11 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
     # TODO: better scope names
     for scope, classifications, regressions in (
             ('true',
-             labels['detection']['classifications'].prob,
-             labels['detection']['regressions_postprocessed']),
+             labels['detection'].classification.prob,
+             labels['detection'].regression_postprocessed),
             ('pred',
-             logits['detection']['classifications'].prob,
-             logits['detection']['regressions_postprocessed'])
+             logits['detection'].classification.prob,
+             logits['detection'].regression_postprocessed)
     ):
         for i in range(image.shape[0]):
             with tf.name_scope('{}/{}'.format(scope, i)):
