@@ -21,6 +21,9 @@ class Shapes(Base):
         return len(self._class_names)
 
     def __iter__(self):
+        if not os.path.exists(self._path):
+            os.mkdir(self._path)
+
         for i in range(self._num_samples):
             bg_color, shapes = random_image(self._image_size)
             bg_color = np.array(bg_color).reshape([1, 1, 3])
