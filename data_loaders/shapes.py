@@ -1,6 +1,9 @@
-from data_loaders.base import Base
-import cv2
+import random
+import numpy as np
+import math
 import os
+import cv2
+from data_loaders.base import Base
 
 
 # TODO: refactor
@@ -53,15 +56,6 @@ class Shapes(Base):
                 'class_ids': class_ids,
                 'boxes': boxes
             }
-
-
-import numpy as np
-import random
-import cv2
-import math
-import matplotlib.pyplot as plt
-from itertools import islice, count
-import tensorflow as tf
 
 
 def compute_iou(box, boxes, box_area, boxes_area):
@@ -185,41 +179,3 @@ def random_image(image_size):
     keep_ixs = non_max_suppression(np.array(boxes), np.arange(N), 0.3)
     shapes = [s for i, s in enumerate(shapes) if i in keep_ixs]
     return bg_color, shapes
-
-
-# def generator(image_size):
-
-
-def make_dataset(levels, batch_size, image_size):
-    def preprocess(image, class_id, boxes):
-        image = tf.image.convert_image_dtype(image, tf.float32)
-        return image, class_id, boxes
-
-    ds = tf.data.Dataset.from_generator(
-        lambda: generator(image_size),
-        output_types=(tf.int32, tf.int32, tf.int32),
-        output_shapes=((*image_size, 3), (), (None, 4)))
-    ds = ds.map(preprocess)
-    ds = ds.batch(batch_size)
-
-    return ds, len(shape_to_id)
-
-
-def main():
-    dl = Shapes(600, 600)
-    image_size = 256, 256
-
-    for image, class_id, boxes in islice(generator(image_size), 5):
-        for box in boxes:
-            cv2.rectangle(
-                image,
-                (box[1], box[0]),
-                (box[3], box[2]),
-                (0, 255, 0),
-            )
-        plt.imshow(image)
-        plt.show()
-
-
-if __name__ == '__main__':
-    main()
