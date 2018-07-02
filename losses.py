@@ -56,14 +56,14 @@ def focal_softmax_cross_entropy_with_logits(
 
 
 def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
-    focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
-    num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
-    focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
+    # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
+    # num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
+    # focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
 
     dice = dice_loss(labels=labels, logits=logits, axis=0)
 
     loss = sum([
-        tf.reduce_mean(focal),
+        # tf.reduce_mean(focal),
         tf.reduce_mean(dice),
     ])
 
