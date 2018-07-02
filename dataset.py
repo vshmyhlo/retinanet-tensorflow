@@ -155,7 +155,7 @@ def build_dataset(data_loader, levels, scale=None, shuffle=None, augment=False):
         image = tf.image.decode_jpeg(image, channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
         image_size = tf.shape(image)[:2]
-        boxes = input['boxes'] / tf.to_float(tf.concat([image_size, image_size], 0))
+        boxes = input['boxes'] / tf.to_float(tf.concat([image_size, image_size], 0))  # TODO: move to dataset
 
         if scale is not None:
             image = rescale_image(image, scale)

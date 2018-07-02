@@ -37,12 +37,7 @@ class Shapes(Base):
             for shape, color, dims in shapes:
                 image = draw_shape(image, shape, dims, color)
                 x, y, s = dims
-                boxes.append([
-                    (y - s) / self._image_size[0],
-                    (x - s) / self._image_size[1],
-                    (y + s) / self._image_size[0],
-                    (x + s) / self._image_size[1]
-                ])
+                boxes.append([y - s, x - s, y + s, x + s])
                 class_ids.append(shape)
 
             boxes = np.array(boxes)
