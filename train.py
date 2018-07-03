@@ -252,8 +252,8 @@ def main():
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
-    learnign_rate = build_learning_rate(global_step, args)
-    train_step = build_train_step(total_loss, learnign_rate, global_step=global_step, config=args)
+    learning_rate = build_learning_rate(global_step, args)
+    train_step = build_train_step(total_loss, learning_rate, global_step=global_step, config=args)
 
     metrics, update_metrics = build_metrics(
         total_loss,
@@ -268,7 +268,7 @@ def main():
         image=input['image'],
         labels=input,
         logits=logits,
-        learning_rate=learning_rate,  # TODO: fix this
+        learning_rate=learning_rate,
         class_names=data_loader.class_names)
 
     globals_init = tf.global_variables_initializer()
