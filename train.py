@@ -12,6 +12,7 @@ import L4
 from data_loaders.inferred import Inferred
 
 
+# TODO: remove tfe.Network
 # TODO: check fpn relu activation usage
 # TODO: rename non_bg to fg
 # TODO: typing

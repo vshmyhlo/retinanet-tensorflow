@@ -43,9 +43,9 @@ def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
     # focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)  # TODO: count all points, not only trainable?
     # losses.append(focal)
 
-    # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, non_bg_mask=non_bg_mask)
-    # losses.append(bce)
-    #
+    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, non_bg_mask=non_bg_mask)
+    losses.append(bce)
+   
     dice = dice_loss(labels=labels, logits=logits, axis=0)
     losses.append(dice)
 
