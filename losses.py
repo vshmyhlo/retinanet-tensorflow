@@ -38,16 +38,16 @@ def focal_softmax_cross_entropy_with_logits(
 def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
     losses = []
 
-    focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
-    num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
-    focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)  # TODO: count all points, not only trainable?
-    losses.append(focal)
+    # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
+    # num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
+    # focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)  # TODO: count all points, not only trainable?
+    # losses.append(focal)
 
-    # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, non_bg_mask=non_bg_mask)
-    # losses.append(bce)
+    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, non_bg_mask=non_bg_mask)
+    losses.append(bce)
 
-    # dice = dice_loss(labels=labels, logits=logits, axis=0)
-    # losses.append(dice)
+    dice = dice_loss(labels=labels, logits=logits, axis=0)
+    losses.append(dice)
 
     # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
     # losses.append(jaccard)
