@@ -213,7 +213,8 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
 
 
 def build_learning_rate(global_step, config):
-    return cyclical_learning_rate(1e-3, 3., 5000, global_step)
+    # return cyclical_learning_rate(1e-3, 3., 5000, global_step)
+    return config.learning_rate
 
 
 def main():
