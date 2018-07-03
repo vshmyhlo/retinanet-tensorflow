@@ -79,10 +79,12 @@ def level_labels(image_size, class_id, true_box, level, factor, num_classes):
 
     # mask for assigning background class
     # [H, W, ANCHORS]
-    bg_mask = iou_value < NEG_IOU_THRESHOLD
+    # bg_mask = iou_value < NEG_IOU_THRESHOLD
+    bg_mask = iou_value < POS_IOU_THRESHOLD
     # mask for ignoring unassigned anchors
     # [H, W, ANCHORS]
-    trainable_mask = tf.logical_or(bg_mask, iou_value >= POS_IOU_THRESHOLD)
+    # trainable_mask = tf.logical_or(bg_mask, iou_value >= POS_IOU_THRESHOLD)
+    trainable_mask = tf.logical_or(iou_value < NEG_IOU_THRESHOLD, iou_value >= POS_IOU_THRESHOLD)
 
     # assign class labels to anchors
     # [H, W, ANCHORS]
