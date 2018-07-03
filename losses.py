@@ -43,11 +43,14 @@ def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
     # focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
     # losses.append(focal)
 
-    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, non_bg_mask=non_bg_mask)
-    losses.append(bce)
+    # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, non_bg_mask=non_bg_mask)
+    # losses.append(bce)
 
     # dice = dice_loss(labels=labels, logits=logits, axis=0)
     # losses.append(dice)
+
+    jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
+    losses.append(jaccard)
 
     loss = sum(tf.reduce_mean(l) for l in losses)
 
@@ -68,12 +71,25 @@ def regression_loss(labels, logits, non_bg_mask):
     return loss
 
 
-def dice_loss(labels, logits, smooth=1, axis=None, name='dice_loss'):
+def jaccard_loss(labels, logits, smooth=100., axis=None, name='jaccard_loss'):
     with tf.name_scope(name):
-        probs = tf.nn.sigmoid(logits)
+        logits = tf.nn.sigmoid(logits)
 
-        intersection = tf.reduce_sum(labels * probs, axis=axis)
-        union = tf.reduce_sum(labels, axis=axis) + tf.reduce_sum(probs, axis=axis)
+        intersection = tf.reduce_sum(labels * logits, axis=axis)
+        union = tf.reduce_sum(labels, axis=axis) + tf.reduce_sum(logits, axis=axis)
+
+        jaccard = (intersection + smooth) / (union - intersection + smooth)
+        loss = (1 - jaccard) * smooth
+
+        return loss
+
+
+def dice_loss(labels, logits, smooth=1., axis=None, name='dice_loss'):
+    with tf.name_scope(name):
+        logits = tf.nn.sigmoid(logits)
+
+        intersection = tf.reduce_sum(labels * logits, axis=axis)
+        union = tf.reduce_sum(labels, axis=axis) + tf.reduce_sum(logits, axis=axis)
 
         coef = (2 * intersection + smooth) / (union + smooth)
         loss = 1 - coef
