@@ -52,6 +52,15 @@ def print_summary(metrics, step):
             step, metrics['total_loss'], metrics['class_loss'], metrics['regr_loss'], metrics['regularization_loss']))
 
 
+def cyclical_learning_rate(min, max, step_size, global_step):
+    cycle_size = step_size * 2
+    step = global_step % cycle_size
+    k = tf.cond(step < step_size, lambda: step / step_size, lambda: 1 - (step - step_size) / step_size)
+    learning_rate = min + (max - min) * k
+
+    return learning_rate
+
+
 def draw_classmap(image, classifications):
     for k in classifications:
         classification = classifications[k]
@@ -116,10 +125,13 @@ def build_parser():
 def build_train_step(loss, global_step, config):
     assert config.optimizer in ['momentum', 'adam', 'l4']
 
+    # learning_rate = config.learning_rate
+    learning_rate = cyclical_learning_rate(0.1, 3., 5000, global_step)
+
     if config.optimizer == 'momentum':
-        optimizer = tf.train.MomentumOptimizer(config.learning_rate, 0.9)
+        optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
     elif config.optimizer == 'adam':
-        optimizer = tf.train.AdamOptimizer(config.learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate)
     elif config.optimizer == 'l4':
         optimizer = L4.L4Adam(fraction=0.15)
     else:
