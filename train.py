@@ -122,11 +122,8 @@ def build_parser():
     return parser
 
 
-def build_train_step(loss, global_step, config):
+def build_train_step(loss, learning_rate, global_step, config):
     assert config.optimizer in ['momentum', 'adam', 'l4']
-
-    # learning_rate = config.learning_rate
-    learning_rate = cyclical_learning_rate(0.1, 3., 5000, global_step)
 
     if config.optimizer == 'momentum':
         optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
@@ -215,6 +212,10 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
     return summary
 
 
+def build_learning_rate(global_step, config):
+    return cyclical_learning_rate(0.1, 3., 5000, global_step)
+
+
 def main():
     args = build_parser().parse_args()
     utils.log_args(args)
@@ -251,7 +252,8 @@ def main():
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
-    train_step = build_train_step(total_loss, global_step=global_step, config=args)
+    learnign_rate = build_learning_rate(global_step, args)
+    train_step = build_train_step(total_loss, learnign_rate, global_step=global_step, config=args)
 
     metrics, update_metrics = build_metrics(
         total_loss,
@@ -266,7 +268,7 @@ def main():
         image=input['image'],
         labels=input,
         logits=logits,
-        learning_rate=args.learning_rate,
+        learning_rate=learning_rate,  # TODO: fix this
         class_names=data_loader.class_names)
 
     globals_init = tf.global_variables_initializer()
