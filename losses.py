@@ -133,20 +133,20 @@ def classwise_balanced_sigmoid_cross_entropy_with_logits(
 
 def loss(labels: Detection, logits: Detection, class_loss_kwargs, name='loss'):
     with tf.name_scope(name):
-        non_bg_mask = utils.classmap_decode(labels.classification.prob)['non_bg_mask']
+        fg_mask = utils.classmap_decode(labels.classification.prob)['non_bg_mask']
 
-        tf.summary.histogram('fg', tf.boolean_mask(logits.classification.prob, non_bg_mask))
-        tf.summary.histogram('bg', tf.boolean_mask(logits.classification.prob, tf.logical_not(non_bg_mask)))
+        tf.summary.histogram('fg', tf.boolean_mask(logits.classification.prob, tf.equal(labels.classification.prob, 1)))
+        tf.summary.histogram('bg', tf.boolean_mask(logits.classification.prob, tf.equal(labels.classification.prob, 0)))
 
         class_loss = classification_loss(
             labels=labels.classification.prob,
             logits=logits.classification.unscaled,
-            non_bg_mask=non_bg_mask,
+            non_bg_mask=fg_mask,
             class_loss_kwargs=class_loss_kwargs)
 
         regr_loss = regression_loss(
             labels=labels.regression,
             logits=logits.regression,
-            non_bg_mask=non_bg_mask)
+            non_bg_mask=fg_mask)
 
         return class_loss, regr_loss
