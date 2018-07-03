@@ -85,7 +85,7 @@ def balanced_sigmoid_cross_entropy_with_logits(
         labels, logits, non_bg_mask, name='balanced_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
         num_positive = tf.reduce_sum(tf.to_float(non_bg_mask))
-        num_negative = tf.reduce_sum(1 - tf.to_float(non_bg_mask))
+        num_negative = tf.reduce_sum(1. - tf.to_float(non_bg_mask))
 
         weight_positive = num_negative / (num_positive + num_negative)
         weight_negative = num_positive / (num_positive + num_negative)
