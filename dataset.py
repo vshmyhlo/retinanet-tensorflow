@@ -166,8 +166,9 @@ def build_dataset(data_loader, levels, scale=None, shuffle=None, augment=False):
 
         return {
             **input,
-            'boxes': boxes,
             'image': image,
+            'image_size': image_size,
+            'boxes': boxes,
             'detection': {
                 'classifications': classifications,
                 'regressions': regressions,

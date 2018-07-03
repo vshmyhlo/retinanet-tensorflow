@@ -12,6 +12,8 @@ import L4
 from data_loaders.inferred import Inferred
 
 
+# TODO: check fpn relu activation usage
+
 # TODO: typing
 # TODO: check retinanet encodes background as 0 everywhere
 # TODO: compute only loss on train

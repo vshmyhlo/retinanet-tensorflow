@@ -38,13 +38,13 @@ def focal_softmax_cross_entropy_with_logits(
 def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
     losses = []
 
-    focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
-    num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
-    focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
-    losses.append(focal)
+    # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
+    # num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
+    # focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
+    # losses.append(focal)
 
-    # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
-    # losses.append(bce)
+    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, non_bg_mask=non_bg_mask)
+    losses.append(bce)
 
     # dice = dice_loss(labels=labels, logits=logits, axis=0)
     # losses.append(dice)
@@ -81,8 +81,24 @@ def dice_loss(labels, logits, smooth=1, axis=None, name='dice_loss'):
         return loss
 
 
-# TODO: balance over bg
 def balanced_sigmoid_cross_entropy_with_logits(
+        labels, logits, non_bg_mask, name='balanced_sigmoid_cross_entropy_with_logits'):
+    with tf.name_scope(name):
+        num_positive = tf.reduce_sum(tf.to_float(non_bg_mask))
+        num_negative = tf.reduce_sum(1 - tf.to_float(non_bg_mask))
+
+        weight_positive = num_negative / (num_positive + num_negative)
+        weight_negative = num_positive / (num_positive + num_negative)
+        ones = tf.ones_like(logits)
+        weight = tf.where(tf.equal(labels, 1), ones * weight_positive, ones * weight_negative)
+
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss = loss * weight
+
+        return loss
+
+
+def classwise_balanced_sigmoid_cross_entropy_with_logits(
         labels, logits, axis=None, name='balanced_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
         num_positive = tf.reduce_sum(tf.to_float(tf.equal(labels, 1)), axis=axis)

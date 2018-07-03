@@ -250,7 +250,7 @@ class RetinaNetBase(Network):
                 cn: self.track_layer(
                     Sequential([
                         tf.layers.BatchNormalization(),
-                        activation,
+                        activation
                     ]))
                 for cn in ['C3', 'C4', 'C5']
             }
