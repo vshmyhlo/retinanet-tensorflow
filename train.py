@@ -13,7 +13,7 @@ from data_loaders.inferred import Inferred
 
 
 # TODO: check fpn relu activation usage
-
+# TODO: rename non_bg to fg
 # TODO: typing
 # TODO: check retinanet encodes background as 0 everywhere
 # TODO: compute only loss on train
@@ -207,7 +207,8 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
                     image[i], utils.dict_map(lambda x: x[i], classifications))
                 summary.append(tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0)))
 
-    summary = tf.summary.merge(summary)
+    # summary = tf.summary.merge(summary)
+    summary = tf.summary.merge_all()  # FIXME:
 
     return summary
 

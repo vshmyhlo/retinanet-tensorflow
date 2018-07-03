@@ -40,7 +40,7 @@ def classification_loss(labels, logits, non_bg_mask, class_loss_kwargs):
 
     focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
     num_non_bg = tf.reduce_sum(tf.to_float(non_bg_mask))
-    focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)
+    focal = tf.reduce_sum(focal) / tf.maximum(num_non_bg, 1.0)  # TODO: count all points, not only trainable?
     losses.append(focal)
 
     # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, non_bg_mask=non_bg_mask)
@@ -134,6 +134,9 @@ def classwise_balanced_sigmoid_cross_entropy_with_logits(
 def loss(labels: Detection, logits: Detection, class_loss_kwargs, name='loss'):
     with tf.name_scope(name):
         non_bg_mask = utils.classmap_decode(labels.classification.prob)['non_bg_mask']
+
+        tf.summary.histogram('fg', tf.boolean_mask(logits.classification.prob, non_bg_mask))
+        tf.summary.histogram('bg', tf.boolean_mask(logits.classification.prob, tf.logical_not(non_bg_mask)))
 
         class_loss = classification_loss(
             labels=labels.classification.prob,
