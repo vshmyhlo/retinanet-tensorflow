@@ -117,7 +117,7 @@ def build_parser():
     parser.add_argument(
         '--optimizer',
         type=str,
-        choices=['momentum', 'adam', 'l4'],
+        choices=['momentum', 'adam', 'rmsprop', 'l4'],
         default='momentum')
 
     return parser
@@ -128,6 +128,8 @@ def build_train_step(loss, learning_rate, global_step, config):
 
     if config.optimizer == 'momentum':
         optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
+    elif config.optimizer == 'rmsprop':
+        optimizer = tf.train.RMSPropOptimizer(learning_rate, 0.9, 0.9)
     elif config.optimizer == 'adam':
         optimizer = tf.train.AdamOptimizer(learning_rate)
     elif config.optimizer == 'l4':
