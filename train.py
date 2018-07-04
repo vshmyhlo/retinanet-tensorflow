@@ -124,7 +124,7 @@ def build_parser():
 
 
 def build_train_step(loss, learning_rate, global_step, config):
-    assert config.optimizer in ['momentum', 'adam', 'l4']
+    assert config.optimizer in ['momentum', 'adam', 'rmsprop', 'l4']
 
     if config.optimizer == 'momentum':
         optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
