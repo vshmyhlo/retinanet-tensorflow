@@ -10,6 +10,7 @@ import dataset
 from tqdm import tqdm
 import L4
 from data_loaders.inferred import Inferred
+import math
 
 
 # TODO: check dropout usage
@@ -64,6 +65,15 @@ def print_summary(metrics, step):
 #     learning_rate = min + (max - min) * k
 #
 #     return learning_rate
+
+def cosine_decay(learning_rate, global_step, decay_steps, alpha=0.0, name='cosine_decay'):
+    with tf.name_scope(name):
+        global_step = tf.minimum(global_step, decay_steps)
+        completed_fraction = global_step / decay_steps
+        cosine_decayed = 0.5 * (1.0 + tf.cos(math.pi * completed_fraction))
+        decayed = (1 - alpha) * cosine_decayed + alpha
+
+        return learning_rate * decayed
 
 
 def draw_classmap(image, classifications):
