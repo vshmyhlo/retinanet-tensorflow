@@ -55,7 +55,8 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
 
         bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         bce = tf.reshape(bce, [-1])
-        bce, _ = tf.nn.top_k(bce, 512, sorted=False)
+        bce, _ = tf.nn.top_k(bce, 256, sorted=False)
+        tf.summary.histogram('bce', bce)  # FIXME:
         losses.append(bce)
 
         loss = sum(tf.reduce_mean(l) for l in losses)
