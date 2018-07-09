@@ -149,6 +149,8 @@ class FeaturePyramidNetwork(Network):
                     tf.layers.BatchNormalization()
                 ]))
 
+        # TODO: refactor arguments
+        # TODO: refactor upsampling to function
         def call(self, lateral, downsampled, training):
             lateral = self.conv_lateral(lateral, training)
             lateral_size = tf.shape(lateral)[1:3]

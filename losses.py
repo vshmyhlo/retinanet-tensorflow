@@ -35,40 +35,38 @@ def focal_softmax_cross_entropy_with_logits(
 
 
 # TODO: check bg mask usage and bg weighting calculation
-def classification_loss(labels, logits, fg_mask, class_loss_kwargs):
-    losses = []
+def classification_loss(labels, logits, fg_mask, name='classification_loss'):
+    with tf.name_scope(name):
+        losses = []
 
-    # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
-    # num_fg = tf.reduce_sum(tf.to_float(fg_mask))
-    # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)  # TODO: count all points, not only trainable?
-    # losses.append(focal)
+        # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, **class_loss_kwargs)
+        # num_fg = tf.reduce_sum(tf.to_float(fg_mask))
+        # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)  # TODO: count all points, not only trainable?
+        # losses.append(focal)
 
-    bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, fg_mask=fg_mask)
-    losses.append(bce)
+        bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, fg_mask=fg_mask)
+        losses.append(bce)
 
-    dice = dice_loss(labels=labels, logits=logits, axis=0)
-    losses.append(dice)
+        dice = dice_loss(labels=labels, logits=logits, axis=0)
+        losses.append(dice)
 
-    # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
-    # losses.append(jaccard)
+        # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
+        # losses.append(jaccard)
 
-    loss = sum(tf.reduce_mean(l) for l in losses)
+        loss = sum(tf.reduce_mean(l) for l in losses)
 
-    return loss
+        return loss
 
 
-def regression_loss(labels, logits, fg_mask):
-    loss = tf.losses.huber_loss(
-        labels=labels,
-        predictions=logits,
-        weights=tf.expand_dims(fg_mask, -1),
-        reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+def regression_loss(labels, logits, fg_mask, name='regression_loss'):
+    with tf.name_scope(name):
+        loss = tf.losses.huber_loss(
+            labels=labels,
+            predictions=logits,
+            weights=tf.expand_dims(fg_mask, -1),
+            reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
-    check = tf.Assert(tf.is_finite(loss), [tf.reduce_mean(loss)])
-    with tf.control_dependencies([check]):
-        loss = tf.identity(loss)
-
-    return loss
+        return loss
 
 
 def jaccard_loss(labels, logits, smooth=100., axis=None, name='jaccard_loss'):
@@ -131,7 +129,7 @@ def classwise_balanced_sigmoid_cross_entropy_with_logits(
         return loss
 
 
-def loss(labels: Detection, logits: Detection, class_loss_kwargs, name='loss'):
+def loss(labels: Detection, logits: Detection, name='loss'):
     with tf.name_scope(name):
         fg_mask = utils.classmap_decode(labels.classification.prob)['non_bg_mask']
 
@@ -141,8 +139,7 @@ def loss(labels: Detection, logits: Detection, class_loss_kwargs, name='loss'):
         class_loss = classification_loss(
             labels=labels.classification.prob,
             logits=logits.classification.unscaled,
-            fg_mask=fg_mask,
-            class_loss_kwargs=class_loss_kwargs)
+            fg_mask=fg_mask)
 
         regr_loss = regression_loss(
             labels=labels.regression,

@@ -12,8 +12,12 @@ import L4
 from data_loaders.inferred import Inferred
 
 
+# TODO: check dropout usage
+# TODO: rename c5_from_p4 layers to p4_to_c5
+# TODO: remove redundant `strides` argument from conv
 # TODO: remove tfe.Network
 # TODO: check fpn relu activation usage
+# TODO: check activationm usage and relu usage
 # TODO: rename non_bg to fg
 # TODO: typing
 # TODO: check retinanet encodes background as 0 everywhere
@@ -108,7 +112,6 @@ def build_parser():
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument('--grad-clip-norm', type=float)
-    parser.add_argument('--focal-loss-alpha', type=float, default=0.25)
     parser.add_argument(
         '--backbone',
         type=str,
@@ -250,10 +253,7 @@ def main():
     logits = {'detection': net(input['image'], training)}
     input, logits = utils.process_labels_and_logits(labels=input, logits=logits, levels=levels)
 
-    class_loss, regr_loss = losses.loss(
-        labels=input['detection_trainable'],
-        logits=logits['detection_trainable'],
-        class_loss_kwargs={'alpha': args.focal_loss_alpha})
+    class_loss, regr_loss = losses.loss(labels=input['detection_trainable'], logits=logits['detection_trainable'])
     regularization_loss = tf.losses.get_regularization_loss()
 
     total_loss = class_loss + regr_loss + regularization_loss
@@ -300,14 +300,12 @@ def main():
                         [(train_step, update_metrics), global_step], {training: True})
 
                     if args.log_interval is not None and step % args.log_interval == 0:
-                        m, s = sess.run(
-                            [metrics, summary], {training: True})
+                        m, s = sess.run([metrics, summary], {training: True})
 
                         print()
                         print_summary(m, step)
                         train_writer.add_summary(s, step)
                         saver.save(sess, os.path.join(args.experiment, 'model.ckpt'), write_meta_graph=False)
-                        sess.run(locals_init)
                 except tf.errors.OutOfRangeError:
                     break
 
