@@ -44,7 +44,7 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)  # TODO: count all points, not only trainable?
         # losses.append(focal)
 
-        bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, fg_mask=fg_mask)
+        bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
         losses.append(bce)
 
         dice = dice_loss(labels=labels, logits=logits, axis=0)
@@ -95,25 +95,25 @@ def dice_loss(labels, logits, smooth=1., axis=None, name='dice_loss'):
         return loss
 
 
+# def balanced_sigmoid_cross_entropy_with_logits(
+#         labels, logits, fg_mask, name='balanced_sigmoid_cross_entropy_with_logits'):
+#     with tf.name_scope(name):
+#         num_positive = tf.reduce_sum(tf.to_float(fg_mask))
+#         num_negative = tf.reduce_sum(1. - tf.to_float(fg_mask))
+#
+#         weight_positive = num_negative / (num_positive + num_negative)
+#         weight_negative = num_positive / (num_positive + num_negative)
+#         ones = tf.ones_like(fg_mask, dtype=tf.float32)
+#         weight = tf.where(fg_mask, ones * weight_positive, ones * weight_negative)
+#         weight = tf.expand_dims(weight, -1)
+#
+#         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+#         loss = loss * weight
+#
+#         return loss
+
+
 def balanced_sigmoid_cross_entropy_with_logits(
-        labels, logits, fg_mask, name='balanced_sigmoid_cross_entropy_with_logits'):
-    with tf.name_scope(name):
-        num_positive = tf.reduce_sum(tf.to_float(fg_mask))
-        num_negative = tf.reduce_sum(1. - tf.to_float(fg_mask))
-
-        weight_positive = num_negative / (num_positive + num_negative)
-        weight_negative = num_positive / (num_positive + num_negative)
-        ones = tf.ones_like(fg_mask, dtype=tf.float32)
-        weight = tf.where(fg_mask, ones * weight_positive, ones * weight_negative)
-        weight = tf.expand_dims(weight, -1)
-
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        loss = loss * weight
-
-        return loss
-
-
-def classwise_balanced_sigmoid_cross_entropy_with_logits(
         labels, logits, axis=None, name='balanced_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
         num_positive = tf.reduce_sum(tf.to_float(tf.equal(labels, 1)), axis=axis)
@@ -121,7 +121,7 @@ def classwise_balanced_sigmoid_cross_entropy_with_logits(
 
         weight_positive = num_negative / (num_positive + num_negative)
         weight_negative = num_positive / (num_positive + num_negative)
-        ones = tf.ones_like(logits)
+        ones = tf.ones_like(labels)
         weight = tf.where(tf.equal(labels, 1), ones * weight_positive, ones * weight_negative)
 
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
