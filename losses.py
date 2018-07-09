@@ -116,8 +116,8 @@ def dice_loss(labels, logits, smooth=1., axis=None, name='dice_loss'):
 def balanced_sigmoid_cross_entropy_with_logits(
         labels, logits, axis=None, name='balanced_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
-        num_positive = tf.reduce_sum(tf.to_float(tf.equal(labels, 1)), axis=axis)
-        num_negative = tf.reduce_sum(tf.to_float(tf.equal(labels, 0)), axis=axis)
+        num_positive = tf.reduce_sum(labels, axis=axis)
+        num_negative = tf.reduce_sum(1 - labels, axis=axis)
 
         weight_positive = num_negative / (num_positive + num_negative)
         weight_negative = num_positive / (num_positive + num_negative)
