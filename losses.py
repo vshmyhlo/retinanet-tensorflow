@@ -103,8 +103,9 @@ def balanced_sigmoid_cross_entropy_with_logits(
 
         weight_positive = num_negative / (num_positive + num_negative)
         weight_negative = num_positive / (num_positive + num_negative)
-        ones = tf.ones_like(logits)
-        weight = tf.where(tf.equal(labels, 1), ones * weight_positive, ones * weight_negative)
+        ones = tf.ones_like(fg_mask, dtype=tf.float32)
+        weight = tf.where(fg_mask, ones * weight_positive, ones * weight_negative)
+        weight = tf.expand_dims(weight, -1)
 
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         loss = loss * weight
