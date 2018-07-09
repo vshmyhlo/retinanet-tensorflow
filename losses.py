@@ -133,6 +133,7 @@ def loss(labels: Detection, logits: Detection, name='loss'):
     with tf.name_scope(name):
         fg_mask = utils.classmap_decode(labels.classification.prob)['non_bg_mask']
 
+        # FIXME:
         tf.summary.histogram('fg', tf.boolean_mask(logits.classification.prob, tf.equal(labels.classification.prob, 1)))
         tf.summary.histogram('bg', tf.boolean_mask(logits.classification.prob, tf.equal(labels.classification.prob, 0)))
 
