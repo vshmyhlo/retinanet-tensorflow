@@ -57,13 +57,13 @@ def print_summary(metrics, step):
             step, metrics['total_loss'], metrics['class_loss'], metrics['regr_loss'], metrics['regularization_loss']))
 
 
-def cyclical_learning_rate(min, max, step_size, global_step):
-    cycle_size = step_size * 2
-    step = global_step % cycle_size
-    k = tf.cond(step < step_size, lambda: step / step_size, lambda: 1 - (step - step_size) / step_size)
-    learning_rate = min + (max - min) * k
-
-    return learning_rate
+# def cyclical_learning_rate(min, max, step_size, global_step):
+#     cycle_size = step_size * 2
+#     step = global_step % cycle_size
+#     k = tf.cond(step < step_size, lambda: step / step_size, lambda: 1 - (step - step_size) / step_size)
+#     learning_rate = min + (max - min) * k
+#
+#     return learning_rate
 
 
 def draw_classmap(image, classifications):
@@ -219,8 +219,10 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
 
 
 def build_learning_rate(global_step, config):
+    return tf.train.cosine_decay(config.learning_rate, global_step % 10000, 10000)
+
     # return cyclical_learning_rate(1e-3, 3., 5000, global_step)
-    return config.learning_rate
+    # return config.learning_rate
 
 
 def main():
