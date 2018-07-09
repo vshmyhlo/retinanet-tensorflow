@@ -229,7 +229,7 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
 
 
 def build_learning_rate(global_step, config):
-    return tf.train.cosine_decay(config.learning_rate, global_step % 10000, 10000)
+    return cosine_decay(config.learning_rate, global_step % 10000, 10000)
 
     # return cyclical_learning_rate(1e-3, 3., 5000, global_step)
     # return config.learning_rate
