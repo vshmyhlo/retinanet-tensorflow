@@ -117,7 +117,7 @@ def build_parser():
     parser.add_argument('--learning-rate', type=float, default=1e-2)
     parser.add_argument('--dropout', type=float, default=0.2)
     parser.add_argument('--dataset', type=str, nargs='+', required=True)
-    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--log-interval', type=int)
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
@@ -230,10 +230,10 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
 
 
 def build_learning_rate(global_step, config):
-    return cosine_decay(config.learning_rate, global_step % 10000, 10000)
+    # return cosine_decay(config.learning_rate, global_step % 10000, 10000)
 
     # return cyclical_learning_rate(1e-3, 3., 5000, global_step)
-    # return config.learning_rate
+    return config.learning_rate
 
 
 def main():

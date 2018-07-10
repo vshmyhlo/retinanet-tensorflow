@@ -53,6 +53,7 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
         # losses.append(jaccard)
 
+        # FIXME:
         bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         bce = tf.reshape(bce, [-1])
         bce, _ = tf.nn.top_k(bce, 512, sorted=False)
