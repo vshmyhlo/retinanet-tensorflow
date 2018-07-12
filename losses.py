@@ -106,7 +106,9 @@ def dice_loss(labels, logits, smooth=1., axis=None, name='dice_loss'):
 
 
 def fixed_iou_loss(labels, logits, smooth=1., axis=0, name='fixed_iou_loss'):
-    def fixed_iou_loss_(labels, logits):
+    with tf.name_scope(name):
+        logits = tf.nn.sigmoid(logits)
+
         intersection = tf.reduce_sum(labels * logits, axis=axis)
         union = tf.reduce_sum(labels, axis=axis) + tf.reduce_sum((1 - labels) * logits, axis=axis)
 
@@ -114,11 +116,6 @@ def fixed_iou_loss(labels, logits, smooth=1., axis=0, name='fixed_iou_loss'):
         loss = 1 - iou
 
         return loss
-
-    with tf.name_scope(name):
-        logits = tf.nn.sigmoid(logits)
-
-        return fixed_iou_loss_(labels, logits) + fixed_iou_loss_(1 - labels, 1 - logits)
 
 
 # def balanced_sigmoid_cross_entropy_with_logits(
