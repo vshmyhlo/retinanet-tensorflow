@@ -53,7 +53,8 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
         # losses.append(jaccard)
 
-        iou = fixed_iou_loss(labels, logits, axis=0, smooth=1e-7)
+        # iou = fixed_iou_loss(labels, logits, axis=0, smooth=1e-7)
+        iou = fixed_iou_loss(labels, logits, smooth=1e-7)
         losses.append(iou)
 
         # # FIXME:
