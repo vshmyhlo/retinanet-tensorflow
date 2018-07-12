@@ -202,24 +202,6 @@ def build_dataset(data_loader, levels, scale=None, shuffle=None, augment=False):
             'trainable_masks': trainable_masks
         }
 
-    # def preprocess(input):
-    #     image = tf.expand_dims(input['image'], 0)
-    #     classifications = {pn: tf.expand_dims(input['detection']['classifications'][pn], 0) for pn in
-    #                        input['detection']['classifications']}
-    #     regressions = {pn: tf.expand_dims(input['detection']['regressions'][pn], 0) for pn in
-    #                    input['detection']['regressions']}
-    #     trainable_masks = {pn: tf.expand_dims(input['trainable_masks'][pn], 0) for pn in input['trainable_masks']}
-    #
-    #     return {
-    #         **input,
-    #         'image': image,
-    #         'detection': {
-    #             'classifications': classifications,
-    #             'regressions': regressions,
-    #         },
-    #         'trainable_masks': trainable_masks
-    #     }
-
     def augment_sample(input):
         # TODO: add augmentation
         # image = tf.image.random_contrast(image, 0.8, 1.2)
