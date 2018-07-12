@@ -178,37 +178,19 @@ def build_dataset(data_loader, levels, scale=None, shuffle=None, augment=False):
             'trainable_masks': trainable_masks
         }
 
-    # def preprocess(input):
-    #     flipped = augmentation.flip(input)
-    #
-    #     image = tf.stack([input['image'], flipped['image']], 0)
-    #     classifications = {
-    #         pn: tf.stack([input['classifications'][pn], flipped['classifications'][pn]], 0)
-    #         for pn in input['classifications']}
-    #     regressions = {
-    #         pn: tf.stack([input['regressions'][pn], flipped['regressions'][pn]], 0)
-    #         for pn in input['regressions']}
-    #     trainable_masks = {
-    #         pn: tf.stack([input['trainable_masks'][pn], flipped['trainable_masks'][pn]], 0)
-    #         for pn in input['trainable_masks']}
-    #
-    #     return {
-    #         **input,
-    #         'image': image,
-    #         'detection': {
-    #             'classifications': classifications,
-    #             'regressions': regressions,
-    #         },
-    #         'trainable_masks': trainable_masks
-    #     }
-
     def preprocess(input):
-        image = tf.expand_dims(input['image'], 0)
-        classifications = {pn: tf.expand_dims(input['detection']['classifications'][pn], 0) for pn in
-                           input['detection']['classifications']}
-        regressions = {pn: tf.expand_dims(input['detection']['regressions'][pn], 0) for pn in
-                       input['detection']['regressions']}
-        trainable_masks = {pn: tf.expand_dims(input['trainable_masks'][pn], 0) for pn in input['trainable_masks']}
+        flipped = augmentation.flip(input)
+
+        image = tf.stack([input['image'], flipped['image']], 0)
+        classifications = utils.dict_starmap(
+            lambda a, b: tf.stack([a, b], 0),
+            [input['detection']['classifications'], flipped['detection']['classifications']])
+        regressions = utils.dict_starmap(
+            lambda a, b: tf.stack([a, b], 0),
+            [input['detection']['regressions'], flipped['detection']['regressions']])
+        trainable_masks = utils.dict_starmap(
+            lambda a, b: tf.stack([a, b], 0),
+            [input['trainable_masks'], flipped['trainable_masks']])
 
         return {
             **input,
@@ -219,6 +201,24 @@ def build_dataset(data_loader, levels, scale=None, shuffle=None, augment=False):
             },
             'trainable_masks': trainable_masks
         }
+
+    # def preprocess(input):
+    #     image = tf.expand_dims(input['image'], 0)
+    #     classifications = {pn: tf.expand_dims(input['detection']['classifications'][pn], 0) for pn in
+    #                        input['detection']['classifications']}
+    #     regressions = {pn: tf.expand_dims(input['detection']['regressions'][pn], 0) for pn in
+    #                    input['detection']['regressions']}
+    #     trainable_masks = {pn: tf.expand_dims(input['trainable_masks'][pn], 0) for pn in input['trainable_masks']}
+    #
+    #     return {
+    #         **input,
+    #         'image': image,
+    #         'detection': {
+    #             'classifications': classifications,
+    #             'regressions': regressions,
+    #         },
+    #         'trainable_masks': trainable_masks
+    #     }
 
     def augment_sample(input):
         # TODO: add augmentation

@@ -1,18 +1,22 @@
 import tensorflow as tf
+import utils
 
 
 def flip(input):
     image = tf.reverse(input['image'], [1])
-    classifications = {pn: tf.reverse(input['classifications'][pn], [1]) for pn in input['classifications']}
-    regressions = {pn: tf.reverse(input['regressions'][pn], [1]) for pn in input['regressions']}
-    trainable_masks = {pn: tf.reverse(input['trainable_masks'][pn], [1]) for pn in input['trainable_masks']}
+    classifications = utils.dict_map(lambda x: tf.reverse(x, [1]), input['detection']['classifications'])
+    regressions = utils.dict_map(lambda x: tf.reverse(x, [1]), input['detection']['regressions'])
+    trainable_masks = utils.dict_map(lambda x: tf.reverse(x, [1]), input['trainable_masks'])
+
     for pn in regressions:
-        y, x, h, w = tf.split(regressions[pn], 4, -1)
-        regressions[pn] = tf.concat([y, -x, h, w], -1)
+        y, x, h, w = tf.unstack(regressions[pn], axis=-1)
+        regressions[pn] = tf.stack([y, -x, h, w], -1)
 
     return {
         'image': image,
-        'classifications': classifications,
-        'regressions': regressions,
+        'detection': {
+            'classifications': classifications,
+            'regressions': regressions,
+        },
         'trainable_masks': trainable_masks
     }

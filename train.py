@@ -13,6 +13,7 @@ from data_loaders.inferred import Inferred
 import math
 
 
+# TODO: refactor to use Detection class
 # TODO: check dropout usage
 # TODO: rename c5_from_p4 layers to p4_to_c5
 # TODO: remove redundant `strides` argument from conv

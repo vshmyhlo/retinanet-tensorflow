@@ -61,8 +61,9 @@ def main():
         lambda r, l: utils.regression_postprocess(r, tf.to_float(l.anchor_sizes / input['image_size'])),
         [input['detection']['regressions'], levels])
 
-    level_images = {}
+    batch = []
     for i in range(image.shape[0]):
+        level_images = {}
         for k in levels:
             class_row = []
             mask_row = []
@@ -89,14 +90,16 @@ def main():
             boxes_row = tf.concat(boxes_row, 1)
             level_image = tf.concat([class_row, mask_row, boxes_row], 0)
             level_images[k] = level_image
+        batch.append(level_images)
 
     with tf.Session() as sess:
-        level_images = sess.run(level_images)
-        for k in level_images:
-            plt.figure(figsize=(16, 8))
-            plt.imshow(level_images[k])
-            plt.title(k)
-            plt.show()
+        batch = sess.run(batch)
+        for level_images in batch:
+            for k in level_images:
+                plt.figure(figsize=(16, 8))
+                plt.imshow(level_images[k])
+                plt.title(k)
+                plt.show()
 
 
 if __name__ == '__main__':

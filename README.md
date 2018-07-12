@@ -6,8 +6,10 @@ To overcome this problem I tried different initialization schemes, backbone arch
 Also training on multiple GPUs might help.
 You can choose densenet, resnext or mobilenet_v2 as a backbone architecture.
 
+### Observations
+* Training focal loss on a simple synthetic dataset does not converges and predicts everything as background
 
-My current setup which gives me at least some result:
+### Current setup which gives at least some result:
 * Training on a single Titan X with 1 image per batch (cant fit into memory anything larger with 500 image scale)
 * MobileNetV2 as a backbone, with 500 image scale (cant fit into memory anything larger)
 * Not using Focal Loss, I am sure I will get back to it once I will find out why it is so hard to train it as it is described in a paper.
