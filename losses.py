@@ -155,7 +155,7 @@ def balanced_sigmoid_cross_entropy_with_logits(
 
 def loss(labels: Detection, logits: Detection, name='loss'):
     with tf.name_scope(name):
-        fg_mask = utils.classmap_decode(labels.classification.prob)['non_bg_mask']
+        fg_mask = utils.classmap_decode(labels.classification.prob).fg_mask
 
         # FIXME:
         tf.summary.histogram(

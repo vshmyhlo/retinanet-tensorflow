@@ -7,6 +7,7 @@ from typing import List
 
 NMS_MAX_OUTPUT_SIZE = 1000
 BoxesDecoded = namedtuple('BoxesDecoded', ['boxes', 'scores', 'class_ids'])
+ClassmapDecoded = namedtuple('ClassmapDecoded', ['fg_mask'])
 Detection = namedtuple('Detection', ['classification', 'regression', 'regression_postprocessed'])
 Classification = namedtuple('Classification', ['unscaled', 'prob'])
 
@@ -169,14 +170,12 @@ def dict_starmap(f, dicts):
 def classmap_decode(classmap, name='classmap_decoder'):
     with tf.name_scope(name):
         classmap_max = tf.reduce_max(classmap, -1)
-        non_bg_mask = classmap_max > 0.5
+        fg_mask = classmap_max > 0.5
 
         # scores = tf.boolean_mask(tf.reduce_max(classmap, ))
-        # classmap = tf.where(non_bg_mask, tf.argmax(classmap, -1), tf.fill(tf.shape(non_bg_mask), tf.to_int64(-1)))
+        # classmap = tf.where(fg_mask, tf.argmax(classmap, -1), tf.fill(tf.shape(fg_mask), tf.to_int64(-1)))
 
-        return {
-            'non_bg_mask': non_bg_mask
-        }
+        return ClassmapDecoded(fg_mask=fg_mask)
 
 
 # TODO: use classmap_decode
@@ -184,10 +183,10 @@ def boxes_decode(classifications, regressions, name='boxes_decode'):
     with tf.name_scope(name):
         classifications_max = tf.reduce_max(classifications, -1)
         class_ids = tf.argmax(classifications, -1)
-        non_bg_mask = classifications_max > 0.5
-        boxes = tf.boolean_mask(regressions, non_bg_mask)
-        scores = tf.boolean_mask(classifications_max, non_bg_mask)
-        class_ids = tf.boolean_mask(class_ids, non_bg_mask)
+        fg_mask = classifications_max > 0.5
+        boxes = tf.boolean_mask(regressions, fg_mask)
+        scores = tf.boolean_mask(classifications_max, fg_mask)
+        class_ids = tf.boolean_mask(class_ids, fg_mask)
 
         return BoxesDecoded(
             boxes=boxes,

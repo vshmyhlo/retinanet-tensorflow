@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 
 
 def draw_classmap(image, classification):
-    non_bg_mask = utils.classmap_decode(classification)['non_bg_mask']
-    non_bg_mask = tf.to_float(non_bg_mask)
-    non_bg_mask = tf.expand_dims(non_bg_mask, -1)
+    fg_mask = utils.classmap_decode(classification).fg_mask
+    fg_mask = tf.to_float(fg_mask)
+    fg_mask = tf.expand_dims(fg_mask, -1)
     image_size = tf.shape(image)[:2]
-    non_bg_mask = tf.image.resize_images(
-        non_bg_mask, image_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
+    fg_mask = tf.image.resize_images(
+        fg_mask, image_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, align_corners=True)
 
-    image += non_bg_mask
+    image += fg_mask
 
     return image
 
