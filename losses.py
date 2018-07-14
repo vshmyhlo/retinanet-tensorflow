@@ -44,12 +44,10 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)  # TODO: count all points, not only trainable?
         # losses.append(focal)
 
-        axis = None
+        # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=axis)
+        # losses.append(bce)
 
-        bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=axis)
-        losses.append(bce)
-
-        dice = dice_loss(labels=labels, logits=logits, axis=axis, smooth=1e-7)
+        dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
         losses.append(dice)
 
         # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
