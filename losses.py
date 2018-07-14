@@ -39,10 +39,10 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
     with tf.name_scope(name):
         losses = []
 
-        # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, alpha=0.9, focus=2)
-        # num_fg = tf.reduce_sum(tf.to_float(fg_mask))
-        # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)  # TODO: count all points, not only trainable?
-        # losses.append(focal)
+        focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        num_fg = tf.reduce_sum(tf.to_float(fg_mask))
+        focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)  # TODO: count all points, not only trainable?
+        losses.append(focal)
 
         # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=axis)
         # losses.append(bce)
