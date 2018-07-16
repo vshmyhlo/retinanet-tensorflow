@@ -40,9 +40,10 @@ def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
         logits = tf.reshape(logits, [-1])
 
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        top_k = tf.count_nonzero(labels)
-        top_k = tf.maximum(top_k, 1)
-        top_k = tf.to_int32(top_k)
+        # top_k = tf.count_nonzero(labels)
+        # top_k = tf.maximum(top_k, 1)
+        # top_k = tf.to_int32(top_k)
+        top_k = 512
         _, indices = tf.nn.top_k(loss, top_k, sorted=False)
 
         labels = tf.gather(labels, indices)
