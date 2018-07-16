@@ -152,8 +152,6 @@ def balanced_sigmoid_cross_entropy_with_logits(
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         loss = loss * weight
 
-        loss = tf.reduce_sum(loss)
-
         return loss
 
 
