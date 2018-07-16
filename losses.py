@@ -34,17 +34,28 @@ def focal_softmax_cross_entropy_with_logits(
         return loss
 
 
+# def ohem_loss(labels, logits, name='ohem_loss'):
+#     with tf.name_scope(name):
+#         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+#         tf.summary.histogram('loss', loss)  # FIXME:
+#         loss = tf.reduce_mean(loss, -1)
+#         _, indices = tf.nn.top_k(loss, 512, sorted=False)
+#
+#         labels = tf.gather(labels, indices)
+#         logits = tf.gather(logits, indices)
+#
+#         dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
+#         loss = dice
+#
+#         return loss
+
+
 def ohem_loss(labels, logits, name='ohem_loss'):
     with tf.name_scope(name):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        tf.summary.histogram('loss', loss)  # FIXME:
-        loss = tf.reduce_mean(loss, -1)
-        _, indices = tf.nn.top_k(loss, 512, sorted=False)
-
-        labels = tf.gather(labels, indices)
-        logits = tf.gather(logits, indices)
-
-        loss = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
+        loss_fg = tf.reduce_mean(loss * labels, 0)
+        loss_bg = tf.reduce_mean(loss * (1 - labels), 0)
+        loss = loss_fg + loss_bg
 
         return loss
 
