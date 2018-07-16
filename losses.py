@@ -160,8 +160,8 @@ def separate_mean_sigmoid_cross_entropy_with_logits(
         labels, logits, name='separate_mean_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        loss_fg = tf.reduce_sum(loss * labels, 0) / tf.reduce_sum(labels, 0)
-        loss_bg = tf.reduce_sum(loss * (1 - labels), 0) / tf.reduce_sum(1 - labels, 0)
+        loss_fg = tf.reduce_sum(loss * labels, 0) / tf.maximum(tf.reduce_sum(labels, 0), 1)
+        loss_bg = tf.reduce_sum(loss * (1 - labels), 0) / tf.maximum(tf.reduce_sum(1 - labels, 0), 1)
         loss = loss_fg + loss_bg
 
         return loss
