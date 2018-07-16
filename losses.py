@@ -36,11 +36,11 @@ def focal_softmax_cross_entropy_with_logits(
 
 def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
     with tf.name_scope(name):
-        # num_classes = labels.shape[-1]
+        num_classes = labels.shape[-1]
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         loss = tf.reshape(loss, [-1])
-        # top_k = tf.to_int32(tf.maximum(tf.count_nonzero(fg_mask) * num_classes), 1)
-        loss, _ = tf.nn.top_k(loss, 512, sorted=False)
+        top_k = tf.to_int32(tf.maximum(tf.count_nonzero(fg_mask) * num_classes, 1))
+        loss, _ = tf.nn.top_k(loss, top_k, sorted=False)
 
         tf.summary.histogram('loss', loss)  # FIXME:
 
