@@ -34,28 +34,28 @@ def focal_softmax_cross_entropy_with_logits(
         return loss
 
 
-# def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
-#     with tf.name_scope(name):
-#         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-#         loss = tf.reshape(loss, [-1])
-#         loss, _ = tf.nn.top_k(loss, 512, sorted=False)
-#
-#         return loss
-
-
 def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
     with tf.name_scope(name):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        loss = tf.reduce_mean(loss, -1)
-
-        loss_fg = tf.boolean_mask(loss, fg_mask)
-        loss_bg = tf.boolean_mask(loss, tf.logical_not(fg_mask))
-        num_fg = tf.size(loss_fg)
-        loss_bg, _ = tf.nn.top_k(loss_bg, num_fg * 3, sorted=False)
-
-        loss = tf.concat([loss_fg, loss_bg], 0)
+        loss = tf.reshape(loss, [-1])
+        loss, _ = tf.nn.top_k(loss, 512, sorted=False)
 
         return loss
+
+
+# def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
+#     with tf.name_scope(name):
+#         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+#         loss = tf.reduce_mean(loss, -1)
+#
+#         loss_fg = tf.boolean_mask(loss, fg_mask)
+#         loss_bg = tf.boolean_mask(loss, tf.logical_not(fg_mask))
+#         num_fg = tf.size(loss_fg)
+#         loss_bg, _ = tf.nn.top_k(loss_bg, num_fg * 3, sorted=False)
+#
+#         loss = tf.concat([loss_fg, loss_bg], 0)
+#
+#         return loss
 
 
 def jaccard_loss(labels, logits, smooth=1., axis=None, name='jaccard_loss'):
