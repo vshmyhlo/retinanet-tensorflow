@@ -47,8 +47,8 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
         losses.append(bce)
 
-        # dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
-        # losses.append(dice)
+        dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
+        losses.append(dice)
 
         # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
         # losses.append(jaccard)
@@ -137,6 +137,7 @@ def fixed_iou_loss(labels, logits, smooth=1., axis=0, name='fixed_iou_loss'):
 
 
 # TODO: fix keepdims
+# TODO: reduce_sum?
 def balanced_sigmoid_cross_entropy_with_logits(
         labels, logits, axis=None, name='balanced_sigmoid_cross_entropy_with_logits'):
     with tf.name_scope(name):
@@ -150,6 +151,8 @@ def balanced_sigmoid_cross_entropy_with_logits(
 
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         loss = loss * weight
+
+        loss = tf.reduce_sum(loss)
 
         return loss
 
