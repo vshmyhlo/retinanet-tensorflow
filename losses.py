@@ -34,47 +34,11 @@ def focal_softmax_cross_entropy_with_logits(
         return loss
 
 
-# TODO: check bg mask usage and bg weighting calculation
-def classification_loss(labels, logits, fg_mask, name='classification_loss'):
+def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
     with tf.name_scope(name):
-        losses = []
-
-        # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        # num_fg = tf.reduce_sum(tf.to_float(fg_mask))
-        # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)
-        # losses.append(focal)
-
-        bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
-        losses.append(bce)
-
-        dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
-        losses.append(dice)
-
-        # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
-        # losses.append(jaccard)
-
-        # iou = fixed_iou_loss(labels, logits, axis=0, smooth=1e-7)
-        # losses.append(iou)
-
-        # FIXME:
-        # bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        # bce = tf.reshape(bce, [-1])
-        # bce, _ = tf.nn.top_k(bce, 128, sorted=False)
-        # tf.summary.histogram('loss', bce)  # FIXME:
-        # losses.append(bce)
-
-        loss = sum(tf.reduce_mean(l) for l in losses)
-
-        return loss
-
-
-def regression_loss(labels, logits, fg_mask, name='regression_loss'):
-    with tf.name_scope(name):
-        loss = tf.losses.huber_loss(
-            labels=labels,
-            predictions=logits,
-            weights=tf.expand_dims(fg_mask, -1),
-            reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss = tf.reshape(loss, [-1])
+        loss, _ = tf.nn.top_k(loss, 512, sorted=False)
 
         return loss
 
@@ -151,6 +115,54 @@ def balanced_sigmoid_cross_entropy_with_logits(
 
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         loss = loss * weight
+
+        return loss
+
+
+# TODO: check bg mask usage and bg weighting calculation
+def classification_loss(labels, logits, fg_mask, name='classification_loss'):
+    with tf.name_scope(name):
+        losses = []
+
+        # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        # num_fg = tf.reduce_sum(tf.to_float(fg_mask))
+        # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)
+        # losses.append(focal)
+
+        # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
+        # losses.append(bce)
+
+        # dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
+        # losses.append(dice)
+
+        ohem = ohem_loss(labels=labels, logits=logits, fg_mask=fg_mask)
+        losses.append(ohem)
+
+        # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
+        # losses.append(jaccard)
+
+        # iou = fixed_iou_loss(labels, logits, axis=0, smooth=1e-7)
+        # losses.append(iou)
+
+        # FIXME:
+        # bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        # bce = tf.reshape(bce, [-1])
+        # bce, _ = tf.nn.top_k(bce, 128, sorted=False)
+        # tf.summary.histogram('loss', bce)  # FIXME:
+        # losses.append(bce)
+
+        loss = sum(tf.reduce_mean(l) for l in losses)
+
+        return loss
+
+
+def regression_loss(labels, logits, fg_mask, name='regression_loss'):
+    with tf.name_scope(name):
+        loss = tf.losses.huber_loss(
+            labels=labels,
+            predictions=logits,
+            weights=tf.expand_dims(fg_mask, -1),
+            reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
         return loss
 
