@@ -34,18 +34,17 @@ def focal_softmax_cross_entropy_with_logits(
         return loss
 
 
-# def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
-#     with tf.name_scope(name):
-#         num_classes = labels.shape[-1]
-#         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-#         loss = tf.reshape(loss, [-1])
-#
-#         # top_k = tf.to_int32(tf.maximum(tf.count_nonzero(fg_mask) * num_classes), 3)
-#         # loss, _ = tf.nn.top_k(loss, top_k, sorted=False)
-#
-#         tf.summary.histogram('loss', loss)  # FIXME:
-#
-#         return loss
+def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
+    with tf.name_scope(name):
+        # num_classes = labels.shape[-1]
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss = tf.reshape(loss, [-1])
+        # top_k = tf.to_int32(tf.maximum(tf.count_nonzero(fg_mask) * num_classes), 1)
+        loss, _ = tf.nn.top_k(loss, 512, sorted=False)
+
+        tf.summary.histogram('loss', loss)  # FIXME:
+
+        return loss
 
 
 def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
@@ -59,6 +58,8 @@ def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
         loss_bg, _ = tf.nn.top_k(loss_bg, num_fg * 3, sorted=False)
 
         loss = tf.concat([loss_fg, loss_bg], 0)
+
+        tf.summary.histogram('loss', loss)  # FIXME:
 
         return loss
 
