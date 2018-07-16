@@ -180,8 +180,8 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
         # losses.append(bce)
 
-        # dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
-        # losses.append(dice)
+        dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
+        losses.append(dice)
 
         sm = separate_mean_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         losses.append(sm)
