@@ -45,8 +45,8 @@ def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
         top_k = tf.to_int32(top_k)
         _, indices = tf.nn.top_k(loss, top_k, sorted=False)
 
-        labels = labels[indices]
-        logits = logits[indices]
+        labels = tf.gather(labels, indices)
+        logits = tf.gather(logits, indices)
 
         loss = dice_loss(labels=labels, logits=logits, smooth=1e-7)
 
