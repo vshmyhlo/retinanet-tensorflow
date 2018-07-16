@@ -79,7 +79,7 @@ def regression_loss(labels, logits, fg_mask, name='regression_loss'):
         return loss
 
 
-def jaccard_loss(labels, logits, smooth=100., axis=None, name='jaccard_loss'):
+def jaccard_loss(labels, logits, smooth=1., axis=None, name='jaccard_loss'):
     with tf.name_scope(name):
         logits = tf.nn.sigmoid(logits)
 
