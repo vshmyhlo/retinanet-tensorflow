@@ -50,16 +50,6 @@ def focal_softmax_cross_entropy_with_logits(
 #         return loss
 
 
-def ohem_loss(labels, logits, name='ohem_loss'):
-    with tf.name_scope(name):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        loss_fg = tf.reduce_mean(loss * labels, 0)
-        loss_bg = tf.reduce_mean(loss * (1 - labels), 0)
-        loss = loss_fg + loss_bg
-
-        return loss
-
-
 # def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
 #     with tf.name_scope(name):
 #         num_classes = labels.shape[-1]
@@ -166,6 +156,17 @@ def balanced_sigmoid_cross_entropy_with_logits(
         return loss
 
 
+def separate_mean_sigmoid_cross_entropy_with_logits(
+        labels, logits, name='separate_mean_sigmoid_cross_entropy_with_logits'):
+    with tf.name_scope(name):
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss_fg = tf.reduce_mean(loss * labels, 0)
+        loss_bg = tf.reduce_mean(loss * (1 - labels), 0)
+        loss = loss_fg + loss_bg
+
+        return loss
+
+
 # TODO: check bg mask usage and bg weighting calculation
 def classification_loss(labels, logits, fg_mask, name='classification_loss'):
     with tf.name_scope(name):
@@ -182,8 +183,11 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
         # losses.append(dice)
 
-        ohem = ohem_loss(labels=labels, logits=logits)
-        losses.append(ohem)
+        sm = separate_mean_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        losses.append(sm)
+
+        # ohem = ohem_loss(labels=labels, logits=logits)
+        # losses.append(ohem)
 
         # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
         # losses.append(jaccard)
