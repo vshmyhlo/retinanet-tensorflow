@@ -38,7 +38,8 @@ def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
     with tf.name_scope(name):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         loss = tf.reshape(loss, [-1])
-        loss, _ = tf.nn.top_k(loss, 512, sorted=False)
+        top_k = tf.reduce_sum(tf.to_float(fg_mask))
+        loss, _ = tf.nn.top_k(loss, top_k, sorted=False)
 
         tf.summary.histogram('loss', loss)  # FIXME:
 
