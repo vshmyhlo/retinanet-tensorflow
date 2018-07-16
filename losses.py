@@ -34,24 +34,17 @@ def focal_softmax_cross_entropy_with_logits(
         return loss
 
 
-def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
+def ohem_loss(labels, logits, name='ohem_loss'):
     with tf.name_scope(name):
-        labels = tf.reshape(labels, [-1])
-        logits = tf.reshape(logits, [-1])
-
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         tf.summary.histogram('loss', loss)  # FIXME:
-       
-        # top_k = tf.count_nonzero(labels)
-        # top_k = tf.maximum(top_k, 1)
-        # top_k = tf.to_int32(top_k)
-        top_k = 512
-        _, indices = tf.nn.top_k(loss, top_k, sorted=False)
+        loss = tf.reduce_mean(loss, -1)
+        _, indices = tf.nn.top_k(loss, 512, sorted=False)
 
         labels = tf.gather(labels, indices)
         logits = tf.gather(logits, indices)
 
-        loss = dice_loss(labels=labels, logits=logits, smooth=1e-7)
+        loss = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
 
         return loss
 
@@ -178,7 +171,7 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
         # losses.append(dice)
 
-        ohem = ohem_loss(labels=labels, logits=logits, fg_mask=fg_mask)
+        ohem = ohem_loss(labels=labels, logits=logits)
         losses.append(ohem)
 
         # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
