@@ -181,10 +181,12 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # losses.append(bce)
 
         dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
-        losses.append(dice)
+        # losses.append(dice)
 
         sm = separate_mean_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        losses.append(sm)
+        # losses.append(sm)
+
+        losses.append(dice + sm)
 
         # ohem = ohem_loss(labels=labels, logits=logits)
         # losses.append(ohem)
