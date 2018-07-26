@@ -172,21 +172,21 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
     with tf.name_scope(name):
         losses = []
 
-        # focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        # num_fg = tf.reduce_sum(tf.to_float(fg_mask))
-        # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)
-        # losses.append(focal)
+        focal = focal_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        num_fg = tf.reduce_sum(tf.to_float(fg_mask))
+        focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)
+        losses.append(focal)
 
         # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
         # losses.append(bce)
 
-        dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
+        # dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
         # losses.append(dice)
 
-        sm = separate_mean_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+        # sm = separate_mean_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         # losses.append(sm)
 
-        losses.append(dice + sm)
+        # losses.append(dice + sm)
 
         # ohem = ohem_loss(labels=labels, logits=logits)
         # losses.append(ohem)
