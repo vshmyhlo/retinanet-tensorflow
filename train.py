@@ -8,7 +8,6 @@ from level import build_levels
 import losses
 import dataset
 from tqdm import tqdm
-import L4
 from data_loaders.inferred import Inferred
 import math
 
@@ -132,14 +131,14 @@ def build_parser():
     parser.add_argument(
         '--optimizer',
         type=str,
-        choices=['momentum', 'adam', 'rmsprop', 'l4'],
+        choices=['momentum', 'adam', 'rmsprop'],
         default='momentum')
 
     return parser
 
 
 def build_train_step(loss, learning_rate, global_step, config):
-    assert config.optimizer in ['momentum', 'adam', 'rmsprop', 'l4']
+    assert config.optimizer in ['momentum', 'adam', 'rmsprop']
 
     if config.optimizer == 'momentum':
         optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
@@ -147,10 +146,8 @@ def build_train_step(loss, learning_rate, global_step, config):
         optimizer = tf.train.RMSPropOptimizer(learning_rate, 0.9, 0.9)
     elif config.optimizer == 'adam':
         optimizer = tf.train.AdamOptimizer(learning_rate)
-    elif config.optimizer == 'l4':
-        optimizer = L4.L4Adam(fraction=0.15)
     else:
-        raise AssertionError('invalid optimizer type: {}'.format(config.optimizer))
+        raise AssertionError('invalid optimizer type {}'.format(config.optimizer))
 
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
@@ -319,7 +316,7 @@ def main():
                         print()
                         print_summary(m, step)
                         train_writer.add_summary(s, step)
-                        saver.save(sess, os.path.join(args.experiment, 'model.ckpt'), write_meta_graph=False)
+                        saver.save(sess, os.path.join(args.experiment, 'model.ckpt'))
                 except tf.errors.OutOfRangeError:
                     break
 
