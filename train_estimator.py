@@ -5,6 +5,7 @@ import tensorflow as tf
 import utils
 import retinanet
 from level import build_levels
+import logging
 import losses
 import dataset
 from tqdm import tqdm
@@ -119,8 +120,7 @@ def build_parser():
     parser.add_argument('--learning-rate', type=float, default=1e-2)
     parser.add_argument('--dropout', type=float, default=0.2)
     parser.add_argument('--dataset', type=str, nargs='+', required=True)
-    parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--log-interval', type=int, default=500)
+    parser.add_argument('--epochs', type=int, default=1000)
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument('--grad-clip-norm', type=float)
@@ -138,25 +138,27 @@ def build_parser():
     return parser
 
 
-def build_train_step(loss, learning_rate, global_step, config):
-    assert config.optimizer in ['momentum', 'adam', 'rmsprop']
+def build_train_step(loss, learning_rate, global_step, optimizer, grad_clip_norm):
+    assert optimizer in ['momentum', 'adam', 'rmsprop']
 
-    if config.optimizer == 'momentum':
+    if optimizer == 'momentum':
         optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
-    elif config.optimizer == 'rmsprop':
+    elif optimizer == 'rmsprop':
         optimizer = tf.train.RMSPropOptimizer(learning_rate, 0.9, 0.9)
-    elif config.optimizer == 'adam':
+    elif optimizer == 'adam':
         optimizer = tf.train.AdamOptimizer(learning_rate)
     else:
-        raise AssertionError('invalid optimizer type {}'.format(config.optimizer))
+        raise AssertionError('invalid optimizer type {}'.format(optimizer))
+
+    tf.summary.scalar('learning_rate', learning_rate)
 
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
-        if config.grad_clip_norm is not None:
+        if grad_clip_norm is not None:
             grads_and_vars = optimizer.compute_gradients(loss)
             grads = [x[0] for x in grads_and_vars]
             vars = [x[1] for x in grads_and_vars]
-            grads, _ = tf.clip_by_global_norm(grads, config.grad_clip_norm)
+            grads, _ = tf.clip_by_global_norm(grads, grad_clip_norm)
             return optimizer.apply_gradients(zip(grads, vars), global_step=global_step)
         else:
             return optimizer.minimize(loss, global_step=global_step)
@@ -189,19 +191,19 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
     return metrics, update_metrics
 
 
-def build_summary(metrics, image, labels, logits, learning_rate, class_names):
-    summary = [
-        # tf.summary.scalar('class_iou', metrics['class_iou']),
-        # tf.summary.scalar('regr_iou', metrics['regr_iou']),
-        tf.summary.scalar('total_loss', metrics['total_loss']),
-        tf.summary.scalar('class_loss', metrics['class_loss']),
-        tf.summary.scalar('regr_loss', metrics['regr_loss']),
-        tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
-        tf.summary.scalar('learning_rate', learning_rate),
-    ]
+def build_summary(metrics, image, labels, logits, class_names):
+    # summary = [
+    #     # tf.summary.scalar('class_iou', metrics['class_iou']),
+    #     # tf.summary.scalar('regr_iou', metrics['regr_iou']),
+    #     tf.summary.scalar('total_loss', metrics['total_loss']),
+    #     tf.summary.scalar('class_loss', metrics['class_loss']),
+    #     tf.summary.scalar('regr_loss', metrics['regr_loss']),
+    #     tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
+    # ]
 
     image = image * dataset.STD + dataset.MEAN
     # TODO: better scope names
+
     for scope, classifications, regressions in (
             ('true',
              labels['detection'].classification.prob,
@@ -217,109 +219,95 @@ def build_summary(metrics, image, labels, logits, learning_rate, class_names):
                     utils.dict_map(lambda x: x[i], classifications),
                     utils.dict_map(lambda x: x[i], regressions),
                     class_names=class_names)
-                summary.append(tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0)))
+                tf.summary.image('regression', tf.expand_dims(image_with_boxes, 0))
 
                 image_with_classmap = draw_classmap(
                     image[i], utils.dict_map(lambda x: x[i], classifications))
-                summary.append(tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0)))
+                tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0))
 
     # summary = tf.summary.merge(summary)
-    summary = tf.summary.merge_all()  # FIXME:
+    # summary = tf.summary.merge_all()  # FIXME:
 
-    return summary
-
-
-def build_learning_rate(global_step, config):
-    # return cosine_decay(config.learning_rate, global_step % 10000, 10000)
-
-    # return cyclical_learning_rate(1e-3, 3., 5000, global_step)
-    return config.learning_rate
+    # return summary
 
 
-def main():
-    args = build_parser().parse_args()
-    utils.log_args(args)
-
+def train_input_fn(params):
     levels = build_levels()
-    training = tf.placeholder(tf.bool, [], name='training')
-    global_step = tf.get_variable('global_step', initializer=0, trainable=False)
 
-    data_loader = Inferred(args.dataset[0], args.dataset[1:])
     ds = dataset.build_dataset(
-        data_loader,
+        params['data_loader'],
         levels=levels,
-        scale=args.scale,
+        scale=params['scale'],
         shuffle=4096,
         augment=True)
 
-    iter = ds.prefetch(1).make_initializable_iterator()
-    input = iter.get_next()
-    input = {**input, 'image': preprocess_image(input['image'])}
+    ds = ds.map(lambda input: {**input, 'image': preprocess_image(input['image'])})
 
-    net = retinanet.RetinaNet(
-        levels=levels,
-        num_classes=data_loader.num_classes,
-        activation=tf.nn.elu,
-        dropout_rate=args.dropout,
-        backbone=args.backbone)
-    logits = {'detection': net(input['image'], training)}
-    input, logits = utils.process_labels_and_logits(labels=input, logits=logits, levels=levels)
+    return ds.prefetch(1)
 
-    class_loss, regr_loss = losses.loss(labels=input['detection_trainable'], logits=logits['detection_trainable'])
-    regularization_loss = tf.losses.get_regularization_loss()
 
-    total_loss = class_loss + regr_loss + regularization_loss
-    learning_rate = build_learning_rate(global_step, args)
-    train_step = build_train_step(total_loss, learning_rate, global_step=global_step, config=args)
+def model_fn(features, labels, mode, params):
+    if mode == tf.estimator.ModeKeys.TRAIN:
+        global_step = tf.train.get_or_create_global_step()
+        levels = build_levels()
 
-    metrics, update_metrics = build_metrics(
-        total_loss,
-        class_loss,
-        regr_loss,
-        regularization_loss,
-        labels=input,
-        logits=logits)
+        net = retinanet.RetinaNet(
+            levels=levels,
+            num_classes=params['data_loader'].num_classes,
+            activation=tf.nn.elu,
+            dropout_rate=params['dropout'],
+            backbone=params['backbone'])
+        logits = {'detection': net(features['image'], training=True)}
+        input, logits = utils.process_labels_and_logits(labels=features, logits=logits, levels=levels)
 
-    summary = build_summary(
-        metrics,
-        image=input['image'],
-        labels=input,
-        logits=logits,
-        learning_rate=learning_rate,
-        class_names=data_loader.class_names)
+        class_loss, regr_loss = losses.loss(labels=input['detection_trainable'], logits=logits['detection_trainable'])
+        regularization_loss = tf.losses.get_regularization_loss()
 
-    globals_init = tf.global_variables_initializer()
-    locals_init = tf.local_variables_initializer()
-    saver = tf.train.Saver()
+        loss = class_loss + regr_loss + regularization_loss
+        train_step = build_train_step(
+            loss, params['learning_rate'], global_step=global_step, optimizer=params['optimizer'],
+            grad_clip_norm=params['grad_clip_norm'])
 
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    with tf.Session(config=config) as sess, tf.summary.FileWriter(
-            logdir=os.path.join(args.experiment, 'train')) as train_writer:
-        restore_path = tf.train.latest_checkpoint(args.experiment)
-        if restore_path:
-            saver.restore(sess, restore_path)
-            print('model restored from {}'.format(restore_path))
-        else:
-            sess.run(globals_init)
+        # metrics, update_metrics = build_metrics(
+        #     loss,
+        #     class_loss,
+        #     regr_loss,
+        #     regularization_loss,
+        #     labels=input,
+        #     logits=logits)
 
-        for epoch in range(args.epochs):
-            sess.run([iter.initializer, locals_init])
+        build_summary(
+            # metrics,
+            None,
+            image=input['image'],
+            labels=input,
+            logits=logits,
+            class_names=params['data_loader'].class_names)
 
-            for _ in tqdm(itertools.count()):
-                try:
-                    _, step = sess.run(
-                        [(train_step, update_metrics), global_step], {training: True})
+        return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_step)
 
-                    if step % args.log_interval == 0:
-                        m, s = sess.run([metrics, summary], {training: True})
 
-                        print()
-                        print_summary(m, step)
-                        train_writer.add_summary(s, step)
-                        saver.save(sess, os.path.join(args.experiment, 'model.ckpt'))
-                except tf.errors.OutOfRangeError:
-                    break
+def main():
+    logging.basicConfig(level=logging.INFO)
+    args = build_parser().parse_args()
+
+    data_loader = Inferred(args.dataset[0], args.dataset[1:])
+    params = {
+        'data_loader': data_loader,
+        'scale': args.scale,
+        'dropout': args.dropout,
+        'backbone': args.backbone,
+        'learning_rate': args.learning_rate,
+        'optimizer': args.optimizer,
+        'grad_clip_norm': args.grad_clip_norm
+    }
+    config = tf.estimator.RunConfig(model_dir=args.experiment, save_summary_steps=500)
+
+    estimator = tf.estimator.Estimator(model_fn, params=params, config=config)
+
+    for epoch in range(args.epochs):
+        print('epoch {}'.format(epoch))
+        estimator.train(train_input_fn)
 
 
 if __name__ == '__main__':
