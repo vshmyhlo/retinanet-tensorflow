@@ -35,4 +35,6 @@ class GroupNormalization(tf.layers.Layer):
         return input
 
 
-Normalization = GroupNormalization
+class Normalization(GroupNormalization):
+    def call(self, input, trainig):
+        return super()(input)

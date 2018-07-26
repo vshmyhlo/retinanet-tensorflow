@@ -8,6 +8,7 @@ from network import Network, Sequential
 # TODO: check resize-conv (upsampling)
 # TODO: check training arg
 # TODO: remove bias where not needed
+# TODO: use normalization training param if uses BatchNormalization
 
 
 class ResNeXt_Bottleneck(Network):
