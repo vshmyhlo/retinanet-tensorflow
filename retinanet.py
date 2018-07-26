@@ -1,5 +1,6 @@
 import tensorflow as tf
 import math
+from normalization import Normalization
 import resnet
 import densenet
 import mobilenet_v2
@@ -44,7 +45,7 @@ class ClassificationSubnet(Network):
                         use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization(),
+                    Normalization(),
                     activation,
                 ]) for _ in range(4)
             ]))
@@ -94,7 +95,7 @@ class RegressionSubnet(Network):
                         use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization(),
+                    Normalization(),
                     activation,
                 ]) for _ in range(4)
             ]))
@@ -135,7 +136,7 @@ class FeaturePyramidNetwork(Network):
                         use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization()
+                    Normalization()
                 ]))
 
             self.conv_merge = self.track_layer(
@@ -148,7 +149,7 @@ class FeaturePyramidNetwork(Network):
                         use_bias=False,
                         kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization()
+                    Normalization()
                 ]))
 
         # TODO: refactor arguments
@@ -181,7 +182,7 @@ class FeaturePyramidNetwork(Network):
                     use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
-                tf.layers.BatchNormalization()
+                Normalization()
             ]))
 
         self.p7_from_p6 = self.track_layer(
@@ -195,7 +196,7 @@ class FeaturePyramidNetwork(Network):
                     use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
-                tf.layers.BatchNormalization()
+                Normalization()
             ]))
 
         self.p5_from_c5 = self.track_layer(
@@ -207,7 +208,7 @@ class FeaturePyramidNetwork(Network):
                     use_bias=False,
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer),
-                tf.layers.BatchNormalization()
+                Normalization()
             ]))
 
         self.p4_from_c4p5 = self.track_layer(
@@ -253,7 +254,7 @@ class RetinaNetBase(Network):
             self.postprocess_bottom_up = {
                 cn: self.track_layer(
                     Sequential([
-                        tf.layers.BatchNormalization(),
+                        Normalization(),
                         activation
                     ]))
                 for cn in ['C3', 'C4', 'C5']
