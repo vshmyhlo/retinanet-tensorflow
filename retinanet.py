@@ -6,6 +6,8 @@ import mobilenet_v2
 from network import Network, Sequential
 
 
+# TODO: refactor with tf.layers.Layer
+
 def build_backbone(backbone, activation, dropout_rate):
     assert backbone in ['resnet', 'densenet_121', 'densenet_169', 'mobilenet_v2']
     if backbone == 'resnet':

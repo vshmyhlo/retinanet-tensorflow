@@ -1,4 +1,5 @@
 import tensorflow as tf
+from normalization import Normalization
 from network import Network, Sequential
 
 
@@ -24,7 +25,7 @@ class ResNeXt_Bottleneck(Network):
                     tf.layers.Conv2D(
                         filters_base * 4, 3, 2, padding='same', use_bias=False, kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization()
+                    Normalization()
                 ]))
         elif project:
             self.identity = self.track_layer(
@@ -32,7 +33,7 @@ class ResNeXt_Bottleneck(Network):
                     tf.layers.Conv2D(
                         filters_base * 4, 1, use_bias=False, kernel_initializer=kernel_initializer,
                         kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization()
+                    Normalization()
                 ]))
         else:
             self.identity = None
@@ -42,7 +43,7 @@ class ResNeXt_Bottleneck(Network):
             tf.layers.Conv2D(
                 filters_base * 2, 1, use_bias=False, kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
-            tf.layers.BatchNormalization(),
+            Normalization(),
             activation
         ]))
 
@@ -56,7 +57,7 @@ class ResNeXt_Bottleneck(Network):
                     tf.layers.Conv2D(
                         (filters_base * 2) // cardinality, 3, strides, padding='same', use_bias=False,
                         kernel_initializer=kernel_initializer, kernel_regularizer=kernel_regularizer),
-                    tf.layers.BatchNormalization(),
+                    Normalization(),
                     activation
                 ]))
 
@@ -67,7 +68,7 @@ class ResNeXt_Bottleneck(Network):
             tf.layers.Conv2D(
                 filters_base * 4, 1, use_bias=False, kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
-            tf.layers.BatchNormalization()
+            Normalization()
         ]))
         self.activation = activation
 
@@ -125,7 +126,7 @@ class ResNeXt_Conv1(Network):
             tf.layers.Conv2D(
                 64, 7, 2, padding='same', use_bias=False, kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer, name='conv1'))
-        self.bn = self.track_layer(tf.layers.BatchNormalization())
+        self.bn = self.track_layer(Normalization())
         self.activation = activation
 
     def call(self, input, training):

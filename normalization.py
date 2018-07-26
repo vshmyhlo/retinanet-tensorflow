@@ -1,39 +1,38 @@
 import tensorflow as tf
-from network import Network
 
 
-class GroupNormalization(Network):
-    def __init__(self, G=32, epsilon=1e-5, name='group_normalization'):
+class GroupNormalization(tf.layers.Layer):
+    def __init__(self, G=32, eps=1e-5, name='group_normalization'):
         super().__init__(name=name)
 
-        self.G = G
-        self.epsilon = epsilon
+        self._G = G
+        self._eps = eps
 
     def build(self, input_shape):
-        # TODO: use self.add_variable
-        self.gamma = tf.get_variable('gamma', [input_shape[-1]], initializer=tf.constant_initializer(1.0))
-        self.beta = tf.get_variable('beta', [input_shape[-1]], initializer=tf.constant_initializer(0.0))
+        C = input_shape[-1]
+
+        # per channel gamma and beta
+        self._gamma = self.add_variable('gamma', [1, 1, 1, C], initializer=tf.constant_initializer(1.0))
+        self._beta = self.add_variable('beta', [1, 1, 1, C], initializer=tf.constant_initializer(0.0))
 
         super().build(input_shape)
 
-    def call(self, input, training):
-        # transpose: [bs, h, w, c] to [bs, c, h, w] following the paper
-        input = tf.transpose(input, [0, 3, 1, 2])
+    def call(self, input):
+        N, H, W, _ = tf.unstack(tf.shape(input))
+        _, _, _, C = input.shape
 
-        input_shape = tf.shape(input)
-        N, C, H, W = (input_shape[i] for i in range(4))
-        G = tf.minimum(self.G, C)
+        G = min(self._G, C)
 
-        input = tf.reshape(input, [N, G, C // G, H, W])
-        mean, var = tf.nn.moments(input, [2, 3, 4], keep_dims=True)
-        input = (input - mean) / tf.sqrt(var + self.epsilon)
+        # add groups
+        input = tf.reshape(input, [N, H, W, G, C // G])
 
-        # per channel gamma and beta
-        gamma = tf.reshape(self.gamma, [1, C, 1, 1])
-        beta = tf.reshape(self.beta, [1, C, 1, 1])
+        # normalize
+        mean, var = tf.nn.moments(input, [1, 2, 4], keep_dims=True)
+        input = (input - mean) / tf.sqrt(var + self._eps)
 
-        input = tf.reshape(input, [N, C, H, W]) * gamma + beta
-        # transpose: [bs, c, h, w, c] to [bs, h, w, c] following the paper
-        input = tf.transpose(input, [0, 2, 3, 1])
+        input = tf.reshape(input, [N, H, W, C]) * self._gamma + self._beta
 
         return input
+
+
+Normalization = GroupNormalization

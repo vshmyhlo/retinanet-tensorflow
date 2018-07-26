@@ -13,6 +13,8 @@ from data_loaders.inferred import Inferred
 import math
 
 
+# TODO: use estimator
+# TODO: group normalization
 # TODO: refactor to use Detection class
 # TODO: check dropout usage
 # TODO: rename c5_from_p4 layers to p4_to_c5
@@ -118,7 +120,7 @@ def build_parser():
     parser.add_argument('--dropout', type=float, default=0.2)
     parser.add_argument('--dataset', type=str, nargs='+', required=True)
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--log-interval', type=int)
+    parser.add_argument('--log-interval', type=int, default=500)
     parser.add_argument('--scale', type=int, default=600)
     parser.add_argument('--experiment', type=str, required=True)
     parser.add_argument('--grad-clip-norm', type=float)
@@ -311,7 +313,7 @@ def main():
                     _, step = sess.run(
                         [(train_step, update_metrics), global_step], {training: True})
 
-                    if args.log_interval is not None and step % args.log_interval == 0:
+                    if step % args.log_interval == 0:
                         m, s = sess.run([metrics, summary], {training: True})
 
                         print()
