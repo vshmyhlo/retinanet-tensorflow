@@ -9,8 +9,8 @@ from network import Network, Sequential
 # TODO: refactor with tf.layers.Layer
 
 def build_backbone(backbone, activation, dropout_rate):
-    assert backbone in ['resnet', 'densenet_121', 'densenet_169', 'mobilenet_v2']
-    if backbone == 'resnet':
+    assert backbone in ['resnet_50', 'densenet_121', 'densenet_169', 'mobilenet_v2']
+    if backbone == 'resnet_50':
         return resnet.ResNeXt_50(activation=activation)
     elif backbone == 'densenet_121':
         return densenet.DenseNetBC_121(activation=activation, dropout_rate=dropout_rate)

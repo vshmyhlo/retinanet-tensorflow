@@ -126,8 +126,8 @@ def build_parser():
     parser.add_argument(
         '--backbone',
         type=str,
-        choices=['resnet', 'densenet_121', 'densenet_169', 'mobilenet_v2'],
-        default='resnet')
+        choices=['resnet_50', 'densenet_121', 'densenet_169', 'mobilenet_v2'],
+        default='resnet_50')
     parser.add_argument(
         '--optimizer',
         type=str,
