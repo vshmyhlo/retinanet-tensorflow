@@ -183,7 +183,8 @@ class ResNeXt(tf.layers.Layer):
 
 
 class ResNeXt_50(ResNeXt):
-    def __init__(self, kernel_initializer=None, kernel_regularizer=None, name='resnext_v2_50'):
+    # TODO: check activation
+    def __init__(self, activation, kernel_initializer=None, kernel_regularizer=None, name='resnext_v2_50'):
         if kernel_initializer is None:
             kernel_initializer = tf.contrib.layers.variance_scaling_initializer(
                 factor=2.0, mode='FAN_IN', uniform=False)
