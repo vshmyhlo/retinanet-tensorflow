@@ -268,14 +268,9 @@ class RetinaNetBase(Network):
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer))
 
-        # all pyramid levels must have the same number of anchors
-        num_anchors = set(levels[pn].anchor_sizes.shape[0] for pn in levels)
-        assert len(num_anchors) == 1
-        num_anchors = list(num_anchors)[0]
-
         self.classification_subnet = self.track_layer(
             ClassificationSubnet(
-                num_anchors=num_anchors,  # TODO: level anchor boxes
+                num_anchors=levels.num_anchors,  # TODO: level anchor boxes
                 num_classes=num_classes,
                 activation=activation,
                 kernel_initializer=kernel_initializer,
@@ -284,7 +279,7 @@ class RetinaNetBase(Network):
 
         self.regression_subnet = self.track_layer(
             RegressionSubnet(
-                num_anchors=num_anchors,  # TODO: level anchor boxes
+                num_anchors=levels.num_anchors,  # TODO: level anchor boxes
                 activation=activation,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
@@ -320,8 +315,6 @@ class RetinaNetBase(Network):
 class RetinaNet(Network):
     def __init__(self, backbone, levels, num_classes, activation, dropout_rate, name='retinanet'):
         super().__init__(name=name)
-
-        self.levels = levels
 
         kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
         kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-4)

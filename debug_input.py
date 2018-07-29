@@ -1,7 +1,7 @@
 import tensorflow as tf
 from data_loaders.inferred import Inferred
 from dataset import build_dataset
-from level import build_levels
+from levels import build_levels
 import utils
 import matplotlib.pyplot as plt
 

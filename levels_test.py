@@ -1,4 +1,4 @@
-from level import Level, compute_box_size
+from levels import Level, compute_box_size
 import numpy as np
 
 

@@ -1,5 +1,5 @@
 import dataset
-from level import Level
+from levels import Level
 import numpy as np
 import tensorflow as tf
 

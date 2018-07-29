@@ -1,6 +1,6 @@
 import tensorflow as tf
 import retinanet
-from level import build_levels
+from levels import build_levels
 
 
 class FeaturePyramidNetworkTest(tf.test.TestCase):
