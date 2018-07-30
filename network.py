@@ -2,6 +2,8 @@ import tensorflow as tf
 import tensorflow.contrib.eager as tfe
 from tensorflow.python.estimator import util as estimator_util
 
+# TODO: refactor out Network, it is deprecated
+
 tfe_avaiable = hasattr(tfe, 'Network')
 
 if tfe_avaiable:

@@ -13,70 +13,40 @@ from data_loaders.inferred import Inferred
 import math
 
 
-# TODO: use estimator
-# TODO: group normalization
+# TODO: THE CODE IN THIS FILE IS IN THE PROCESS IF BEING REFACTORED TO USE TO tf.Estimator
+
+# TODO: use GroupNormalization
 # TODO: refactor to use Detection class
 # TODO: check dropout usage
+# TODO: add correct dropout everywhere (noise shape)
 # TODO: rename c5_from_p4 layers to p4_to_c5
 # TODO: remove redundant `strides` argument from conv
 # TODO: remove tfe.Network
 # TODO: check fpn relu activation usage
-# TODO: check activationm usage and relu usage
-# TODO: typing
-# TODO: check retinanet encodes background as 0 everywhere
+# TODO: check activation parameter usage
+# TODO: maybe add some typing
 # TODO: compute only loss on train
-# TODO: estimator
-# TODO: classwise nms
-# TODO: check preprocessing
+# TODO: use classwise nms
+# TODO: test preprocessing
 # TODO: optimize data loading
-# TODO: add correct dropout everywhere
-# TODO: dropout noise shape
 # TODO: check classmap decoded uses scaled logits (sigmoid)
-
 # TODO: dict map vs dict starmap
-
-# TODO: move label creation to graph
-# TODO: check focal-cross-entropy
+# TODO: move label creation to graph?
 # TODO: try focal cross-entropy
-# TODO: anchor assignment
-# TODO: check rounding and float32 conversions
-# TODO: add dataset downloading to densenet
+# TODO: try balanced cross-entropy
 # TODO: exclude samples without prop IoU
-# TODO: set trainable parts
-# TODO: use trainable_mask for visualization
-# TODO: check if batch norm after dropout is ok
-# TODO: balances cross-entropy
-# TODO: why sometimes ground true boxes not drawn
-# TODO: class iou
-# TODO: regr iou
+# TODO: set network trainable parts
+# TODO: visualize trainable_mask
+# TODO: check if norm after dropout is ok
+# TODO: check why sometimes ground true boxes not drawn
+# TODO: add class iou metric
+# TODO: add regr iou metrics
 # TODO: explicitly set training=
+# TODO: try other scheduling schemes (cyclical?)
+# TODO: move drawing to utils
 
 def preprocess_image(image):
     return (image - dataset.MEAN) / dataset.STD
-
-
-def print_summary(metrics, step):
-    print(
-        'step: {}, total_loss: {:.4f}, class_loss: {:.4f}, regr_loss: {:.4f}, regularization_loss: {:.4f}'.format(
-            step, metrics['total_loss'], metrics['class_loss'], metrics['regr_loss'], metrics['regularization_loss']))
-
-
-# def cyclical_learning_rate(min, max, step_size, global_step):
-#     cycle_size = step_size * 2
-#     step = global_step % cycle_size
-#     k = tf.cond(step < step_size, lambda: step / step_size, lambda: 1 - (step - step_size) / step_size)
-#     learning_rate = min + (max - min) * k
-#
-#     return learning_rate
-
-def cosine_decay(learning_rate, global_step, decay_steps, alpha=0.0, name='cosine_decay'):
-    with tf.name_scope(name):
-        global_step = tf.minimum(global_step, decay_steps)
-        completed_fraction = global_step / decay_steps
-        cosine_decayed = 0.5 * (1.0 + tf.cos(math.pi * completed_fraction))
-        decayed = (1 - alpha) * cosine_decayed + alpha
-
-        return learning_rate * decayed
 
 
 def draw_classmap(image, classifications):
@@ -165,24 +135,24 @@ def build_train_step(loss, learning_rate, global_step, optimizer, grad_clip_norm
 
 
 def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels, logits):
-    # def build_iou(labels, logits, name='build_iou'):
-    #     with tf.name_scope(name):
-    #         # decode both using ground true classification
-    #         labels_decoded = utils.boxes_decode(labels['classifications'], labels['regressions_postprocessed'])
-    #         logits_decoded = utils.boxes_decode(labels['classifications'], logits['regressions_postprocessed'])
-    #         return utils.iou(labels_decoded.boxes, logits_decoded.boxes)
+    def build_iou(labels, logits, name='build_iou'):
+        with tf.name_scope(name):
+            # decode both using ground true classification
+            labels_decoded = utils.boxes_decode(labels['classifications'], labels['regressions_postprocessed'])
+            logits_decoded = utils.boxes_decode(labels['classifications'], logits['regressions_postprocessed'])
+            return utils.iou(labels_decoded.boxes, logits_decoded.boxes)
 
     metrics = {}
     update_metrics = {}
 
     # TODO: refactor
     # TODO: fix iou to use class ids
-    # metrics['class_iou'], update_metrics['class_iou'] = tf.metrics.mean_iou(
-    #     labels=labels['detection_trainable']['classifications'],
-    #     predictions=tf.to_int32(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5),
-    #     num_classes=2)
-    # metrics['regr_iou'], update_metrics['regr_iou'] = tf.metrics.mean(
-    #     build_iou(labels['detection_trainable'], logits['detection_trainable']))
+    metrics['class_iou'], update_metrics['class_iou'] = tf.metrics.mean_iou(
+        labels=labels['detection_trainable']['classifications'],
+        predictions=tf.to_int32(tf.nn.sigmoid(logits['detection_trainable']['classifications']) > 0.5),
+        num_classes=2)
+    metrics['regr_iou'], update_metrics['regr_iou'] = tf.metrics.mean(
+        build_iou(labels['detection_trainable'], logits['detection_trainable']))
     metrics['total_loss'], update_metrics['total_loss'] = tf.metrics.mean(total_loss)
     metrics['class_loss'], update_metrics['class_loss'] = tf.metrics.mean(class_loss)
     metrics['regr_loss'], update_metrics['regr_loss'] = tf.metrics.mean(regr_loss)
@@ -191,19 +161,10 @@ def build_metrics(total_loss, class_loss, regr_loss, regularization_loss, labels
     return metrics, update_metrics
 
 
-def build_summary(metrics, image, labels, logits, class_names):
-    # summary = [
-    #     # tf.summary.scalar('class_iou', metrics['class_iou']),
-    #     # tf.summary.scalar('regr_iou', metrics['regr_iou']),
-    #     tf.summary.scalar('total_loss', metrics['total_loss']),
-    #     tf.summary.scalar('class_loss', metrics['class_loss']),
-    #     tf.summary.scalar('regr_loss', metrics['regr_loss']),
-    #     tf.summary.scalar('regularization_loss', metrics['regularization_loss']),
-    # ]
-
+def build_summary(image, labels, logits, class_names):
     image = image * dataset.STD + dataset.MEAN
-    # TODO: better scope names
 
+    # TODO: use better scope names
     for scope, classifications, regressions in (
             ('true',
              labels['detection'].classification.prob,
@@ -225,11 +186,6 @@ def build_summary(metrics, image, labels, logits, class_names):
                     image[i], utils.dict_map(lambda x: x[i], classifications))
                 tf.summary.image('classification', tf.expand_dims(image_with_classmap, 0))
 
-    # summary = tf.summary.merge(summary)
-    # summary = tf.summary.merge_all()  # FIXME:
-
-    # return summary
-
 
 def train_input_fn(params):
     levels = build_levels()
@@ -246,6 +202,7 @@ def train_input_fn(params):
     return ds.prefetch(1)
 
 
+# TODO: use labels arg
 def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN:
         global_step = tf.train.get_or_create_global_step()
@@ -268,6 +225,7 @@ def model_fn(features, labels, mode, params):
             loss, params['learning_rate'], global_step=global_step, optimizer=params['optimizer'],
             grad_clip_norm=params['grad_clip_norm'])
 
+        # TODO: build metrics
         # metrics, update_metrics = build_metrics(
         #     loss,
         #     class_loss,
@@ -277,9 +235,7 @@ def model_fn(features, labels, mode, params):
         #     logits=logits)
 
         build_summary(
-            # metrics,
-            None,
-            image=input['image'],
+            input['image'],
             labels=input,
             logits=logits,
             class_names=params['data_loader'].class_names)

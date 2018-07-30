@@ -1,7 +1,7 @@
 import tensorflow as tf
 from network import Network, Sequential
 
-# TODO: fixme
+# TODO: use channelwise dropout
 # class Dropout(Network):
 #     def __init__(self, dropout_rate, name='dropout'):
 #         super().__init__(name=name)

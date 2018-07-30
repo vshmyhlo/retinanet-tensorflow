@@ -34,52 +34,6 @@ def focal_softmax_cross_entropy_with_logits(
         return loss
 
 
-# def ohem_loss(labels, logits, name='ohem_loss'):
-#     with tf.name_scope(name):
-#         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-#         tf.summary.histogram('loss', loss)  # FIXME:
-#         loss = tf.reduce_mean(loss, -1)
-#         _, indices = tf.nn.top_k(loss, 512, sorted=False)
-#
-#         labels = tf.gather(labels, indices)
-#         logits = tf.gather(logits, indices)
-#
-#         dice = dice_loss(labels=labels, logits=logits, axis=0, smooth=1e-7)
-#         loss = dice
-#
-#         return loss
-
-
-# def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
-#     with tf.name_scope(name):
-#         num_classes = labels.shape[-1]
-#         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-#         loss = tf.reshape(loss, [-1])
-#         top_k = tf.to_int32(tf.maximum(tf.count_nonzero(fg_mask) * num_classes, 1))
-#         loss, _ = tf.nn.top_k(loss, top_k, sorted=False)
-#
-#         tf.summary.histogram('loss', loss)  # FIXME:
-#
-#         return loss
-
-
-# def ohem_loss(labels, logits, fg_mask, name='ohem_loss'):
-#     with tf.name_scope(name):
-#         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-#         loss = tf.reduce_mean(loss, -1)
-#
-#         loss_fg = tf.boolean_mask(loss, fg_mask)
-#         loss_bg = tf.boolean_mask(loss, tf.logical_not(fg_mask))
-#         num_fg = tf.size(loss_fg)
-#         loss_bg, _ = tf.nn.top_k(loss_bg, num_fg * 3, sorted=False)
-#
-#         loss = tf.concat([loss_fg, loss_bg], 0)
-#
-#         tf.summary.histogram('loss', loss)  # FIXME:
-#
-#         return loss
-
-
 def jaccard_loss(labels, logits, smooth=1., axis=None, name='jaccard_loss'):
     with tf.name_scope(name):
         logits = tf.nn.sigmoid(logits)
@@ -137,7 +91,7 @@ def fixed_iou_loss(labels, logits, smooth=1., axis=0, name='fixed_iou_loss'):
 #         return loss
 
 
-# TODO: fix keepdims
+# TODO: fix keepdims problem
 # TODO: reduce_sum?
 def balanced_sigmoid_cross_entropy_with_logits(
         labels, logits, axis=None, name='balanced_sigmoid_cross_entropy_with_logits'):
@@ -197,13 +151,6 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # iou = fixed_iou_loss(labels, logits, axis=0, smooth=1e-7)
         # losses.append(iou)
 
-        # FIXME:
-        # bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        # bce = tf.reshape(bce, [-1])
-        # bce, _ = tf.nn.top_k(bce, 128, sorted=False)
-        # tf.summary.histogram('loss', bce)  # FIXME:
-        # losses.append(bce)
-
         loss = sum(tf.reduce_mean(l) for l in losses)
 
         return loss
@@ -224,7 +171,7 @@ def loss(labels: Detection, logits: Detection, name='loss'):
     with tf.name_scope(name):
         fg_mask = utils.classmap_decode(labels.classification.prob).fg_mask
 
-        # FIXME:
+        # TODO: remove this once stable
         tf.summary.histogram(
             'prob_fg', tf.boolean_mask(logits.classification.prob, tf.equal(labels.classification.prob, 1)))
         tf.summary.histogram(

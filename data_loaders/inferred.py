@@ -35,7 +35,6 @@ class Inferred(object):
 
 
 if __name__ == '__main__':
-
     dl = Inferred('pascal', [os.path.expanduser('~/Datasets/pascal/VOCdevkit/VOC2012'), 'trainval'])
     for _ in tqdm(dl):
         pass

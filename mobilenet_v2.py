@@ -5,121 +5,14 @@ import tensorflow.contrib.slim as slim
 
 
 # TODO: remove `track_layer(...)` stuff
-# TODO: initialization
-# TODO: reegularization
-# TODO: batchnorm
+# TODO: check initialization
+# TODO: check regularization
+# TODO: use batchnorm
 # TODO: activation parameter
 # TODO: dropout
 # TODO: private fields
 # TODO: check shapes
-# TODO: move everything to `build`
-def expanded_conv(input_tensor,
-                  num_outputs,
-                  expansion_size,
-                  stride=1,
-                  kernel_size=(3, 3),
-                  residual=True,
-                  normalizer_fn=None,
-                  expansion_transform=None,
-                  depthwise_location='expansion',
-                  endpoints=None,
-                  use_explicit_padding=False,
-                  padding='SAME',
-                  scope=None):
-    """Depthwise Convolution Block with expansion.
-    Builds a composite convolution that has the following structure
-    expansion (1x1) -> depthwise (kernel_size) -> projection (1x1)
-    Args:
-      input_tensor: input
-      num_outputs: number of outputs in the final layer.
-      expansion_size: the size of expansion, could be a constant or a callable.
-        If latter it will be provided 'num_inputs' as an input. For forward
-        compatibility it should accept arbitrary keyword arguments.
-        Default will expand the input by factor of 6.
-      stride: depthwise stride
-      rate: depthwise rate
-      kernel_size: depthwise kernel
-      residual: whether to include residual connection between input
-        and output.
-      normalizer_fn: batchnorm or otherwise
-      split_projection: how many ways to split projection operator
-        (that is conv expansion->bottleneck)
-      split_expansion: how many ways to split expansion op
-        (that is conv bottleneck->expansion) ops will keep depth divisible
-        by this value.
-      expansion_transform: Optional function that takes expansion
-        as a single input and returns output.
-      depthwise_location: where to put depthwise covnvolutions supported
-        values None, 'input', 'output', 'expansion'
-      depthwise_channel_multiplier: depthwise channel multiplier:
-      each input will replicated (with different filters)
-      that many times. So if input had c channels,
-      output will have c x depthwise_channel_multpilier.
-      endpoints: An optional dictionary into which intermediate endpoints are
-        placed. The keys "expansion_output", "depthwise_output",
-        "projection_output" and "expansion_transform" are always populated, even
-        if the corresponding functions are not invoked.
-      use_explicit_padding: Use 'VALID' padding for convolutions, but prepad
-        inputs so that the output dimensions are the same as if 'SAME' padding
-        were used.
-      padding: Padding type to use if `use_explicit_padding` is not set.
-      scope: optional scope.
-    Returns:
-      Tensor of depth num_outputs
-    Raises:
-      TypeError: on inval
-    """
-    prev_depth = input_tensor.get_shape().as_list()[3]
-    depthwise_func = functools.partial(
-        slim.separable_conv2d,
-        num_outputs=None,
-        kernel_size=kernel_size,
-        stride=stride,
-        normalizer_fn=normalizer_fn,
-        padding=padding,
-        scope='depthwise')
-    # b1 -> b2 * r -> b2
-    #   i -> (o * r) (bottleneck) -> o
-    net = input_tensor
 
-    inner_size = expansion_size
-
-    net = split_conv(
-        net,
-        inner_size,
-        scope='expand',
-        stride=1,
-        normalizer_fn=normalizer_fn)
-    net = tf.identity(net, 'expansion_output')
-
-    if depthwise_location == 'expansion':
-        net = depthwise_func(net)
-
-    net = tf.identity(net, name='depthwise_output')
-    # Note in contrast with expansion, we always have
-    # projection to produce the desired output size.
-    net = split_conv(
-        net,
-        num_outputs,
-        stride=1,
-        scope='project',
-        normalizer_fn=normalizer_fn,
-        activation_fn=tf.identity)
-
-    if (residual and
-            # stride check enforces that we don't add residuals when spatial
-            # dimensions are None
-            stride == 1 and
-            # Depth matches
-            net.get_shape().as_list()[3] ==
-            input_tensor.get_shape().as_list()[3]):
-        net += input_tensor
-    return tf.identity(net, name='output')
-
-
-# input = tf.zeros((1, 224, 224, 3))
-# expanded_conv(input, stride=2, num_outputs=24, expansion_size=6, residual=True, normalizer_fn=slim.batch_norm)
-# fail
 
 class DepthwiseConv2D(Network):
     def __init__(self, kernel_size, strides, padding, use_bias, kernel_initializer, kernel_regularizer,

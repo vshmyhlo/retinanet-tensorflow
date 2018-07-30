@@ -17,7 +17,7 @@ class GroupNormalization(tf.layers.Layer):
 
         super().build(input_shape)
 
-    def call(self, input, training):  # TODO: remove training
+    def call(self, input, training):  # TODO: remove training argument
         N, H, W, _ = tf.unstack(tf.shape(input))
         _, _, _, C = input.shape
 
@@ -35,4 +35,5 @@ class GroupNormalization(tf.layers.Layer):
         return input
 
 
+# TODO: use best implementation by default
 Normalization = GroupNormalization

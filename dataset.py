@@ -39,7 +39,7 @@ def from_center_box(box):
     return tf.concat([pos - half_size, pos + half_size], -1)
 
 
-# TODO: check this
+# TODO: test this
 def level_labels(image_size, class_id, true_box, level, factor, num_classes):
     num_objects = tf.shape(true_box)[0]
     num_anchors = level.anchor_sizes.shape[0]
@@ -157,7 +157,8 @@ def build_dataset(data_loader, levels, scale=None, shuffle=None, augment=False):
         image = tf.image.decode_jpeg(image, channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
         image_size = tf.shape(image)[:2]
-        boxes = input['boxes'] / tf.to_float(tf.concat([image_size, image_size], 0))  # TODO: move to dataset
+        # TODO: move normalization to data loader
+        boxes = input['boxes'] / tf.to_float(tf.concat([image_size, image_size], 0))
 
         if scale is not None:
             image = rescale_image(image, scale)
