@@ -1,5 +1,6 @@
 import tensorflow as tf
 from network import Network, Sequential
+from normalization import Normalization
 import functools
 import tensorflow.contrib.slim as slim
 
@@ -7,7 +8,7 @@ import tensorflow.contrib.slim as slim
 # TODO: remove `track_layer(...)` stuff
 # TODO: check initialization
 # TODO: check regularization
-# TODO: use batchnorm
+# TODO: use norm
 # TODO: activation parameter
 # TODO: dropout
 # TODO: private fields
@@ -59,7 +60,7 @@ class Bottleneck(Network):
             tf.layers.Conv2D(
                 input_shape[3] * self._expansion_factor, 1, use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
-            tf.layers.BatchNormalization(),
+            Normalization(),
             self._activation,
             tf.layers.Dropout(self._dropout_rate)
         ])
@@ -68,7 +69,7 @@ class Bottleneck(Network):
             DepthwiseConv2D(
                 3, strides=self._strides, padding='same', use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
-            tf.layers.BatchNormalization(),
+            Normalization(),
             self._activation,
             tf.layers.Dropout(self._dropout_rate)
         ])
@@ -77,7 +78,7 @@ class Bottleneck(Network):
             tf.layers.Conv2D(
                 self._filters, 1, use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
-            tf.layers.BatchNormalization(),
+            Normalization(),
             tf.layers.Dropout(self._dropout_rate)
         ])
 
@@ -114,7 +115,7 @@ class MobileNetV2(Network):
             tf.layers.Conv2D(
                 32, 3, strides=2, padding='same', use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
-            tf.layers.BatchNormalization(),
+            Normalization(),
             self._activation,
             tf.layers.Dropout(self._dropout_rate)
         ])
@@ -181,7 +182,7 @@ class MobileNetV2(Network):
             tf.layers.Conv2D(
                 32, 1, use_bias=False, kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer),
-            tf.layers.BatchNormalization(),
+            Normalization(),
             self._activation,
             tf.layers.Dropout(self._dropout_rate)
         ])

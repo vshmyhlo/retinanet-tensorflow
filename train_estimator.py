@@ -15,6 +15,8 @@ import math
 
 # TODO: THE CODE IN THIS FILE IS IN THE PROCESS IF BEING REFACTORED TO USE TO tf.Estimator
 
+# TODO: rename bn prop to norm
+# TODO: training arg to norm
 # TODO: use GroupNormalization
 # TODO: refactor to use Detection class
 # TODO: check dropout usage

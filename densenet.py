@@ -1,5 +1,6 @@
 import tensorflow as tf
 from network import Network, Sequential
+from normalization import Normalization
 
 # TODO: use channelwise dropout
 # class Dropout(Network):
@@ -31,7 +32,7 @@ class CompositeFunction(Sequential):
                  kernel_regularizer,
                  name='composite_function'):
         layers = [
-            tf.layers.BatchNormalization(),
+            Normalization(),
             activation,
             tf.layers.Conv2D(
                 filters,
@@ -55,7 +56,7 @@ class BottleneckCompositeFunction(Sequential):
                  kernel_regularizer,
                  name='bottleneck_composite_function'):
         layers = [
-            tf.layers.BatchNormalization(),
+            Normalization(),
             activation,
             tf.layers.Conv2D(
                 filters * 4,
@@ -64,7 +65,7 @@ class BottleneckCompositeFunction(Sequential):
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer),
             Dropout(dropout_rate),
-            tf.layers.BatchNormalization(),
+            Normalization(),
             activation,
             tf.layers.Conv2D(
                 filters,
@@ -134,7 +135,7 @@ class TransitionLayer(Sequential):
         filters = int(input_filters * compression_factor)
 
         layers = [
-            tf.layers.BatchNormalization(),
+            Normalization(),
             tf.layers.Conv2D(
                 filters,
                 1,
@@ -176,7 +177,7 @@ class DenseNetBC_ImageNet(Network):
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer,
                     name='conv1'),
-                tf.layers.BatchNormalization(),
+                Normalization(),
                 activation,
             ]))
         self.conv1_max_pool = self.track_layer(
