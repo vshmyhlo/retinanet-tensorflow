@@ -1,5 +1,5 @@
 import tensorflow as tf
-from network import Network, Sequential
+from model import Model, Sequential
 from normalization import Normalization
 
 # TODO: use channelwise dropout
@@ -80,7 +80,7 @@ class BottleneckCompositeFunction(Sequential):
         super().__init__(layers, name=name)
 
 
-class DenseNet_Block(Network):
+class DenseNet_Block(Model):
     def __init__(self,
                  growth_rate,
                  depth,
@@ -96,24 +96,22 @@ class DenseNet_Block(Network):
         for i in range(depth):
             if bottleneck:
                 self.composite_functions.append(
-                    self.track_layer(
-                        BottleneckCompositeFunction(
-                            growth_rate,
-                            activation=activation,
-                            dropout_rate=dropout_rate,
-                            kernel_initializer=kernel_initializer,
-                            kernel_regularizer=kernel_regularizer,
-                            name='composite_function{}'.format(i + 1))))
+                    BottleneckCompositeFunction(
+                        growth_rate,
+                        activation=activation,
+                        dropout_rate=dropout_rate,
+                        kernel_initializer=kernel_initializer,
+                        kernel_regularizer=kernel_regularizer,
+                        name='composite_function{}'.format(i + 1)))
             else:
                 self.composite_functions.append(
-                    self.track_layer(
-                        CompositeFunction(
-                            growth_rate,
-                            activation=activation,
-                            dropout_rate=dropout_rate,
-                            kernel_initializer=kernel_initializer,
-                            kernel_regularizer=kernel_regularizer,
-                            name='composite_function{}'.format(i + 1))))
+                    CompositeFunction(
+                        growth_rate,
+                        activation=activation,
+                        dropout_rate=dropout_rate,
+                        kernel_initializer=kernel_initializer,
+                        kernel_regularizer=kernel_regularizer,
+                        name='composite_function{}'.format(i + 1)))
 
     def call(self, input, training):
         for f in self.composite_functions:
@@ -153,7 +151,7 @@ class TransitionLayer(Sequential):
         return super().call(input, training)
 
 
-class DenseNetBC_ImageNet(Network):
+class DenseNetBC_ImageNet(Model):
     def __init__(self,
                  blocks,
                  growth_rate,
@@ -166,93 +164,84 @@ class DenseNetBC_ImageNet(Network):
                  name='densenet_bc_imagenet'):
         super().__init__(name=name)
 
-        self.conv1 = self.track_layer(
-            Sequential([
-                tf.layers.Conv2D(
-                    2 * growth_rate,
-                    7,
-                    2,
-                    padding='same',
-                    use_bias=False,
-                    kernel_initializer=kernel_initializer,
-                    kernel_regularizer=kernel_regularizer,
-                    name='conv1'),
-                Normalization(),
-                activation,
-            ]))
-        self.conv1_max_pool = self.track_layer(
-            tf.layers.MaxPooling2D(3, 2, padding='same'))
-
-        self.dense_block_1 = self.track_layer(
-            DenseNet_Block(
-                growth_rate,
-                depth=blocks[1],
-                bottleneck=bottleneck,
-                activation=activation,
-                dropout_rate=dropout_rate,
+        self.conv1 = Sequential([
+            tf.layers.Conv2D(
+                2 * growth_rate,
+                7,
+                2,
+                padding='same',
+                use_bias=False,
                 kernel_initializer=kernel_initializer,
                 kernel_regularizer=kernel_regularizer,
-                name='dense_block1'))
+                name='conv1'),
+            Normalization(),
+            activation,
+        ])
+        self.conv1_max_pool = tf.layers.MaxPooling2D(3, 2, padding='same')
 
-        self.transition_layer_1 = self.track_layer(
-            TransitionLayer(
-                input_filters=blocks[1] * growth_rate + 64,
-                compression_factor=compression_factor,
-                dropout_rate=dropout_rate,
-                kernel_initializer=kernel_initializer,
-                kernel_regularizer=kernel_regularizer,
-                name='transition_layer_1'))
+        self.dense_block_1 = DenseNet_Block(
+            growth_rate,
+            depth=blocks[1],
+            bottleneck=bottleneck,
+            activation=activation,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name='dense_block1')
 
-        self.dense_block_2 = self.track_layer(
-            DenseNet_Block(
-                growth_rate,
-                depth=blocks[2],
-                bottleneck=bottleneck,
-                activation=activation,
-                dropout_rate=dropout_rate,
-                kernel_initializer=kernel_initializer,
-                kernel_regularizer=kernel_regularizer,
-                name='dense_block2'))
+        self.transition_layer_1 = TransitionLayer(
+            input_filters=blocks[1] * growth_rate + 64,
+            compression_factor=compression_factor,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name='transition_layer_1')
 
-        self.transition_layer_2 = self.track_layer(
-            TransitionLayer(
-                input_filters=blocks[2] * growth_rate + self.transition_layer_1.layers[1].filters,  # FIXME:
-                compression_factor=compression_factor,
-                dropout_rate=dropout_rate,
-                kernel_initializer=kernel_initializer,
-                kernel_regularizer=kernel_regularizer,
-                name='transition_layer_2'))
+        self.dense_block_2 = DenseNet_Block(
+            growth_rate,
+            depth=blocks[2],
+            bottleneck=bottleneck,
+            activation=activation,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name='dense_block2')
 
-        self.dense_block_3 = self.track_layer(
-            DenseNet_Block(
-                growth_rate,
-                depth=blocks[3],
-                bottleneck=bottleneck,
-                activation=activation,
-                dropout_rate=dropout_rate,
-                kernel_initializer=kernel_initializer,
-                kernel_regularizer=kernel_regularizer,
-                name='dense_block3'))
+        self.transition_layer_2 = TransitionLayer(
+            input_filters=blocks[2] * growth_rate + self.transition_layer_1.layers[1].filters,  # FIXME:
+            compression_factor=compression_factor,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name='transition_layer_2')
 
-        self.transition_layer_3 = self.track_layer(
-            TransitionLayer(
-                input_filters=blocks[3] * growth_rate + self.transition_layer_2.layers[1].filters,  # FIXME:
-                compression_factor=compression_factor,
-                dropout_rate=dropout_rate,
-                kernel_initializer=kernel_initializer,
-                kernel_regularizer=kernel_regularizer,
-                name='transition_layer_3'))
+        self.dense_block_3 = DenseNet_Block(
+            growth_rate,
+            depth=blocks[3],
+            bottleneck=bottleneck,
+            activation=activation,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name='dense_block3')
 
-        self.dense_block_4 = self.track_layer(
-            DenseNet_Block(
-                growth_rate,
-                depth=blocks[4],
-                bottleneck=bottleneck,
-                activation=activation,
-                dropout_rate=dropout_rate,
-                kernel_initializer=kernel_initializer,
-                kernel_regularizer=kernel_regularizer,
-                name='dense_block4'))
+        self.transition_layer_3 = TransitionLayer(
+            input_filters=blocks[3] * growth_rate + self.transition_layer_2.layers[1].filters,  # FIXME:
+            compression_factor=compression_factor,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name='transition_layer_3')
+
+        self.dense_block_4 = DenseNet_Block(
+            growth_rate,
+            depth=blocks[4],
+            bottleneck=bottleneck,
+            activation=activation,
+            dropout_rate=dropout_rate,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            name='dense_block4')
 
     def call(self, input, training):
         input = self.conv1(input, training)

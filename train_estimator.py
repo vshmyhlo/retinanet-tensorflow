@@ -259,7 +259,7 @@ def main():
         'optimizer': args.optimizer,
         'grad_clip_norm': args.grad_clip_norm
     }
-    config = tf.estimator.RunConfig(model_dir=args.experiment, save_summary_steps=500)
+    config = tf.estimator.RunConfig(model_dir=args.experiment, save_summary_steps=500, save_checkpoints_steps=500)
 
     estimator = tf.estimator.Estimator(model_fn, params=params, config=config)
 

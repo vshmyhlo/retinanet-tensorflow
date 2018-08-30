@@ -1,11 +1,10 @@
 import tensorflow as tf
-from network import Network, Sequential
+from model import Model, Sequential
 from normalization import Normalization
 import functools
 import tensorflow.contrib.slim as slim
 
 
-# TODO: remove `track_layer(...)` stuff
 # TODO: check initialization
 # TODO: check regularization
 # TODO: use norm
@@ -15,7 +14,7 @@ import tensorflow.contrib.slim as slim
 # TODO: check shapes
 
 
-class DepthwiseConv2D(Network):
+class DepthwiseConv2D(Model):
     def __init__(self, kernel_size, strides, padding, use_bias, kernel_initializer, kernel_regularizer,
                  name='separable_conv2d'):
         super().__init__(name=name)
@@ -41,7 +40,7 @@ class DepthwiseConv2D(Network):
         return input
 
 
-class Bottleneck(Network):
+class Bottleneck(Model):
     def __init__(self, filters, strides, expansion_factor, activation, dropout_rate, kernel_initializer,
                  kernel_regularizer,
                  name='bottleneck'):
@@ -97,7 +96,7 @@ class Bottleneck(Network):
         return input
 
 
-class MobileNetV2(Network):
+class MobileNetV2(Model):
     def __init__(self, activation, dropout_rate, name='mobilenet_v2'):
         super().__init__(name=name)
 
