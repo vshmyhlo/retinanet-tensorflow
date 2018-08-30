@@ -1,8 +1,6 @@
 import tensorflow as tf
 from model import Model, Sequential
 from normalization import Normalization
-import functools
-import tensorflow.contrib.slim as slim
 
 
 # TODO: check initialization
