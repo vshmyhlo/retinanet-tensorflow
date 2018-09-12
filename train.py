@@ -16,8 +16,6 @@ import math
 # TODO: THE CODE IN THIS FILE IS IN THE PROCESS IF BEING REFACTORED TO USE TO tf.Estimator
 
 # TODO: rename bn prop to norm
-# TODO: training arg to norm
-# TODO: use GroupNormalization
 # TODO: refactor to use Detection class
 # TODO: check dropout usage
 # TODO: add correct dropout everywhere (noise shape)
@@ -259,7 +257,14 @@ def main():
         'optimizer': args.optimizer,
         'grad_clip_norm': args.grad_clip_norm
     }
-    config = tf.estimator.RunConfig(model_dir=args.experiment, save_summary_steps=500, save_checkpoints_steps=500)
+
+    num_gpus = utils.get_num_gpus()
+    distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=num_gpus) if num_gpus > 1 else None
+    config = tf.estimator.RunConfig(
+        train_distribute=distribution,
+        model_dir=args.experiment,
+        save_summary_steps=500,
+        save_checkpoints_steps=500)
 
     estimator = tf.estimator.Estimator(model_fn, params=params, config=config)
 

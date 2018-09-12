@@ -1,6 +1,7 @@
 import termcolor
 import tensorflow as tf
 import cv2
+from tensorflow.python.client import device_lib
 import numpy as np
 from collections import namedtuple
 from typing import List
@@ -305,3 +306,10 @@ if __name__ == '__main__':
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     plt.imshow(image)
     plt.show()
+
+
+def get_num_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    gpus = [x.name for x in local_device_protos if x.device_type == 'GPU']
+
+    return len(gpus)

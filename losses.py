@@ -110,6 +110,7 @@ def balanced_sigmoid_cross_entropy_with_logits(
         return loss
 
 
+# TODO: bce/dice weighting
 # TODO: check bg mask usage and bg weighting calculation
 def classification_loss(labels, logits, fg_mask, name='classification_loss'):
     with tf.name_scope(name):
@@ -120,19 +121,14 @@ def classification_loss(labels, logits, fg_mask, name='classification_loss'):
         # focal = tf.reduce_sum(focal) / tf.maximum(num_fg, 1.0)
         # losses.append(focal)
 
-        bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
+        bce = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
         losses.append(bce)
 
-        dice = dice_loss(labels=labels, logits=logits, axis=0)
+        # bce = balanced_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits, axis=0)
+        # losses.append(bce)
+
+        dice = dice_loss(labels=labels, logits=logits, smooth=0., axis=0)
         losses.append(dice)
-
-        # sm = separate_mean_sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        # losses.append(sm)
-
-        # losses.append(dice + sm)
-
-        # ohem = ohem_loss(labels=labels, logits=logits)
-        # losses.append(ohem)
 
         # jaccard = jaccard_loss(labels=labels, logits=logits, axis=0)
         # losses.append(jaccard)
